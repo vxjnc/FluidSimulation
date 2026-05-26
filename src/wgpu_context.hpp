@@ -22,6 +22,12 @@ public:
         return ctx;
     }
 
+    ~WGPUContext() {
+        if (initialized_) {
+            surface_->unconfigure();
+        }
+    }
+
     void init(GLFWwindow* window, uint32_t width, uint32_t height) {
         if (initialized_) {
             return;
@@ -89,8 +95,6 @@ public:
         surfaceConfig.presentMode = wgpu::PresentMode::Mailbox;
         surface_->configure(surfaceConfig);
 
-        createDepthTexture(width, height);
-
         width_ = width;
         height_ = height;
         initialized_ = true;
@@ -110,8 +114,6 @@ public:
         surfaceConfig.presentMode = wgpu::PresentMode::Mailbox;
         surface_->configure(surfaceConfig);
 
-        createDepthTexture(width, height);
-
         width_ = width;
         height_ = height;
     }
@@ -123,7 +125,6 @@ public:
     wgpu::Queue queue() const { return *queue_; }
     wgpu::Surface surface() const { return *surface_; }
     wgpu::TextureFormat surfaceFormat() const { return surfaceFormat_; }
-    wgpu::TextureView depthView() const { return *depthTextureView_; }
     uint32_t width() const { return width_; }
     uint32_t height() const { return height_; }
 
@@ -171,27 +172,6 @@ private:
 #endif
     }
 
-    void createDepthTexture(uint32_t width, uint32_t height) {
-        wgpu::TextureDescriptor depthDesc{};
-        depthDesc.label = wgpu::StringView("Depth Texture");
-        depthDesc.size = {width, height, 1};
-        depthDesc.format = wgpu::TextureFormat::Depth24Plus;
-        depthDesc.usage = wgpu::TextureUsage::RenderAttachment;
-        depthDesc.mipLevelCount = 1;
-        depthDesc.sampleCount = 1;
-        depthDesc.dimension = wgpu::TextureDimension::_2D;
-        depthTexture_ = device_->createTexture(depthDesc);
-
-        wgpu::TextureViewDescriptor viewDesc{};
-        viewDesc.label = wgpu::StringView("Depth Texture View");
-        viewDesc.format = wgpu::TextureFormat::Depth24Plus;
-        viewDesc.dimension = wgpu::TextureViewDimension::_2D;
-        viewDesc.mipLevelCount = 1;
-        viewDesc.arrayLayerCount = 1;
-        viewDesc.aspect = wgpu::TextureAspect::DepthOnly;
-        depthTextureView_ = depthTexture_->createView(viewDesc);
-    }
-
     bool initialized_ = false;
 
     wgpu::raii::Instance instance_;
@@ -199,8 +179,6 @@ private:
     wgpu::raii::Device device_;
     wgpu::raii::Queue queue_;
     wgpu::raii::Surface surface_;
-    wgpu::raii::Texture depthTexture_;
-    wgpu::raii::TextureView depthTextureView_;
 
     wgpu::TextureFormat surfaceFormat_ = wgpu::TextureFormat::Undefined;
     uint32_t width_ = 0;

@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.28)
 
 project(FluidSimulation CXX)
 
+set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -51,6 +52,12 @@ FetchContent_MakeAvailable(glfw webgpu_distribution webgpu_cpp)
 
 add_executable(${PROJECT_NAME} main.cpp ${SOURCE_FILES})
 
+set(GENERATED_ROOT "${CMAKE_BINARY_DIR}/gen_includes")
+set(GENERATED_DIR "${GENERATED_ROOT}/generated")
+
+include(shaders)
+add_dependencies(${PROJECT_NAME} wgsl_shaders)
+
 target_link_libraries(${PROJECT_NAME} PRIVATE
     glfw
     webgpu
@@ -61,6 +68,7 @@ target_copy_webgpu_binaries(${PROJECT_NAME})
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_SOURCE_DIR}
     ${webgpu_cpp_SOURCE_DIR}
+    ${GENERATED_ROOT}
 )
 
 target_compile_options(${PROJECT_NAME} PRIVATE
