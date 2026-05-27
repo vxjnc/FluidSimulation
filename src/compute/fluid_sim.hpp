@@ -5,6 +5,7 @@
 
 #include "generated/shaders/advect.wgsl.h"
 #include "generated/shaders/advect_dye.wgsl.h"
+#include "generated/shaders/boundary.wgsl.h"
 #include "generated/shaders/divergence.wgsl.h"
 #include "generated/shaders/inject.wgsl.h"
 #include "generated/shaders/inject_dye.wgsl.h"
@@ -71,10 +72,12 @@ public:
         subtractGradient(enc, W, H);
         std::swap(velocity, velocity_next);
 
+        applyBoundary(enc, W, H);
+
         wgpu::raii::CommandBuffer cmd = enc->finish({});
         ctx.queue().submit(1, &*cmd);
 
-        // injectSource();
+        injectSource();
     }
 
     void inject(float x, float y, float vx, float vy, float radius = 10.0f) {
@@ -208,6 +211,12 @@ private:
                                                       {wgpu::BufferBindingType::ReadOnlyStorage}, // pressure
                                                       {wgpu::BufferBindingType::ReadOnlyStorage}, // velocity
                                                       {wgpu::BufferBindingType::Storage},         // velocity_next
+                                                  });
+
+        boundaryPipeline_ = createComputePipeline(boundary_wgsl, "Boundary",
+                                                  {
+                                                      {wgpu::BufferBindingType::Uniform}, // params
+                                                      {wgpu::BufferBindingType::Storage}, // velocity
                                                   });
     }
 
@@ -355,6 +364,16 @@ private:
         pass->end();
     }
 
+    void applyBoundary(wgpu::raii::CommandEncoder& enc, uint32_t W, uint32_t H) {
+        wgpu::raii::BindGroup bg = makeBindGroup(boundaryPipeline_, {
+                                                                        {*paramsBuffer_, 8},
+                                                                        {*velocity, velocity->getSize()},
+                                                                    });
+        wgpu::raii::ComputePassEncoder pass = enc->beginComputePass({});
+        dispatch(pass, boundaryPipeline_, bg, W, H);
+        pass->end();
+    }
+
     uint32_t width_ = 0;
     uint32_t height_ = 0;
 
@@ -371,4 +390,5 @@ private:
     wgpu::raii::ComputePipeline divergencePipeline_;
     wgpu::raii::ComputePipeline pressurePipeline_;
     wgpu::raii::ComputePipeline subtractPipeline_;
+    wgpu::raii::ComputePipeline boundaryPipeline_;
 };
