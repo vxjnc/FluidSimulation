@@ -4,6 +4,7 @@
 #include <webgpu/webgpu.hpp>
 
 #include "generated/shaders/shader.wgsl.h"
+#include "src/compute/fluid_sim.hpp"
 #include "src/wgpu_context.hpp"
 
 namespace {
@@ -24,7 +25,7 @@ class Render {
 public:
     Render() { initPipeline(); }
 
-    void draw(wgpu::TextureView targetView, const wgpu::raii::Buffer& fluid) {
+    void draw(const wgpu::raii::TextureView& targetView, FluidSim& fluid) {
         WGPUContext& ctx = WGPUContext::instance();
 
         uint32_t dims[2] = {ctx.width(), ctx.height()};
@@ -32,8 +33,8 @@ public:
 
         wgpu::BindGroupEntry entries[2]{};
         entries[0].binding = 0;
-        entries[0].buffer = *fluid;
-        entries[0].size = fluid->getSize();
+        entries[0].buffer = *fluid.velocity;
+        entries[0].size = fluid.velocity->getSize();
         entries[1].binding = 1;
         entries[1].buffer = *dimsBuffer_;
         entries[1].size = sizeof(dims);
@@ -49,7 +50,7 @@ public:
         wgpu::raii::CommandEncoder enc = ctx.device().createCommandEncoder(encDesc);
 
         wgpu::RenderPassColorAttachment color{};
-        color.view = targetView;
+        color.view = *targetView;
         color.loadOp = wgpu::LoadOp::Clear;
         color.storeOp = wgpu::StoreOp::Store;
         color.clearValue = {0, 0, 0, 1};

@@ -93,13 +93,13 @@ int main() {
             continue;
         }
 
-        wgpu::Texture target(surfaceTex.texture);
+        wgpu::raii::Texture target(surfaceTex.texture);
         wgpu::TextureViewDescriptor viewDesc{};
         viewDesc.mipLevelCount = 1;
         viewDesc.arrayLayerCount = 1;
-        wgpu::raii::TextureView targetView = target.createView(viewDesc);
+        wgpu::raii::TextureView targetView = target->createView(viewDesc);
 
-        render.draw(*targetView, sim.velocity);
+        render.draw(targetView, sim);
         ctx.present();
     }
 
