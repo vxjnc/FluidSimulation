@@ -5,6 +5,7 @@
 
 #include "generated/shaders/advect.wgsl.h"
 #include "generated/shaders/divergence.wgsl.h"
+#include "generated/shaders/inject.wgsl.h"
 #include "generated/shaders/pressure.wgsl.h"
 #include "generated/shaders/subtract.wgsl.h"
 #include "src/wgpu_context.hpp"
@@ -12,6 +13,13 @@
 class FluidSim {
 public:
     void init(uint32_t width, uint32_t height) {
+        WGPUContext& ctx = WGPUContext::instance();
+        paramsBuffer_ = ctx.createBuffer(2 * sizeof(uint32_t), wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst, "sim_params");
+        resize(width, height);
+        initPipelines();
+    }
+
+    void resize(uint32_t width, uint32_t height) {
         width_ = width;
         height_ = height;
 
@@ -31,23 +39,19 @@ public:
         divergence = scalar_buf("divergence");
 
         uint32_t params[2] = {width, height};
-        paramsBuffer_ = ctx.createBuffer(sizeof(params), wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst, "sim_params");
         ctx.queue().writeBuffer(*paramsBuffer_, 0, params, sizeof(params));
-
-        initVelocity();
-        initPipelines();
     }
 
     void step(float dt) {
         WGPUContext& ctx = WGPUContext::instance();
 
-        // Update dt uniform
         ctx.queue().writeBuffer(*dtBuffer_, 0, &dt, sizeof(dt));
 
         uint32_t W = (width_ + 7) / 8;
         uint32_t H = (height_ + 7) / 8;
 
-        injectSource();
+        // injectSource();
+
         advect(W, H);
         std::swap(velocity, velocity_next);
 
@@ -62,18 +66,31 @@ public:
         std::swap(velocity, velocity_next);
     }
 
-    // Exposed for rendering
+    void inject(float x, float y, float vx, float vy, float radius = 10.0f) {
+        WGPUContext& ctx = WGPUContext::instance();
+
+        struct InjectParams {
+            float x, y, vx, vy, radius;
+        };
+        InjectParams p{x, y, vx, vy, radius};
+        ctx.queue().writeBuffer(*injectBuffer_, 0, &p, sizeof(p));
+
+        wgpu::raii::BindGroup bg = makeBindGroup(injectPipeline_, {
+                                                                      {*paramsBuffer_, 8},
+                                                                      {*injectBuffer_, sizeof(InjectParams)},
+                                                                      {*velocity, velocity->getSize()},
+                                                                  });
+
+        uint32_t W = (width_ + 7) / 8;
+        uint32_t H = (height_ + 7) / 8;
+        dispatch(injectPipeline_, bg, W, H);
+    }
+
     wgpu::raii::Buffer velocity, velocity_next;
     wgpu::raii::Buffer pressure, pressure_next;
     wgpu::raii::Buffer divergence;
 
 private:
-    void initVelocity() {
-        WGPUContext& ctx = WGPUContext::instance();
-        std::vector<float> vel(width_ * height_ * 2, 0.0f);
-        ctx.queue().writeBuffer(*velocity, 0, vel.data(), vel.size() * sizeof(float));
-    }
-
     void injectSource() {
         WGPUContext& ctx = WGPUContext::instance();
         constexpr uint32_t r = 1;
@@ -96,6 +113,15 @@ private:
         WGPUContext& ctx = WGPUContext::instance();
 
         dtBuffer_ = ctx.createBuffer(sizeof(float), wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst, "dt");
+
+        injectBuffer_ = ctx.createBuffer(5 * sizeof(float), wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst, "inject_params");
+
+        injectPipeline_ = createComputePipeline(inject_wgsl, "Inject",
+                                                {
+                                                    {wgpu::BufferBindingType::Uniform}, // params
+                                                    {wgpu::BufferBindingType::Uniform}, // inject
+                                                    {wgpu::BufferBindingType::Storage}, // velocity
+                                                });
 
         advectPipeline_ = createComputePipeline(advect_wgsl, "Advect",
                                                 {
@@ -255,6 +281,9 @@ private:
 
     wgpu::raii::Buffer paramsBuffer_;
     wgpu::raii::Buffer dtBuffer_;
+
+    wgpu::raii::Buffer injectBuffer_;
+    wgpu::raii::ComputePipeline injectPipeline_;
 
     wgpu::raii::ComputePipeline advectPipeline_;
     wgpu::raii::ComputePipeline divergencePipeline_;
