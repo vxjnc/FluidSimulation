@@ -47,26 +47,31 @@ public:
 
         ctx.queue().writeBuffer(*dtBuffer_, 0, &dt, sizeof(dt));
 
+        wgpu::raii::CommandEncoder enc = ctx.device().createCommandEncoder({});
+
         uint32_t W = (width_ + 7) / 8;
         uint32_t H = (height_ + 7) / 8;
 
-        // injectSource();
+        injectSource();
 
-        advect(W, H);
+        advect(enc, W, H);
         std::swap(velocity, velocity_next);
 
-        computeDivergence(W, H);
+        computeDivergence(enc, W, H);
 
         for (int i = 0; i < 30; ++i) {
-            solvePressure(W, H);
+            solvePressure(enc, W, H);
             std::swap(pressure, pressure_next);
         }
 
-        subtractGradient(W, H);
+        subtractGradient(enc, W, H);
         std::swap(velocity, velocity_next);
+
+        wgpu::raii::CommandBuffer cmd = enc->finish({});
+        ctx.queue().submit(1, &*cmd);
     }
 
-    void inject(float x, float y, float vx, float vy, float radius = 10.0f) {
+    void inject(wgpu::raii::CommandEncoder& enc, float x, float y, float vx, float vy, float radius = 10.0f) {
         WGPUContext& ctx = WGPUContext::instance();
 
         struct InjectParams {
@@ -83,7 +88,10 @@ public:
 
         uint32_t W = (width_ + 7) / 8;
         uint32_t H = (height_ + 7) / 8;
-        dispatch(injectPipeline_, bg, W, H);
+
+        wgpu::raii::ComputePassEncoder pass = enc->beginComputePass({});
+        dispatch(pass, injectPipeline_, bg, W, H);
+        pass->end();
     }
 
     wgpu::raii::Buffer velocity, velocity_next;
@@ -203,16 +211,11 @@ private:
         return ctx.device().createComputePipeline(pipeDesc);
     }
 
-    void dispatch(wgpu::raii::ComputePipeline& pipeline, wgpu::raii::BindGroup& bg, uint32_t W, uint32_t H) {
-        WGPUContext& ctx = WGPUContext::instance();
-        wgpu::raii::CommandEncoder enc = ctx.device().createCommandEncoder({});
-        wgpu::raii::ComputePassEncoder pass = enc->beginComputePass({});
+    void dispatch(wgpu::raii::ComputePassEncoder& pass, wgpu::raii::ComputePipeline& pipeline, wgpu::raii::BindGroup& bg, uint32_t W,
+                  uint32_t H) {
         pass->setPipeline(*pipeline);
         pass->setBindGroup(0, *bg, 0, nullptr);
         pass->dispatchWorkgroups(W, H, 1);
-        pass->end();
-        wgpu::raii::CommandBuffer cmd = enc->finish({});
-        ctx.queue().submit(1, &*cmd);
     }
 
     wgpu::raii::BindGroup makeBindGroup(wgpu::raii::ComputePipeline& pipeline,
@@ -237,43 +240,51 @@ private:
         return ctx.device().createBindGroup(desc);
     }
 
-    void advect(uint32_t W, uint32_t H) {
+    void advect(wgpu::raii::CommandEncoder& enc, uint32_t W, uint32_t H) {
         wgpu::raii::BindGroup bg = makeBindGroup(advectPipeline_, {
                                                                       {*paramsBuffer_, 8},
                                                                       {*dtBuffer_, 4},
                                                                       {*velocity, velocity->getSize()},
                                                                       {*velocity_next, velocity_next->getSize()},
                                                                   });
-        dispatch(advectPipeline_, bg, W, H);
+        wgpu::raii::ComputePassEncoder pass = enc->beginComputePass({});
+        dispatch(pass, advectPipeline_, bg, W, H);
+        pass->end();
     }
 
-    void computeDivergence(uint32_t W, uint32_t H) {
+    void computeDivergence(wgpu::raii::CommandEncoder& enc, uint32_t W, uint32_t H) {
         wgpu::raii::BindGroup bg = makeBindGroup(divergencePipeline_, {
                                                                           {*paramsBuffer_, 8},
                                                                           {*velocity, velocity->getSize()},
                                                                           {*divergence, divergence->getSize()},
                                                                       });
-        dispatch(divergencePipeline_, bg, W, H);
+        wgpu::raii::ComputePassEncoder pass = enc->beginComputePass({});
+        dispatch(pass, divergencePipeline_, bg, W, H);
+        pass->end();
     }
 
-    void solvePressure(uint32_t W, uint32_t H) {
+    void solvePressure(wgpu::raii::CommandEncoder& enc, uint32_t W, uint32_t H) {
         wgpu::raii::BindGroup bg = makeBindGroup(pressurePipeline_, {
                                                                         {*paramsBuffer_, 8},
                                                                         {*pressure, pressure->getSize()},
                                                                         {*divergence, divergence->getSize()},
                                                                         {*pressure_next, pressure_next->getSize()},
                                                                     });
-        dispatch(pressurePipeline_, bg, W, H);
+        wgpu::raii::ComputePassEncoder pass = enc->beginComputePass({});
+        dispatch(pass, pressurePipeline_, bg, W, H);
+        pass->end();
     }
 
-    void subtractGradient(uint32_t W, uint32_t H) {
+    void subtractGradient(wgpu::raii::CommandEncoder& enc, uint32_t W, uint32_t H) {
         wgpu::raii::BindGroup bg = makeBindGroup(subtractPipeline_, {
                                                                         {*paramsBuffer_, 8},
                                                                         {*pressure, pressure->getSize()},
                                                                         {*velocity, velocity->getSize()},
                                                                         {*velocity_next, velocity_next->getSize()},
                                                                     });
-        dispatch(subtractPipeline_, bg, W, H);
+        wgpu::raii::ComputePassEncoder pass = enc->beginComputePass({});
+        dispatch(pass, subtractPipeline_, bg, W, H);
+        pass->end();
     }
 
     uint32_t width_ = 0;

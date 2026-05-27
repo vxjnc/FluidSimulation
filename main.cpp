@@ -75,8 +75,8 @@ int main() {
 
         MouseState& mouse = state.mouse;
         if (mouse.pressed) {
-            sim.inject(static_cast<float>(mouse.x), static_cast<float>(state.height - mouse.y), static_cast<float>(mouse.dx) * 10.0f,
-                       -static_cast<float>(mouse.dy) * 10.0f);
+            // sim.inject(static_cast<float>(mouse.x), static_cast<float>(state.height - mouse.y), static_cast<float>(mouse.dx) * 10.0f,
+            //            -static_cast<float>(mouse.dy) * 10.0f);
         }
         mouse.dx = 0;
         mouse.dy = 0;
@@ -88,10 +88,6 @@ int main() {
 
         wgpu::SurfaceTexture surfaceTex{};
         ctx.surface().getCurrentTexture(&surfaceTex);
-        if (surfaceTex.status != wgpu::SurfaceGetCurrentTextureStatus::SuccessOptimal &&
-            surfaceTex.status != wgpu::SurfaceGetCurrentTextureStatus::SuccessSuboptimal) {
-            continue;
-        }
 
         wgpu::raii::Texture target(surfaceTex.texture);
         wgpu::TextureViewDescriptor viewDesc{};
@@ -101,6 +97,11 @@ int main() {
 
         render.draw(targetView, sim);
         ctx.present();
+
+        // static int i = 0;
+        // if (i++ == 1000) {
+        //     exit(0);
+        // }
     }
 
     glfwDestroyWindow(window);

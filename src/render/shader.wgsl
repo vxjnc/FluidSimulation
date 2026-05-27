@@ -45,8 +45,8 @@ fn fs_main(in: VertOut) -> @location(0) vec4f {
     let v   = fluid[iy * dims.x + ix];
     let speed = length(v);
     let t = clamp(speed / 110.0, 0.0, 1.0);
-    return vec4f(t, t, t, 1.0);
-    // let hue = (atan2(v.y, v.x) / (2.0 * 3.14159265) + 1.0) % 1.0;
-    // let val = 1.0 - exp(-speed * 2.0);
-    // return vec4f(hsv2rgb(hue, 1.0, val), 1.0);
+    // return vec4f(t, t, t, 1.0);
+    let hue = (atan2(v.y, v.x) / (2.0 * 3.14159265) + 1.0) % 1.0;
+    let val = 1.0 - exp(-speed * 2.0);
+    return vec4f(hsv2rgb(hue, 1.0, val), 1.0);
 }
