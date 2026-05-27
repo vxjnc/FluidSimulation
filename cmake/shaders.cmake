@@ -23,8 +23,8 @@ function(compile_wgsl_to_header WGSL_FILE OUT_HEADERS_VAR)
 endfunction()
 
 file(GLOB WGSL_SOURCES
-    "${CMAKE_SOURCE_DIR}/src/render/*.wgsl"
-    "${CMAKE_SOURCE_DIR}/src/compute/*.wgsl"
+    "${CMAKE_SOURCE_DIR}/src/render/shaders/*.wgsl"
+    "${CMAKE_SOURCE_DIR}/src/compute/shaders/*.wgsl"
 )
 set(WGSL_HEADERS "")
 

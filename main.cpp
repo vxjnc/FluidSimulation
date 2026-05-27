@@ -97,11 +97,6 @@ int main() {
 
         render.draw(targetView, sim);
         ctx.present();
-
-        // static int i = 0;
-        // if (i++ == 1000) {
-        //     exit(0);
-        // }
     }
 
     glfwDestroyWindow(window);

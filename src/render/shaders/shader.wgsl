@@ -40,10 +40,8 @@ fn hsv2rgb(h: f32, s: f32, v: f32) -> vec3f {
 
 @fragment
 fn fs_main(in: VertOut) -> @location(0) vec4f {
-    let ix = u32(in.uv.x * f32(dims.x));
-    let iy = u32(in.uv.y * f32(dims.y));
-
-    let index = iy * dims.x + ix;
+    let i = vec2u(in.uv * vec2f(dims));
+    let index = i.y * dims.x + i.x;
 
     let d = dye[index];
     let v = velocity[index];
