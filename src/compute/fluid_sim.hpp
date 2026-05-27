@@ -334,21 +334,25 @@ private:
     }
 
     void solvePressure(wgpu::raii::CommandEncoder& enc, uint32_t W, uint32_t H) {
+        wgpu::raii::BindGroup bg0 = makeBindGroup(pressurePipeline_, {
+                                                                         {*paramsBuffer_, 8},
+                                                                         {*pressure, pressure->getSize()},
+                                                                         {*divergence, divergence->getSize()},
+                                                                         {*pressure_next, pressure_next->getSize()},
+                                                                     });
+        wgpu::raii::BindGroup bg1 = makeBindGroup(pressurePipeline_, {
+                                                                         {*paramsBuffer_, 8},
+                                                                         {*pressure_next, pressure_next->getSize()},
+                                                                         {*divergence, divergence->getSize()},
+                                                                         {*pressure, pressure->getSize()},
+                                                                     });
+
         wgpu::raii::ComputePassEncoder pass = enc->beginComputePass({});
         pass->setPipeline(*pressurePipeline_);
-
         for (int i = 0; i < 30; ++i) {
-            wgpu::raii::BindGroup bg = makeBindGroup(pressurePipeline_, {
-                                                                            {*paramsBuffer_, 8},
-                                                                            {*pressure, pressure->getSize()},
-                                                                            {*divergence, divergence->getSize()},
-                                                                            {*pressure_next, pressure_next->getSize()},
-                                                                        });
-            pass->setBindGroup(0, *bg, 0, nullptr);
+            pass->setBindGroup(0, i % 2 == 0 ? *bg0 : *bg1, 0, nullptr);
             pass->dispatchWorkgroups(W, H, 1);
-            std::swap(pressure, pressure_next);
         }
-
         pass->end();
     }
 
