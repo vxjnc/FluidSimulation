@@ -1,4 +1,6 @@
-@group(0) @binding(0) var<storage, read> fluid: array<vec2f>;
+@group(0) @binding(0) var<storage, read> dye: array<f32>;
+@group(0) @binding(1) var<storage, read> velocity: array<vec2f>;
+@group(0) @binding(2) var<uniform> dims: vec2u;
 
 struct VertOut {
     @builtin(position) pos: vec4f,
@@ -19,8 +21,6 @@ fn vs_main(@builtin(vertex_index) vi: u32) -> VertOut {
     return out;
 }
 
-@group(0) @binding(1) var<uniform> dims: vec2u;
-
 fn hsv2rgb(h: f32, s: f32, v: f32) -> vec3f {
     let h6 = h * 6.0;
     let i  = floor(h6);
@@ -40,13 +40,18 @@ fn hsv2rgb(h: f32, s: f32, v: f32) -> vec3f {
 
 @fragment
 fn fs_main(in: VertOut) -> @location(0) vec4f {
-    let ix  = u32(in.uv.x * f32(dims.x));
-    let iy  = u32(in.uv.y * f32(dims.y));
-    let v   = fluid[iy * dims.x + ix];
-    let speed = length(v);
-    let t = clamp(speed / 110.0, 0.0, 1.0);
-    // return vec4f(t, t, t, 1.0);
-    let hue = (atan2(v.y, v.x) / (2.0 * 3.14159265) + 1.0) % 1.0;
-    let val = 1.0 - exp(-speed * 2.0);
+    let ix = u32(in.uv.x * f32(dims.x));
+    let iy = u32(in.uv.y * f32(dims.y));
+
+    let index = iy * dims.x + ix;
+
+    let d = dye[index];
+    let v = velocity[index];
+    
+    const pi = 3.14159265;
+
+    let hue = (atan2(v.y, v.x) / (2.0 * pi) + 1.0) % 1.0;
+    let val = clamp(d, 0.0, 1.0);
+    
     return vec4f(hsv2rgb(hue, 1.0, val), 1.0);
 }

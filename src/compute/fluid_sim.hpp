@@ -4,8 +4,10 @@
 #include <webgpu/webgpu-raii.hpp>
 
 #include "generated/shaders/advect.wgsl.h"
+#include "generated/shaders/advect_dye.wgsl.h"
 #include "generated/shaders/divergence.wgsl.h"
 #include "generated/shaders/inject.wgsl.h"
+#include "generated/shaders/inject_dye.wgsl.h"
 #include "generated/shaders/pressure.wgsl.h"
 #include "generated/shaders/subtract.wgsl.h"
 #include "src/wgpu_context.hpp"
@@ -37,6 +39,8 @@ public:
         pressure = scalar_buf("pressure");
         pressure_next = scalar_buf("pressure_next");
         divergence = scalar_buf("divergence");
+        dye = scalar_buf("dye");
+        dye_next = scalar_buf("dye_next");
 
         uint32_t params[2] = {width, height};
         ctx.queue().writeBuffer(*paramsBuffer_, 0, params, sizeof(params));
@@ -52,27 +56,30 @@ public:
         uint32_t W = (width_ + 7) / 8;
         uint32_t H = (height_ + 7) / 8;
 
-        injectSource();
+        // injectSource();
 
         advect(enc, W, H);
         std::swap(velocity, velocity_next);
 
+        advectDye(enc, W, H);
+        std::swap(dye, dye_next);
+
         computeDivergence(enc, W, H);
 
-        for (int i = 0; i < 30; ++i) {
-            solvePressure(enc, W, H);
-            std::swap(pressure, pressure_next);
-        }
+        solvePressure(enc, W, H);
 
         subtractGradient(enc, W, H);
         std::swap(velocity, velocity_next);
 
         wgpu::raii::CommandBuffer cmd = enc->finish({});
         ctx.queue().submit(1, &*cmd);
+
+        // injectSource();
     }
 
-    void inject(wgpu::raii::CommandEncoder& enc, float x, float y, float vx, float vy, float radius = 10.0f) {
+    void inject(float x, float y, float vx, float vy, float radius = 10.0f) {
         WGPUContext& ctx = WGPUContext::instance();
+        wgpu::raii::CommandEncoder enc = ctx.device().createCommandEncoder({});
 
         struct InjectParams {
             float x, y, vx, vy, radius;
@@ -80,40 +87,65 @@ public:
         InjectParams p{x, y, vx, vy, radius};
         ctx.queue().writeBuffer(*injectBuffer_, 0, &p, sizeof(p));
 
-        wgpu::raii::BindGroup bg = makeBindGroup(injectPipeline_, {
-                                                                      {*paramsBuffer_, 8},
-                                                                      {*injectBuffer_, sizeof(InjectParams)},
-                                                                      {*velocity, velocity->getSize()},
-                                                                  });
-
         uint32_t W = (width_ + 7) / 8;
         uint32_t H = (height_ + 7) / 8;
 
-        wgpu::raii::ComputePassEncoder pass = enc->beginComputePass({});
-        dispatch(pass, injectPipeline_, bg, W, H);
-        pass->end();
+        // Inject velocity
+        {
+            wgpu::raii::BindGroup bg = makeBindGroup(injectPipeline_, {
+                                                                          {*paramsBuffer_, 8},
+                                                                          {*injectBuffer_, sizeof(InjectParams)},
+                                                                          {*velocity, velocity->getSize()},
+                                                                      });
+
+            wgpu::raii::ComputePassEncoder pass = enc->beginComputePass({});
+            dispatch(pass, injectPipeline_, bg, W, H);
+            pass->end();
+        }
+
+        // Inject dye
+        {
+            wgpu::raii::BindGroup bg = makeBindGroup(injectDyePipeline_, {
+                                                                             {*paramsBuffer_, 8},
+                                                                             {*injectBuffer_, sizeof(InjectParams)},
+                                                                             {*dye, dye->getSize()},
+                                                                         });
+
+            wgpu::raii::ComputePassEncoder pass = enc->beginComputePass({});
+            dispatch(pass, injectDyePipeline_, bg, W, H);
+            pass->end();
+        }
+
+        wgpu::raii::CommandBuffer cmd = enc->finish({});
+        ctx.queue().submit(1, &*cmd);
     }
 
     wgpu::raii::Buffer velocity, velocity_next;
     wgpu::raii::Buffer pressure, pressure_next;
     wgpu::raii::Buffer divergence;
+    wgpu::raii::Buffer dye, dye_next;
 
 private:
     void injectSource() {
         WGPUContext& ctx = WGPUContext::instance();
-        constexpr uint32_t r = 1;
+        constexpr uint32_t r = 4;
         uint32_t cx = width_ / 2;
         uint32_t cy = height_ / 2;
 
-        std::vector<float> patch(r * 2 * 2);
+        std::vector<float> velocity_patch(r * 2 * 2);
         for (uint32_t i = 0; i < r * 2; ++i) {
-            patch[i * 2 + 0] = 0.0f;
-            patch[i * 2 + 1] = 100.0f;
+            velocity_patch[i * 2 + 0] = 0.0f;
+            velocity_patch[i * 2 + 1] = 100.0f;
         }
 
+        std::vector<float> dye_patch(r * 2, 1.0f);
+
         for (uint32_t y = cy - r; y < cy + r; ++y) {
-            uint64_t offset = (y * width_ + cx - r) * sizeof(float) * 2;
-            ctx.queue().writeBuffer(*velocity, offset, patch.data(), patch.size() * sizeof(float));
+            uint64_t vel_offset = (y * width_ + cx - r) * sizeof(float) * 2;
+            ctx.queue().writeBuffer(*velocity, vel_offset, velocity_patch.data(), velocity_patch.size() * sizeof(float));
+
+            uint64_t dye_offset = (y * width_ + cx - r) * sizeof(float);
+            ctx.queue().writeBuffer(*dye, dye_offset, dye_patch.data(), dye_patch.size() * sizeof(float));
         }
     }
 
@@ -131,6 +163,13 @@ private:
                                                     {wgpu::BufferBindingType::Storage}, // velocity
                                                 });
 
+        injectDyePipeline_ = createComputePipeline(inject_dye_wgsl, "InjectDye",
+                                                   {
+                                                       {wgpu::BufferBindingType::Uniform}, // params
+                                                       {wgpu::BufferBindingType::Uniform}, // inject
+                                                       {wgpu::BufferBindingType::Storage}, // dye
+                                                   });
+
         advectPipeline_ = createComputePipeline(advect_wgsl, "Advect",
                                                 {
                                                     {wgpu::BufferBindingType::Uniform},         // params
@@ -138,6 +177,15 @@ private:
                                                     {wgpu::BufferBindingType::ReadOnlyStorage}, // velocity
                                                     {wgpu::BufferBindingType::Storage},         // velocity_next
                                                 });
+
+        advectDyePipeline_ = createComputePipeline(advect_dye_wgsl, "AdvectDye",
+                                                   {
+                                                       {wgpu::BufferBindingType::Uniform},         // params
+                                                       {wgpu::BufferBindingType::Uniform},         // dt
+                                                       {wgpu::BufferBindingType::ReadOnlyStorage}, // velocity
+                                                       {wgpu::BufferBindingType::ReadOnlyStorage}, // dye
+                                                       {wgpu::BufferBindingType::Storage},         // dye_next
+                                                   });
 
         divergencePipeline_ = createComputePipeline(divergence_wgsl, "Divergence",
                                                     {
@@ -198,7 +246,7 @@ private:
         // Pipeline layout
         wgpu::PipelineLayoutDescriptor plDesc{};
         plDesc.bindGroupLayoutCount = 1;
-        plDesc.bindGroupLayouts = (WGPUBindGroupLayout*)&bgl;
+        plDesc.bindGroupLayouts = reinterpret_cast<WGPUBindGroupLayout*>(&bgl);
         wgpu::raii::PipelineLayout pipelineLayout = ctx.device().createPipelineLayout(plDesc);
 
         // Pipeline
@@ -252,6 +300,19 @@ private:
         pass->end();
     }
 
+    void advectDye(wgpu::raii::CommandEncoder& enc, uint32_t W, uint32_t H) {
+        wgpu::raii::BindGroup bg = makeBindGroup(advectDyePipeline_, {
+                                                                         {*paramsBuffer_, 8},
+                                                                         {*dtBuffer_, 4},
+                                                                         {*velocity, velocity->getSize()},
+                                                                         {*dye, dye->getSize()},
+                                                                         {*dye_next, dye_next->getSize()},
+                                                                     });
+        wgpu::raii::ComputePassEncoder pass = enc->beginComputePass({});
+        dispatch(pass, advectDyePipeline_, bg, W, H);
+        pass->end();
+    }
+
     void computeDivergence(wgpu::raii::CommandEncoder& enc, uint32_t W, uint32_t H) {
         wgpu::raii::BindGroup bg = makeBindGroup(divergencePipeline_, {
                                                                           {*paramsBuffer_, 8},
@@ -264,14 +325,21 @@ private:
     }
 
     void solvePressure(wgpu::raii::CommandEncoder& enc, uint32_t W, uint32_t H) {
-        wgpu::raii::BindGroup bg = makeBindGroup(pressurePipeline_, {
-                                                                        {*paramsBuffer_, 8},
-                                                                        {*pressure, pressure->getSize()},
-                                                                        {*divergence, divergence->getSize()},
-                                                                        {*pressure_next, pressure_next->getSize()},
-                                                                    });
         wgpu::raii::ComputePassEncoder pass = enc->beginComputePass({});
-        dispatch(pass, pressurePipeline_, bg, W, H);
+        pass->setPipeline(*pressurePipeline_);
+
+        for (int i = 0; i < 30; ++i) {
+            wgpu::raii::BindGroup bg = makeBindGroup(pressurePipeline_, {
+                                                                            {*paramsBuffer_, 8},
+                                                                            {*pressure, pressure->getSize()},
+                                                                            {*divergence, divergence->getSize()},
+                                                                            {*pressure_next, pressure_next->getSize()},
+                                                                        });
+            pass->setBindGroup(0, *bg, 0, nullptr);
+            pass->dispatchWorkgroups(W, H, 1);
+            std::swap(pressure, pressure_next);
+        }
+
         pass->end();
     }
 
@@ -292,11 +360,14 @@ private:
 
     wgpu::raii::Buffer paramsBuffer_;
     wgpu::raii::Buffer dtBuffer_;
-
     wgpu::raii::Buffer injectBuffer_;
+
     wgpu::raii::ComputePipeline injectPipeline_;
+    wgpu::raii::ComputePipeline injectDyePipeline_;
 
     wgpu::raii::ComputePipeline advectPipeline_;
+    wgpu::raii::ComputePipeline advectDyePipeline_;
+
     wgpu::raii::ComputePipeline divergencePipeline_;
     wgpu::raii::ComputePipeline pressurePipeline_;
     wgpu::raii::ComputePipeline subtractPipeline_;

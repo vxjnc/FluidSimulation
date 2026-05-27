@@ -37,7 +37,7 @@ public:
 
 #ifndef NDEBUG
         WGPUInstanceExtras extras{};
-        extras.chain.sType = (WGPUSType)WGPUNativeSType::WGPUSType_InstanceExtras;
+        extras.chain.sType = static_cast<WGPUSType>(WGPUNativeSType::WGPUSType_InstanceExtras);
         extras.flags = WGPUInstanceFlag_Debug | WGPUInstanceFlag_Validation;
         instanceDesc.nextInChain = &extras.chain;
 #endif

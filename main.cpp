@@ -75,8 +75,8 @@ int main() {
 
         MouseState& mouse = state.mouse;
         if (mouse.pressed) {
-            // sim.inject(static_cast<float>(mouse.x), static_cast<float>(state.height - mouse.y), static_cast<float>(mouse.dx) * 10.0f,
-            //            -static_cast<float>(mouse.dy) * 10.0f);
+            sim.inject(static_cast<float>(mouse.x), static_cast<float>(state.height - mouse.y), static_cast<float>(mouse.dx) * 10.0f,
+                       -static_cast<float>(mouse.dy) * 10.0f);
         }
         mouse.dx = 0;
         mouse.dy = 0;

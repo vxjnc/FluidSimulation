@@ -31,17 +31,20 @@ public:
         uint32_t dims[2] = {ctx.width(), ctx.height()};
         ctx.queue().writeBuffer(*dimsBuffer_, 0, dims, sizeof(dims));
 
-        wgpu::BindGroupEntry entries[2]{};
+        wgpu::BindGroupEntry entries[3]{};
         entries[0].binding = 0;
-        entries[0].buffer = *fluid.velocity;
-        entries[0].size = fluid.velocity->getSize();
+        entries[0].buffer = *fluid.dye;
+        entries[0].size = fluid.dye->getSize();
         entries[1].binding = 1;
-        entries[1].buffer = *dimsBuffer_;
-        entries[1].size = sizeof(dims);
+        entries[1].buffer = *fluid.velocity;
+        entries[1].size = fluid.velocity->getSize();
+        entries[2].binding = 2;
+        entries[2].buffer = *dimsBuffer_;
+        entries[2].size = sizeof(dims);
 
         wgpu::BindGroupDescriptor bgDesc{};
         bgDesc.layout = *bindGroupLayout_;
-        bgDesc.entryCount = 2;
+        bgDesc.entryCount = sizeof(entries) / sizeof(entries[0]);
         bgDesc.entries = entries;
         wgpu::raii::BindGroup bindGroup = ctx.device().createBindGroup(bgDesc);
 
@@ -76,23 +79,26 @@ private:
         wgpu::raii::ShaderModule shader = createShaderModule(shader_wgsl, "FluidShader");
 
         // Bind group layout
-        wgpu::BindGroupLayoutEntry entries[2]{};
+        wgpu::BindGroupLayoutEntry entries[3]{};
         entries[0].binding = 0;
         entries[0].visibility = wgpu::ShaderStage::Fragment;
         entries[0].buffer.type = wgpu::BufferBindingType::ReadOnlyStorage;
         entries[1].binding = 1;
         entries[1].visibility = wgpu::ShaderStage::Fragment;
-        entries[1].buffer.type = wgpu::BufferBindingType::Uniform;
-        entries[1].buffer.minBindingSize = 8;
+        entries[1].buffer.type = wgpu::BufferBindingType::ReadOnlyStorage;
+        entries[2].binding = 2;
+        entries[2].visibility = wgpu::ShaderStage::Fragment;
+        entries[2].buffer.type = wgpu::BufferBindingType::Uniform;
+        entries[2].buffer.minBindingSize = 8;
 
         wgpu::BindGroupLayoutDescriptor bglDesc{};
-        bglDesc.entryCount = 2;
+        bglDesc.entryCount = sizeof(entries) / sizeof(entries[0]);
         bglDesc.entries = entries;
         bindGroupLayout_ = ctx.device().createBindGroupLayout(bglDesc);
 
         wgpu::PipelineLayoutDescriptor plDesc{};
         plDesc.bindGroupLayoutCount = 1;
-        plDesc.bindGroupLayouts = (WGPUBindGroupLayout*)&bindGroupLayout_;
+        plDesc.bindGroupLayouts = reinterpret_cast<WGPUBindGroupLayout*>(&bindGroupLayout_);
         wgpu::raii::PipelineLayout pipelineLayout = ctx.device().createPipelineLayout(plDesc);
 
         // Pipeline
