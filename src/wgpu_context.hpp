@@ -137,6 +137,28 @@ public:
         return device_->createBuffer(desc);
     }
 
+    wgpu::BindGroup makeBindGroup(wgpu::raii::ComputePipeline& pipeline, std::initializer_list<std::pair<wgpu::Buffer, uint64_t>> buffers,
+                                  std::string_view label) {
+        wgpu::raii::BindGroupLayout layout = pipeline->getBindGroupLayout(0);
+
+        std::vector<wgpu::BindGroupEntry> entries;
+        uint32_t binding = 0;
+        for (auto& [buf, size] : buffers) {
+            wgpu::BindGroupEntry e{};
+            e.binding = binding++;
+            e.buffer = buf;
+            e.size = size;
+            entries.emplace_back(e);
+        }
+
+        wgpu::BindGroupDescriptor desc{};
+        desc.layout = *layout;
+        desc.entryCount = entries.size();
+        desc.entries = entries.data();
+        desc.label = wgpu::StringView(label);
+        return device_->createBindGroup(desc);
+    }
+
 private:
     WGPUContext() = default;
 

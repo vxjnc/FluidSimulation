@@ -4,7 +4,7 @@
 #include <webgpu/webgpu.hpp>
 
 #include "generated/shaders/shader.wgsl.h"
-#include "src/compute/fluid_sim.hpp"
+#include "src/compute/fluid_state.hpp"
 #include "src/wgpu_context.hpp"
 
 namespace {
@@ -18,14 +18,13 @@ namespace {
         desc.nextInChain = reinterpret_cast<WGPUChainedStruct*>(&wgslDesc);
         return WGPUContext::instance().device().createShaderModule(desc);
     }
-
 }
 
 class Render {
 public:
     Render() { initPipeline(); }
 
-    void draw(const wgpu::raii::TextureView& targetView, FluidSim& fluid) {
+    void draw(const wgpu::raii::TextureView& targetView, FluidState& fluid) {
         WGPUContext& ctx = WGPUContext::instance();
 
         uint32_t dims[2] = {ctx.width(), ctx.height()};
@@ -46,11 +45,11 @@ public:
         bgDesc.layout = *bindGroupLayout_;
         bgDesc.entryCount = sizeof(entries) / sizeof(entries[0]);
         bgDesc.entries = entries;
+        bgDesc.label = wgpu::StringView("DrawBindGroup");
         wgpu::raii::BindGroup bindGroup = ctx.device().createBindGroup(bgDesc);
 
         // Encode
-        wgpu::CommandEncoderDescriptor encDesc{};
-        wgpu::raii::CommandEncoder enc = ctx.device().createCommandEncoder(encDesc);
+        wgpu::raii::CommandEncoder enc = ctx.device().createCommandEncoder();
 
         wgpu::RenderPassColorAttachment color{};
         color.view = *targetView;
@@ -59,6 +58,7 @@ public:
         color.clearValue = {0, 0, 0, 1};
 
         wgpu::RenderPassDescriptor passDesc{};
+        passDesc.label = wgpu::StringView("DrawPass");
         passDesc.colorAttachmentCount = 1;
         passDesc.colorAttachments = &color;
 
@@ -68,15 +68,14 @@ public:
         pass->draw(4, 1, 0, 0);
         pass->end();
 
-        wgpu::CommandBufferDescriptor cmdDesc{};
-        wgpu::raii::CommandBuffer cmd = enc->finish(cmdDesc);
+        wgpu::raii::CommandBuffer cmd = enc->finish();
         ctx.queue().submit(1, &*cmd);
     }
 
 private:
     void initPipeline() {
         WGPUContext& ctx = WGPUContext::instance();
-        wgpu::raii::ShaderModule shader = createShaderModule(shader_wgsl, "FluidShader");
+        wgpu::raii::ShaderModule shader = createShaderModule(shader_wgsl, "DrawShader");
 
         // Bind group layout
         wgpu::BindGroupLayoutEntry entries[3]{};
@@ -92,11 +91,13 @@ private:
         entries[2].buffer.minBindingSize = 8;
 
         wgpu::BindGroupLayoutDescriptor bglDesc{};
+        bglDesc.label = wgpu::StringView("DrawBindGroupLayout");
         bglDesc.entryCount = sizeof(entries) / sizeof(entries[0]);
         bglDesc.entries = entries;
         bindGroupLayout_ = ctx.device().createBindGroupLayout(bglDesc);
 
         wgpu::PipelineLayoutDescriptor plDesc{};
+        plDesc.label = wgpu::StringView("DrawPipelineLayout");
         plDesc.bindGroupLayoutCount = 1;
         plDesc.bindGroupLayouts = reinterpret_cast<WGPUBindGroupLayout*>(&bindGroupLayout_);
         wgpu::raii::PipelineLayout pipelineLayout = ctx.device().createPipelineLayout(plDesc);

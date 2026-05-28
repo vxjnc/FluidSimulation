@@ -95,7 +95,7 @@ int main() {
         viewDesc.arrayLayerCount = 1;
         wgpu::raii::TextureView targetView = target->createView(viewDesc);
 
-        render.draw(targetView, sim);
+        render.draw(targetView, sim.state);
         ctx.present();
     }
 
