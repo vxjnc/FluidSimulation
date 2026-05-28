@@ -38,7 +38,7 @@ int main() {
     ctx.init(window, W, H);
 
     FluidSim sim;
-    sim.init(W, H);
+    sim.init(WGPUContext::instance().device(), WGPUContext::instance().queue(), W, H);
 
     AppState state{sim, {}, W, H};
     glfwSetWindowUserPointer(window, &state);

@@ -2,16 +2,15 @@
 
 #include <webgpu/webgpu-raii.hpp>
 
-#include "src/wgpu_context.hpp"
-
 class FluidState {
 public:
-    void init(uint32_t w, uint32_t h) {
-        WGPUContext& ctx = WGPUContext::instance();
+    void init(wgpu::Device device, wgpu::Queue queue, uint32_t w, uint32_t h) {
+        device_ = device;
+        queue_ = queue;
 
-        paramsBuffer = ctx.createBuffer(2 * sizeof(uint32_t), wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst, "sim_params");
-        dtBuffer = ctx.createBuffer(sizeof(float), wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst, "dt");
-        injectBuffer = ctx.createBuffer(5 * sizeof(float), wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst, "inject_params");
+        paramsBuffer = makeBuffer(2 * sizeof(uint32_t), wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst, "sim_params");
+        dtBuffer = makeBuffer(sizeof(float), wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst, "dt");
+        injectBuffer = makeBuffer(5 * sizeof(float), wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst, "inject_params");
 
         resize(w, h);
     }
@@ -19,10 +18,9 @@ public:
     void resize(uint32_t w, uint32_t h) {
         width = w;
         height = h;
-        WGPUContext& ctx = WGPUContext::instance();
 
         auto buf = [&](std::string_view label, size_t count) {
-            return ctx.createBuffer(width * height * sizeof(float) * count, wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst, label);
+            return makeBuffer(width * height * sizeof(float) * count, wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst, label);
         };
 
         velocity = buf("velocity", 2);
@@ -34,7 +32,7 @@ public:
         dye_next = buf("dye_next", 1);
 
         uint32_t params[2] = {width, height};
-        ctx.queue().writeBuffer(*paramsBuffer, 0, params, sizeof(params));
+        queue_.writeBuffer(*paramsBuffer, 0, params, sizeof(params));
     }
 
     uint32_t width = 0;
@@ -48,4 +46,16 @@ public:
     wgpu::raii::Buffer paramsBuffer;
     wgpu::raii::Buffer dtBuffer;
     wgpu::raii::Buffer injectBuffer;
+
+private:
+    wgpu::Buffer makeBuffer(size_t bytes, wgpu::BufferUsage usage, std::string_view label) {
+        wgpu::BufferDescriptor desc{};
+        desc.label = wgpu::StringView(label);
+        desc.size = bytes;
+        desc.usage = usage;
+        return device_.createBuffer(desc);
+    }
+
+    wgpu::Device device_;
+    wgpu::Queue queue_;
 };

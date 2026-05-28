@@ -48,28 +48,65 @@ FetchContent_Declare(
     GIT_SHALLOW    ON
 )
 
-FetchContent_MakeAvailable(glfw webgpu_distribution webgpu_cpp)
-
-add_executable(${PROJECT_NAME} main.cpp ${SOURCE_FILES})
-
-set(GENERATED_ROOT "${CMAKE_BINARY_DIR}/gen_includes")
-set(GENERATED_DIR "${GENERATED_ROOT}/generated")
-
-include(shaders)
-add_dependencies(${PROJECT_NAME} wgsl_shaders)
-
-target_link_libraries(${PROJECT_NAME} PRIVATE
-    glfw
-    webgpu
+# --- Dear ImGui ---
+FetchContent_Declare(
+    imgui
+    GIT_REPOSITORY https://github.com/ocornut/imgui.git
+    GIT_TAG        v1.92.8
+    GIT_SHALLOW    ON
 )
 
-target_copy_webgpu_binaries(${PROJECT_NAME})
+FetchContent_MakeAvailable(glfw webgpu_distribution webgpu_cpp imgui)
 
-target_include_directories(${PROJECT_NAME} PRIVATE
+add_library(imgui STATIC
+    ${imgui_SOURCE_DIR}/imgui.cpp
+    ${imgui_SOURCE_DIR}/imgui_draw.cpp
+    ${imgui_SOURCE_DIR}/imgui_tables.cpp
+    ${imgui_SOURCE_DIR}/imgui_widgets.cpp
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_wgpu.cpp
+)
+target_include_directories(imgui PUBLIC
+    ${imgui_SOURCE_DIR}
+    ${imgui_SOURCE_DIR}/backends
+)
+target_compile_definitions(imgui PUBLIC IMGUI_IMPL_WEBGPU_BACKEND_WGPU)
+target_link_libraries(imgui PUBLIC glfw webgpu)
+
+set(GENERATED_ROOT "${CMAKE_BINARY_DIR}/gen_includes")
+set(GENERATED_DIR  "${GENERATED_ROOT}/generated")
+
+include(shaders)
+
+# --- fluid_compute ---
+add_library(fluid_compute INTERFACE)
+target_include_directories(fluid_compute INTERFACE
     ${CMAKE_SOURCE_DIR}
     ${webgpu_cpp_SOURCE_DIR}
     ${GENERATED_ROOT}
 )
+target_link_libraries(fluid_compute INTERFACE webgpu)
+add_dependencies(fluid_compute wgsl_shaders)
+
+# --- fluid_gui ---
+add_library(fluid_gui INTERFACE)
+target_include_directories(fluid_gui INTERFACE
+    ${CMAKE_SOURCE_DIR}
+    ${webgpu_cpp_SOURCE_DIR}
+    ${GENERATED_ROOT}
+)
+target_link_libraries(fluid_gui INTERFACE webgpu glfw imgui)
+add_dependencies(fluid_gui wgsl_shaders)
+
+# --- Executable ---
+add_executable(${PROJECT_NAME} main.cpp ${SOURCE_FILES})
+
+target_link_libraries(${PROJECT_NAME} PRIVATE
+    fluid_compute
+    fluid_gui
+)
+
+target_copy_webgpu_binaries(${PROJECT_NAME})
 
 target_compile_options(${PROJECT_NAME} PRIVATE
     -Wall

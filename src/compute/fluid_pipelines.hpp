@@ -1,7 +1,6 @@
 #pragma once
 #include <initializer_list>
 #include <string_view>
-#include <utility>
 #include <vector>
 
 #include <webgpu/webgpu-raii.hpp>
@@ -14,67 +13,52 @@
 #include "generated/shaders/inject_dye.wgsl.h"
 #include "generated/shaders/pressure.wgsl.h"
 #include "generated/shaders/subtract.wgsl.h"
-#include "src/wgpu_context.hpp"
-
-struct BindingDesc {
-    wgpu::BufferBindingType type;
-};
 
 class FluidPipelines {
 public:
-    void init() {
-        inject = createComputePipeline(
-            inject_wgsl, "Inject",
-            {{wgpu::BufferBindingType::Uniform}, {wgpu::BufferBindingType::Uniform}, {wgpu::BufferBindingType::Storage}});
+    void init(wgpu::Device device) {
+        inject =
+            createComputePipeline(device, inject_wgsl, "Inject",
+                                  {wgpu::BufferBindingType::Uniform, wgpu::BufferBindingType::Uniform, wgpu::BufferBindingType::Storage});
 
-        injectDye = createComputePipeline(
-            inject_dye_wgsl, "InjectDye",
-            {{wgpu::BufferBindingType::Uniform}, {wgpu::BufferBindingType::Uniform}, {wgpu::BufferBindingType::Storage}});
+        injectDye =
+            createComputePipeline(device, inject_dye_wgsl, "InjectDye",
+                                  {wgpu::BufferBindingType::Uniform, wgpu::BufferBindingType::Uniform, wgpu::BufferBindingType::Storage});
 
-        advect = createComputePipeline(advect_wgsl, "Advect",
-                                       {{wgpu::BufferBindingType::Uniform},
-                                        {wgpu::BufferBindingType::Uniform},
-                                        {wgpu::BufferBindingType::ReadOnlyStorage},
-                                        {wgpu::BufferBindingType::Storage}});
+        advect = createComputePipeline(device, advect_wgsl, "Advect",
+                                       {wgpu::BufferBindingType::Uniform, wgpu::BufferBindingType::Uniform,
+                                        wgpu::BufferBindingType::ReadOnlyStorage, wgpu::BufferBindingType::Storage});
 
-        advectDye = createComputePipeline(advect_dye_wgsl, "AdvectDye",
-                                          {{wgpu::BufferBindingType::Uniform},
-                                           {wgpu::BufferBindingType::Uniform},
-                                           {wgpu::BufferBindingType::ReadOnlyStorage},
-                                           {wgpu::BufferBindingType::ReadOnlyStorage},
-                                           {wgpu::BufferBindingType::Storage}});
+        advectDye = createComputePipeline(device, advect_dye_wgsl, "AdvectDye",
+                                          {wgpu::BufferBindingType::Uniform, wgpu::BufferBindingType::Uniform,
+                                           wgpu::BufferBindingType::ReadOnlyStorage, wgpu::BufferBindingType::ReadOnlyStorage,
+                                           wgpu::BufferBindingType::Storage});
 
         divergence = createComputePipeline(
-            divergence_wgsl, "Divergence",
-            {{wgpu::BufferBindingType::Uniform}, {wgpu::BufferBindingType::ReadOnlyStorage}, {wgpu::BufferBindingType::Storage}});
+            device, divergence_wgsl, "Divergence",
+            {wgpu::BufferBindingType::Uniform, wgpu::BufferBindingType::ReadOnlyStorage, wgpu::BufferBindingType::Storage});
 
-        pressure = createComputePipeline(pressure_wgsl, "Pressure",
-                                         {{wgpu::BufferBindingType::Uniform},
-                                          {wgpu::BufferBindingType::ReadOnlyStorage},
-                                          {wgpu::BufferBindingType::ReadOnlyStorage},
-                                          {wgpu::BufferBindingType::Storage}});
+        pressure = createComputePipeline(device, pressure_wgsl, "Pressure",
+                                         {wgpu::BufferBindingType::Uniform, wgpu::BufferBindingType::ReadOnlyStorage,
+                                          wgpu::BufferBindingType::ReadOnlyStorage, wgpu::BufferBindingType::Storage});
 
-        subtract = createComputePipeline(subtract_wgsl, "Subtract",
-                                         {{wgpu::BufferBindingType::Uniform},
-                                          {wgpu::BufferBindingType::ReadOnlyStorage},
-                                          {wgpu::BufferBindingType::ReadOnlyStorage},
-                                          {wgpu::BufferBindingType::Storage}});
+        subtract = createComputePipeline(device, subtract_wgsl, "Subtract",
+                                         {wgpu::BufferBindingType::Uniform, wgpu::BufferBindingType::ReadOnlyStorage,
+                                          wgpu::BufferBindingType::ReadOnlyStorage, wgpu::BufferBindingType::Storage});
 
         boundary =
-            createComputePipeline(boundary_wgsl, "Boundary", {{wgpu::BufferBindingType::Uniform}, {wgpu::BufferBindingType::Storage}});
+            createComputePipeline(device, boundary_wgsl, "Boundary", {wgpu::BufferBindingType::Uniform, wgpu::BufferBindingType::Storage});
     }
 
-    static wgpu::raii::ComputePipeline createComputePipeline(std::string_view wgsl, std::string_view label,
-                                                             std::initializer_list<BindingDesc> bindings) {
-        WGPUContext& ctx = WGPUContext::instance();
-
+    static wgpu::raii::ComputePipeline createComputePipeline(wgpu::Device device, std::string_view wgsl, std::string_view label,
+                                                             std::initializer_list<wgpu::BufferBindingType> bindings) {
         WGPUShaderSourceWGSL wgslDesc{};
         wgslDesc.chain.sType = wgpu::SType::ShaderSourceWGSL;
         wgslDesc.code = wgpu::StringView(wgsl);
         wgpu::ShaderModuleDescriptor shaderDesc{};
         shaderDesc.label = wgpu::StringView(label);
         shaderDesc.nextInChain = reinterpret_cast<WGPUChainedStruct*>(&wgslDesc);
-        wgpu::raii::ShaderModule shader = ctx.device().createShaderModule(shaderDesc);
+        wgpu::raii::ShaderModule shader = device.createShaderModule(shaderDesc);
 
         std::vector<wgpu::BindGroupLayoutEntry> entries;
         uint32_t binding = 0;
@@ -82,18 +66,18 @@ public:
             wgpu::BindGroupLayoutEntry e{};
             e.binding = binding++;
             e.visibility = wgpu::ShaderStage::Compute;
-            e.buffer.type = b.type;
-            entries.push_back(e);
+            e.buffer.type = b;
+            entries.emplace_back(e);
         }
         wgpu::BindGroupLayoutDescriptor bglDesc{};
         bglDesc.entryCount = entries.size();
         bglDesc.entries = entries.data();
-        wgpu::raii::BindGroupLayout bgl = ctx.device().createBindGroupLayout(bglDesc);
+        wgpu::raii::BindGroupLayout bgl = device.createBindGroupLayout(bglDesc);
 
         wgpu::PipelineLayoutDescriptor plDesc{};
         plDesc.bindGroupLayoutCount = 1;
         plDesc.bindGroupLayouts = reinterpret_cast<WGPUBindGroupLayout*>(&bgl);
-        wgpu::raii::PipelineLayout pipelineLayout = ctx.device().createPipelineLayout(plDesc);
+        wgpu::raii::PipelineLayout pipelineLayout = device.createPipelineLayout(plDesc);
 
         wgpu::ComputePipelineDescriptor pipeDesc{};
         pipeDesc.label = wgpu::StringView(label);
@@ -101,7 +85,7 @@ public:
         pipeDesc.compute.module = *shader;
         pipeDesc.compute.entryPoint = wgpu::StringView("main");
 
-        return ctx.device().createComputePipeline(pipeDesc);
+        return device.createComputePipeline(pipeDesc);
     }
 
     static void dispatch(wgpu::raii::ComputePassEncoder& pass, wgpu::raii::ComputePipeline& pipeline, wgpu::raii::BindGroup& bg, uint32_t W,
