@@ -1,6 +1,8 @@
 @group(0) @binding(0) var<storage, read> dye: array<f32>;
 @group(0) @binding(1) var<storage, read> velocity: array<vec2f>;
-@group(0) @binding(2) var<uniform> dims: vec2u;
+@group(0) @binding(2) var<storage, read> pressure: array<f32>;
+@group(0) @binding(3) var<storage, read> divergence: array<f32>;
+@group(0) @binding(4) var<uniform> dims: vec4u; // width, height, mode, _
 
 struct VertOut {
     @builtin(position) pos: vec4f,
@@ -40,16 +42,38 @@ fn hsv2rgb(h: f32, s: f32, v: f32) -> vec3f {
 
 @fragment
 fn fs_main(in: VertOut) -> @location(0) vec4f {
-    let i = vec2u(in.uv * vec2f(dims));
-    let index = i.y * dims.x + i.x;
+    let i = vec2u(in.uv * vec2f(dims.xy));
+    let idx = i.y * dims.x + i.x;
 
-    let d = dye[index];
-    let v = velocity[index];
-    
     const pi = 3.14159265;
 
-    let hue = (atan2(v.y, v.x) / (2.0 * pi) + 1.0) % 1.0;
-    let val = clamp(d, 0.0, 1.0);
-    
-    return vec4f(hsv2rgb(hue, 1.0, val), 1.0);
+    switch dims.z {
+        case 0u: {
+            let d = clamp(dye[idx], 0.0, 1.0);
+            let v = velocity[idx];
+            let hue = (atan2(v.y, v.x) / (2.0 * pi) + 1.0) % 1.0;
+            return vec4f(hsv2rgb(hue, 1.0, d), 1.0);
+        }
+        case 1u: {
+            let v = velocity[idx];
+            let hue = (atan2(v.y, v.x) / (2.0 * pi) + 1.0) % 1.0;
+            let mag = clamp(length(v) * 0.1, 0.0, 1.0);
+            return vec4f(hsv2rgb(hue, 1.0, mag), 1.0);
+        }
+        case 2u: {
+            let p = pressure[idx];
+            let pos = clamp( p * 0.1, 0.0, 1.0);
+            let neg = clamp(-p * 0.1, 0.0, 1.0);
+            return vec4f(pos, 0.0, neg, 1.0);
+        }
+        case 3u: {
+            let d = clamp(divergence[idx], 0.0, 1.0);
+            let v = velocity[idx];
+            let hue = (atan2(v.y, v.x) / (2.0 * pi) + 1.0) % 1.0;
+            return vec4f(hsv2rgb(hue, 1.0, d), 1.0);
+        }
+        default: {
+            return vec4f(0.0, 0.0, 0.0, 1.0);
+        }
+    }
 }

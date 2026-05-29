@@ -32,7 +32,7 @@ public:
         glfwSetFramebufferSizeCallback(
             window, [](GLFWwindow*, int w, int h) { WGPUContext::instance().resize(static_cast<uint32_t>(w), static_cast<uint32_t>(h)); });
 
-        uint32_t sim_w = width - imguiManager.panelWidth();
+        uint32_t sim_w = width - static_cast<uint32_t>(imguiManager.panelWidth());
         renderer.init();
         simulation.init(ctx.device(), ctx.queue(), sim_w, height);
         viewport.init(ctx.device(), sim_w, height, ctx.surfaceFormat());
@@ -64,7 +64,7 @@ public:
             update(dt);
 
             imguiManager.beginFrame();
-            imguiManager.renderUI(viewport, mouse, simulation);
+            imguiManager.renderUI(viewport, mouse, simulation, renderSettings_);
 
             render();
         }
@@ -81,7 +81,7 @@ private:
     void render() {
         WGPUContext& ctx = WGPUContext::instance();
 
-        renderer.draw(viewport.view, simulation.state);
+        renderer.draw(viewport.view, simulation.state, renderSettings_);
 
         wgpu::SurfaceTexture surfaceTex{};
         ctx.surface().getCurrentTexture(&surfaceTex);
@@ -110,6 +110,8 @@ private:
     }
 
     GLFWwindow* window = nullptr;
+
+    RenderSettings renderSettings_;
 
     FluidSim simulation;
     Render renderer;

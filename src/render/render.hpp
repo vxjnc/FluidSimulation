@@ -5,6 +5,7 @@
 
 #include "generated/shaders/shader.wgsl.h"
 #include "src/compute/fluid_state.hpp"
+#include "src/render/render_settings.hpp"
 #include "src/wgpu_context.hpp"
 
 namespace {
@@ -24,13 +25,13 @@ class Render {
 public:
     void init() { initPipeline(); }
 
-    void draw(const wgpu::raii::TextureView& targetView, FluidState& fluid) {
+    void draw(const wgpu::raii::TextureView& targetView, FluidState& fluid, const RenderSettings& settings) {
         WGPUContext& ctx = WGPUContext::instance();
 
-        uint32_t dims[2] = {fluid.width, fluid.height};
+        uint32_t dims[4] = {fluid.width, fluid.height, static_cast<uint32_t>(settings.mode), 0};
         ctx.queue().writeBuffer(*dimsBuffer_, 0, dims, sizeof(dims));
 
-        wgpu::BindGroupEntry entries[3]{};
+        wgpu::BindGroupEntry entries[5]{};
         entries[0].binding = 0;
         entries[0].buffer = *fluid.dye;
         entries[0].size = fluid.dye->getSize();
@@ -38,8 +39,14 @@ public:
         entries[1].buffer = *fluid.velocity;
         entries[1].size = fluid.velocity->getSize();
         entries[2].binding = 2;
-        entries[2].buffer = *dimsBuffer_;
-        entries[2].size = sizeof(dims);
+        entries[2].buffer = *fluid.pressure;
+        entries[2].size = fluid.pressure->getSize();
+        entries[3].binding = 3;
+        entries[3].buffer = *fluid.divergence;
+        entries[3].size = fluid.divergence->getSize();
+        entries[4].binding = 4;
+        entries[4].buffer = *dimsBuffer_;
+        entries[4].size = sizeof(dims);
 
         wgpu::BindGroupDescriptor bgDesc{};
         bgDesc.layout = *bindGroupLayout_;
@@ -48,7 +55,6 @@ public:
         bgDesc.label = wgpu::StringView("DrawBindGroup");
         wgpu::raii::BindGroup bindGroup = ctx.device().createBindGroup(bgDesc);
 
-        // Encode
         wgpu::raii::CommandEncoder enc = ctx.device().createCommandEncoder();
 
         wgpu::RenderPassColorAttachment color{};
@@ -77,8 +83,7 @@ private:
         WGPUContext& ctx = WGPUContext::instance();
         wgpu::raii::ShaderModule shader = createShaderModule(shader_wgsl, "DrawShader");
 
-        // Bind group layout
-        wgpu::BindGroupLayoutEntry entries[3]{};
+        wgpu::BindGroupLayoutEntry entries[5]{};
         entries[0].binding = 0;
         entries[0].visibility = wgpu::ShaderStage::Fragment;
         entries[0].buffer.type = wgpu::BufferBindingType::ReadOnlyStorage;
@@ -87,8 +92,14 @@ private:
         entries[1].buffer.type = wgpu::BufferBindingType::ReadOnlyStorage;
         entries[2].binding = 2;
         entries[2].visibility = wgpu::ShaderStage::Fragment;
-        entries[2].buffer.type = wgpu::BufferBindingType::Uniform;
-        entries[2].buffer.minBindingSize = 8;
+        entries[2].buffer.type = wgpu::BufferBindingType::ReadOnlyStorage;
+        entries[3].binding = 3;
+        entries[3].visibility = wgpu::ShaderStage::Fragment;
+        entries[3].buffer.type = wgpu::BufferBindingType::ReadOnlyStorage;
+        entries[4].binding = 4;
+        entries[4].visibility = wgpu::ShaderStage::Fragment;
+        entries[4].buffer.type = wgpu::BufferBindingType::Uniform;
+        entries[4].buffer.minBindingSize = 16;
 
         wgpu::BindGroupLayoutDescriptor bglDesc{};
         bglDesc.label = wgpu::StringView("DrawBindGroupLayout");
@@ -102,7 +113,6 @@ private:
         plDesc.bindGroupLayouts = reinterpret_cast<WGPUBindGroupLayout*>(&bindGroupLayout_);
         wgpu::raii::PipelineLayout pipelineLayout = ctx.device().createPipelineLayout(plDesc);
 
-        // Pipeline
         wgpu::ColorTargetState colorTarget{};
         colorTarget.format = ctx.surfaceFormat();
         colorTarget.writeMask = wgpu::ColorWriteMask::All;
@@ -123,7 +133,7 @@ private:
         pipeDesc.fragment = &frag;
         pipeline_ = ctx.device().createRenderPipeline(pipeDesc);
 
-        dimsBuffer_ = ctx.createBuffer(sizeof(uint32_t) * 2, wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst, "Dims");
+        dimsBuffer_ = ctx.createBuffer(sizeof(uint32_t) * 4, wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst, "Dims");
     }
 
     wgpu::raii::BindGroupLayout bindGroupLayout_;

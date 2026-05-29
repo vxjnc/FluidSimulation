@@ -5,6 +5,7 @@
 #include <webgpu/webgpu.hpp>
 
 #include "src/compute/fluid_sim.hpp"
+#include "src/render/render_settings.hpp"
 #include "src/ui/fluid_viewport.hpp"
 #include "src/wgpu_context.hpp"
 
@@ -41,24 +42,33 @@ public:
         ImGui::NewFrame();
     }
 
-    void renderUI(FluidViewport& viewport, MouseState& mouse, FluidSim& sim) {
+    void renderUI(FluidViewport& viewport, MouseState& mouse, FluidSim& sim, RenderSettings& renderSettings_) {
         ImGuiIO& io = ImGui::GetIO();
         float screen_w = io.DisplaySize.x;
         float screen_h = io.DisplaySize.y;
 
         // --- Controls Panel ---
         ImGui::SetNextWindowPos(ImVec2(0, 0));
-        ImGui::SetNextWindowSize(ImVec2(static_cast<float>(m_panelWidth), screen_h));
+        ImGui::SetNextWindowSize(ImVec2(panelWidth_, screen_h));
         ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
         {
             ImGui::Text("FPS: %.1f", io.Framerate);
             ImGui::Text("Sim size: %ux%u = %u", viewport.w, viewport.h, viewport.w * viewport.h);
+
+            ImGui::Separator();
+
+            ImGui::Text("Render Mode");
+            static const char* modes[] = {"Dye", "Velocity", "Pressure", "Divergence"};
+            int current = static_cast<int>(renderSettings_.mode);
+            if (ImGui::Combo("##mode", &current, modes, sizeof(modes) / sizeof(modes[0]))) {
+                renderSettings_.mode = static_cast<RenderMode>(current);
+            }
         }
         ImGui::End();
 
         // --- Viewport Panel ---
-        ImGui::SetNextWindowPos(ImVec2(static_cast<float>(m_panelWidth), 0));
-        ImGui::SetNextWindowSize(ImVec2(screen_w - static_cast<float>(m_panelWidth), screen_h));
+        ImGui::SetNextWindowPos(ImVec2(panelWidth_, 0));
+        ImGui::SetNextWindowSize(ImVec2(screen_w - panelWidth_, screen_h));
 
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
         ImGui::Begin("Viewport", nullptr,
@@ -100,8 +110,8 @@ public:
 
     void endFrame(WGPURenderPassEncoder passEncoder) { ImGui_ImplWGPU_RenderDrawData(ImGui::GetDrawData(), passEncoder); }
 
-    uint32_t panelWidth() const { return m_panelWidth; }
+    float panelWidth() const { return panelWidth_; }
 
 private:
-    static constexpr uint32_t m_panelWidth = 280;
+    static constexpr float panelWidth_ = 280.f;
 };
