@@ -74,7 +74,8 @@ private:
         if (appSettings_.brushMode == BrushMode::Inject) {
             if (mouse.leftPressed) {
                 simulation.inject(static_cast<float>(mouse.x), static_cast<float>(viewport.h) - static_cast<float>(mouse.y),
-                                  static_cast<float>(mouse.dx) * 10.0f, -static_cast<float>(mouse.dy) * 10.0f);
+                                  static_cast<float>(mouse.dx) * appSettings_.brushStrength,
+                                  -static_cast<float>(mouse.dy) * appSettings_.brushStrength, appSettings_.brushRadius);
             }
         }
         else {

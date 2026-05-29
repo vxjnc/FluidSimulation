@@ -69,7 +69,7 @@ public:
         injectSource();
     }
 
-    void inject(float x, float y, float vx, float vy, float radius = 10.0f) {
+    void inject(float x, float y, float vx, float vy, float radius) {
         struct InjectParams {
             float x, y, vx, vy, radius;
         };
