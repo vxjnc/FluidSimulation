@@ -1,9 +1,11 @@
 #pragma once
+#include <ranges>
 #include <vector>
 
 #include <webgpu/webgpu-raii.hpp>
 
 #include "src/compute/fluid_pipelines.hpp"
+#include "src/compute/fluid_source.hpp"
 #include "src/compute/fluid_state.hpp"
 
 namespace {
@@ -123,6 +125,8 @@ public:
         }
     }
 
+    std::vector<FluidSource> sources;
+
     FluidState state;
     FluidPipelines pipelines;
 
@@ -131,21 +135,8 @@ private:
     wgpu::Queue queue_;
 
     void injectSource() {
-        constexpr uint32_t r = 4;
-        uint32_t cx = state.width / 2;
-        uint32_t cy = state.height / 2;
-
-        static std::vector<float> velocity_patch(r * 2 * 2);
-        for (uint32_t i = 0; i < r * 2; ++i) {
-            velocity_patch[i * 2 + 0] = 0.0f;
-            velocity_patch[i * 2 + 1] = 100.0f;
-        }
-        static std::vector<float> dye_patch(r * 2, 1.0f);
-
-        for (uint32_t y = cy - r; y < cy + r; ++y) {
-            queue_.writeBuffer(*state.velocity, (y * state.width + cx - r) * sizeof(float) * 2, velocity_patch.data(),
-                               velocity_patch.size() * sizeof(float));
-            queue_.writeBuffer(*state.dye, (y * state.width + cx - r) * sizeof(float), dye_patch.data(), dye_patch.size() * sizeof(float));
+        for (const FluidSource& s : sources | std::views::filter([](const FluidSource& s) { return s.active; })) {
+            inject(s.x, s.y, s.vx, s.vy, s.radius);
         }
     }
 

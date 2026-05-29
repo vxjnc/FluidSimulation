@@ -37,6 +37,8 @@ public:
         viewport.init(ctx.device(), sim_w, height, ctx.surfaceFormat());
 
         prevTime = glfwGetTime();
+
+        simulation.sources.emplace_back(static_cast<float>(sim_w) / 3, static_cast<float>(height) / 3, 0, -1000, 10);
     };
 
     ~Application() {
