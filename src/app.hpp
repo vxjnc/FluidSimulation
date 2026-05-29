@@ -1,0 +1,120 @@
+#pragma once
+#include <cstdint>
+
+#include <GLFW/glfw3.h>
+
+#include "compute/fluid_sim.hpp"
+#include "render/render.hpp"
+#include "ui/fluid_viewport.hpp"
+#include "ui/imgui_manager.hpp"
+
+class Application {
+public:
+    Application(uint32_t width, uint32_t height, std::string_view title) {
+        if (!glfwInit()) {
+            std::cerr << "Failed to init GLFW\n";
+            throw std::runtime_error("Failed to init GLFW");
+        }
+        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+
+        window = glfwCreateWindow(width, height, title.data(), nullptr, nullptr);
+        if (!window) {
+            std::cerr << "Failed to create window\n";
+            glfwTerminate();
+            throw std::runtime_error("Failed to create window");
+        }
+
+        WGPUContext& ctx = WGPUContext::instance();
+        ctx.init(window, width, height);
+
+        imguiManager.init(window, ctx.device(), ctx.surfaceFormat());
+
+        glfwSetFramebufferSizeCallback(
+            window, [](GLFWwindow*, int w, int h) { WGPUContext::instance().resize(static_cast<uint32_t>(w), static_cast<uint32_t>(h)); });
+
+        uint32_t sim_w = width - imguiManager.panelWidth();
+        renderer.init();
+        simulation.init(ctx.device(), ctx.queue(), sim_w, height);
+        viewport.init(ctx.device(), sim_w, height, ctx.surfaceFormat());
+
+        prevTime = glfwGetTime();
+    };
+
+    ~Application() {
+        glfwDestroyWindow(window);
+        glfwTerminate();
+    }
+
+    Application(const Application&) = delete;
+    Application& operator=(const Application&) = delete;
+
+    void run() {
+        WGPUContext& ctx = WGPUContext::instance();
+
+        while (!glfwWindowShouldClose(window)) {
+            glfwPollEvents();
+            ctx.processEvents();
+
+            double now = glfwGetTime();
+            float dt = static_cast<float>(now - prevTime);
+            prevTime = now;
+
+            processInput();
+
+            update(dt);
+
+            imguiManager.beginFrame();
+            imguiManager.renderUI(viewport, mouse, simulation);
+
+            render();
+        }
+    }
+
+private:
+    void processInput() {
+        if (mouse.pressed) {
+            simulation.inject(static_cast<float>(mouse.x), static_cast<float>(viewport.h) - static_cast<float>(mouse.y),
+                              static_cast<float>(mouse.dx) * 10.0f, -static_cast<float>(mouse.dy) * 10.0f);
+        }
+    }
+    void update(float dt) { simulation.step(dt); }
+    void render() {
+        WGPUContext& ctx = WGPUContext::instance();
+
+        renderer.draw(viewport.view, simulation.state);
+
+        wgpu::SurfaceTexture surfaceTex{};
+        ctx.surface().getCurrentTexture(&surfaceTex);
+        wgpu::raii::Texture target(surfaceTex.texture);
+        wgpu::raii::TextureView targetView = target->createView();
+
+        wgpu::RenderPassColorAttachment att{};
+        att.view = *targetView;
+        att.loadOp = wgpu::LoadOp::Clear;
+        att.storeOp = WGPUStoreOp_Store;
+        att.clearValue = {0.1, 0.1, 0.1, 1.0};
+        att.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
+
+        wgpu::RenderPassDescriptor passDesc{};
+        passDesc.colorAttachmentCount = 1;
+        passDesc.colorAttachments = &att;
+
+        wgpu::raii::CommandEncoder enc = ctx.device().createCommandEncoder({});
+        wgpu::raii::RenderPassEncoder pass = enc->beginRenderPass(passDesc);
+        imguiManager.endFrame(*pass);
+        pass->end();
+        wgpu::raii::CommandBuffer cmd = enc->finish({});
+        ctx.queue().submit(1, &*cmd);
+
+        ctx.present();
+    }
+
+    GLFWwindow* window = nullptr;
+
+    FluidSim simulation;
+    Render renderer;
+    FluidViewport viewport;
+    ImGuiManager imguiManager;
+    MouseState mouse;
+    double prevTime = 0.0;
+};

@@ -16,7 +16,7 @@ struct MouseState {
 
 class ImGuiManager {
 public:
-    ImGuiManager(GLFWwindow* window, wgpu::Device device, wgpu::TextureFormat surfaceFormat) {
+    void init(GLFWwindow* window, wgpu::Device device, wgpu::TextureFormat surfaceFormat) {
         ImGui::CreateContext();
         ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
         ImGui::GetIO().IniFilename = nullptr;
@@ -67,8 +67,8 @@ public:
             ImVec2 size = ImGui::GetContentRegionAvail();
 
             if (size.x > 0.0f && size.y > 0.0f) {
-                auto vw = static_cast<uint32_t>(size.x);
-                auto vh = static_cast<uint32_t>(size.y);
+                uint32_t vw = static_cast<uint32_t>(size.x);
+                uint32_t vh = static_cast<uint32_t>(size.y);
 
                 if (vw != viewport.w || vh != viewport.h) {
                     viewport.init(WGPUContext::instance().device(), vw, vh, WGPUContext::instance().surfaceFormat());

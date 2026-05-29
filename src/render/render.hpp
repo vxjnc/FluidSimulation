@@ -22,7 +22,7 @@ namespace {
 
 class Render {
 public:
-    Render() { initPipeline(); }
+    void init() { initPipeline(); }
 
     void draw(const wgpu::raii::TextureView& targetView, FluidState& fluid) {
         WGPUContext& ctx = WGPUContext::instance();
