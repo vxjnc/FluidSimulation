@@ -4,6 +4,7 @@
 #include <imgui_impl_wgpu.h>
 #include <webgpu/webgpu.hpp>
 
+#include "src/app_settings.hpp"
 #include "src/compute/fluid_sim.hpp"
 #include "src/render/render_settings.hpp"
 #include "src/ui/fluid_viewport.hpp"
@@ -12,7 +13,8 @@
 struct MouseState {
     double x = 0, y = 0;
     double dx = 0, dy = 0;
-    bool pressed = false;
+    bool rightPressed = false;
+    bool leftPressed = false;
 };
 
 class ImGuiManager {
@@ -42,7 +44,7 @@ public:
         ImGui::NewFrame();
     }
 
-    void renderUI(FluidViewport& viewport, MouseState& mouse, FluidSim& sim, RenderSettings& renderSettings_) {
+    void renderUI(FluidViewport& viewport, MouseState& mouse, FluidSim& sim, AppSettings& settings) {
         ImGuiIO& io = ImGui::GetIO();
         float screen_w = io.DisplaySize.x;
         float screen_h = io.DisplaySize.y;
@@ -59,9 +61,19 @@ public:
 
             ImGui::Text("Render Mode");
             static const char* modes[] = {"Dye", "Velocity", "Pressure", "Divergence"};
-            int current = static_cast<int>(renderSettings_.mode);
-            if (ImGui::Combo("##mode", &current, modes, sizeof(modes) / sizeof(modes[0]))) {
-                renderSettings_.mode = static_cast<RenderMode>(current);
+            int current = static_cast<int>(settings.renderSettings.mode);
+            if (ImGui::Combo("##render_mode", &current, modes, sizeof(modes) / sizeof(modes[0]))) {
+                settings.renderSettings.mode = static_cast<RenderMode>(current);
+            }
+
+            ImGui::Checkbox("Show Obstacles", &settings.renderSettings.showObstacles);
+
+            ImGui::Separator();
+            ImGui::Text("Brush");
+            static const char* brushModes[] = {"Inject", "Paint Wall"};
+            int bm = static_cast<int>(settings.brushMode);
+            if (ImGui::Combo("##brush", &bm, brushModes, sizeof(brushModes) / sizeof(brushModes[0]))) {
+                settings.brushMode = static_cast<BrushMode>(bm);
             }
         }
         ImGui::End();
@@ -92,10 +104,11 @@ public:
                     mouse.dy = io.MouseDelta.y;
                     mouse.x = mpos.x - origin.x;
                     mouse.y = mpos.y - origin.y;
-                    mouse.pressed = ImGui::IsMouseDown(ImGuiMouseButton_Left);
+                    mouse.leftPressed = ImGui::IsMouseDown(ImGuiMouseButton_Left);
+                    mouse.rightPressed = ImGui::IsMouseDown(ImGuiMouseButton_Right);
                 }
                 else {
-                    mouse.pressed = false;
+                    mouse.leftPressed = false;
                     mouse.dx = mouse.dy = 0;
                 }
 

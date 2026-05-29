@@ -11,4 +11,5 @@ enum class RenderMode : uint8_t {
 
 struct RenderSettings {
     RenderMode mode = RenderMode::Dye;
+    bool showObstacles = true;
 };

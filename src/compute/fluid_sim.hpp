@@ -103,6 +103,26 @@ public:
         queue_.submit(1, &*cmd);
     }
 
+    void paintObstacle(uint32_t cx, uint32_t cy, uint32_t radius, bool erase = false) {
+        uint32_t val = erase ? 0u : 1u;
+        int r = static_cast<int>(radius);
+
+        for (int dy = -r; dy <= r; ++dy) {
+            for (int dx = -r; dx <= r; ++dx) {
+                if (dx * dx + dy * dy > r * r) {
+                    continue;
+                }
+                int x = static_cast<int>(cx) + dx;
+                int y = static_cast<int>(cy) + dy;
+                if (x < 0 || y < 0 || x >= static_cast<int>(state.width) || y >= static_cast<int>(state.height)) {
+                    continue;
+                }
+                uint32_t idx = static_cast<uint32_t>(y) * state.width + static_cast<uint32_t>(x);
+                queue_.writeBuffer(*state.obstacles, idx * sizeof(uint32_t), &val, sizeof(uint32_t));
+            }
+        }
+    }
+
     FluidState state;
     FluidPipelines pipelines;
 

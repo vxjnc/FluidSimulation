@@ -28,10 +28,10 @@ public:
     void draw(const wgpu::raii::TextureView& targetView, FluidState& fluid, const RenderSettings& settings) {
         WGPUContext& ctx = WGPUContext::instance();
 
-        uint32_t dims[4] = {fluid.width, fluid.height, static_cast<uint32_t>(settings.mode), 0};
+        uint32_t dims[4] = {fluid.width, fluid.height, static_cast<uint32_t>(settings.mode), settings.showObstacles};
         ctx.queue().writeBuffer(*dimsBuffer_, 0, dims, sizeof(dims));
 
-        wgpu::BindGroupEntry entries[5]{};
+        wgpu::BindGroupEntry entries[6]{};
         entries[0].binding = 0;
         entries[0].buffer = *fluid.dye;
         entries[0].size = fluid.dye->getSize();
@@ -45,8 +45,11 @@ public:
         entries[3].buffer = *fluid.divergence;
         entries[3].size = fluid.divergence->getSize();
         entries[4].binding = 4;
-        entries[4].buffer = *dimsBuffer_;
-        entries[4].size = sizeof(dims);
+        entries[4].buffer = *fluid.obstacles;
+        entries[4].size = fluid.obstacles->getSize();
+        entries[5].binding = 5;
+        entries[5].buffer = *dimsBuffer_;
+        entries[5].size = sizeof(dims);
 
         wgpu::BindGroupDescriptor bgDesc{};
         bgDesc.layout = *bindGroupLayout_;
@@ -83,7 +86,7 @@ private:
         WGPUContext& ctx = WGPUContext::instance();
         wgpu::raii::ShaderModule shader = createShaderModule(shader_wgsl, "DrawShader");
 
-        wgpu::BindGroupLayoutEntry entries[5]{};
+        wgpu::BindGroupLayoutEntry entries[6]{};
         entries[0].binding = 0;
         entries[0].visibility = wgpu::ShaderStage::Fragment;
         entries[0].buffer.type = wgpu::BufferBindingType::ReadOnlyStorage;
@@ -98,8 +101,11 @@ private:
         entries[3].buffer.type = wgpu::BufferBindingType::ReadOnlyStorage;
         entries[4].binding = 4;
         entries[4].visibility = wgpu::ShaderStage::Fragment;
-        entries[4].buffer.type = wgpu::BufferBindingType::Uniform;
-        entries[4].buffer.minBindingSize = 16;
+        entries[4].buffer.type = wgpu::BufferBindingType::ReadOnlyStorage;
+        entries[5].binding = 5;
+        entries[5].visibility = wgpu::ShaderStage::Fragment;
+        entries[5].buffer.type = wgpu::BufferBindingType::Uniform;
+        entries[5].buffer.minBindingSize = 16;
 
         wgpu::BindGroupLayoutDescriptor bglDesc{};
         bglDesc.label = wgpu::StringView("DrawBindGroupLayout");

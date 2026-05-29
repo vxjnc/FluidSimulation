@@ -5,6 +5,7 @@
 
 #include "compute/fluid_sim.hpp"
 #include "render/render.hpp"
+#include "src/app_settings.hpp"
 #include "ui/fluid_viewport.hpp"
 #include "ui/imgui_manager.hpp"
 
@@ -16,7 +17,7 @@ public:
         }
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-        window = glfwCreateWindow(width, height, title.data(), nullptr, nullptr);
+        window = glfwCreateWindow(static_cast<int>(width), static_cast<int>(height), title.data(), nullptr, nullptr);
         if (!window) {
             glfwTerminate();
             throw std::runtime_error("Failed to create window");
@@ -62,7 +63,7 @@ public:
             update(dt);
 
             imguiManager.beginFrame();
-            imguiManager.renderUI(viewport, mouse, simulation, renderSettings_);
+            imguiManager.renderUI(viewport, mouse, simulation, appSettings_);
 
             render();
         }
@@ -70,16 +71,24 @@ public:
 
 private:
     void processInput() {
-        if (mouse.pressed) {
-            simulation.inject(static_cast<float>(mouse.x), static_cast<float>(viewport.h) - static_cast<float>(mouse.y),
-                              static_cast<float>(mouse.dx) * 10.0f, -static_cast<float>(mouse.dy) * 10.0f);
+        if (appSettings_.brushMode == BrushMode::Inject) {
+            if (mouse.leftPressed) {
+                simulation.inject(static_cast<float>(mouse.x), static_cast<float>(viewport.h) - static_cast<float>(mouse.y),
+                                  static_cast<float>(mouse.dx) * 10.0f, -static_cast<float>(mouse.dy) * 10.0f);
+            }
+        }
+        else {
+            if (mouse.leftPressed || mouse.rightPressed) {
+                simulation.paintObstacle(static_cast<uint32_t>(mouse.x), static_cast<uint32_t>(viewport.h) - static_cast<uint32_t>(mouse.y),
+                                         static_cast<uint32_t>(appSettings_.brushRadius), mouse.rightPressed);
+            }
         }
     }
     void update(float dt) { simulation.step(dt); }
     void render() {
         WGPUContext& ctx = WGPUContext::instance();
 
-        renderer.draw(viewport.view, simulation.state, renderSettings_);
+        renderer.draw(viewport.view, simulation.state, appSettings_.renderSettings);
 
         wgpu::SurfaceTexture surfaceTex{};
         ctx.surface().getCurrentTexture(&surfaceTex);
@@ -109,7 +118,7 @@ private:
 
     GLFWwindow* window = nullptr;
 
-    RenderSettings renderSettings_;
+    AppSettings appSettings_;
 
     FluidSim simulation;
     Render renderer;
