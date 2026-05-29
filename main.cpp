@@ -1,23 +1,17 @@
 #include <iostream>
 
 #include <GLFW/glfw3.h>
+#include <backends/imgui_impl_glfw.h>
+#include <backends/imgui_impl_wgpu.h>
+#include <imgui.h>
 #include <webgpu/webgpu-raii.hpp>
+#include <webgpu/webgpu.hpp>
 
 #include "src/compute/fluid_sim.hpp"
 #include "src/render/render.hpp"
+#include "src/ui/fluid_viewport.hpp"
+#include "src/ui/imgui_manager.hpp"
 #include "src/wgpu_context.hpp"
-
-struct MouseState {
-    double x = 0, y = 0;
-    double dx = 0, dy = 0;
-    bool pressed = false;
-};
-
-struct AppState {
-    FluidSim& sim;
-    MouseState mouse;
-    int width, height;
-};
 
 int main() {
     if (!glfwInit()) {
@@ -26,7 +20,7 @@ int main() {
     }
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-    constexpr int W = 800, H = 600;
+    constexpr int W = 1280, H = 720;
     GLFWwindow* window = glfwCreateWindow(W, H, "Fluid", nullptr, nullptr);
     if (!window) {
         std::cerr << "Failed to create window\n";
@@ -37,65 +31,64 @@ int main() {
     WGPUContext& ctx = WGPUContext::instance();
     ctx.init(window, W, H);
 
+    ImGuiManager imGuiManager(window, ctx.device(), ctx.surfaceFormat());
+
+    glfwSetFramebufferSizeCallback(
+        window, [](GLFWwindow*, int w, int h) { WGPUContext::instance().resize(static_cast<uint32_t>(w), static_cast<uint32_t>(h)); });
+
+    constexpr int panel_w = 280;
     FluidSim sim;
-    sim.init(WGPUContext::instance().device(), WGPUContext::instance().queue(), W, H);
+    sim.init(ctx.device(), ctx.queue(), W - panel_w, H);
 
-    AppState state{sim, {}, W, H};
-    glfwSetWindowUserPointer(window, &state);
-
-    glfwSetFramebufferSizeCallback(window, [](GLFWwindow* w, int width, int height) {
-        AppState* s = static_cast<AppState*>(glfwGetWindowUserPointer(w));
-        s->width = width;
-        s->height = height;
-        WGPUContext::instance().resize(width, height);
-        s->sim.resize(width, height);
-    });
-
-    glfwSetMouseButtonCallback(window, [](GLFWwindow* w, int btn, int action, int) {
-        AppState* s = static_cast<AppState*>(glfwGetWindowUserPointer(w));
-        if (btn == GLFW_MOUSE_BUTTON_LEFT) {
-            s->mouse.pressed = action == GLFW_PRESS;
-        }
-    });
-
-    glfwSetCursorPosCallback(window, [](GLFWwindow* w, double x, double y) {
-        AppState* s = static_cast<AppState*>(glfwGetWindowUserPointer(w));
-        s->mouse.dx = x - s->mouse.x;
-        s->mouse.dy = y - s->mouse.y;
-        s->mouse.x = x;
-        s->mouse.y = y;
-    });
+    FluidViewport viewport;
+    viewport.init(ctx.device(), W - panel_w, H, WGPUContext::instance().surfaceFormat());
 
     Render render;
+    MouseState mouse{};
 
     double prev = glfwGetTime();
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
         ctx.processEvents();
 
-        MouseState& mouse = state.mouse;
         if (mouse.pressed) {
-            sim.inject(static_cast<float>(mouse.x), static_cast<float>(state.height - mouse.y), static_cast<float>(mouse.dx) * 10.0f,
-                       -static_cast<float>(mouse.dy) * 10.0f);
+            sim.inject(static_cast<float>(mouse.x), static_cast<float>(viewport.h) - static_cast<float>(mouse.y),
+                       static_cast<float>(mouse.dx) * 10.0f, -static_cast<float>(mouse.dy) * 10.0f);
         }
-        mouse.dx = 0;
-        mouse.dy = 0;
 
         double now = glfwGetTime();
         float dt = static_cast<float>(now - prev);
         prev = now;
         sim.step(dt);
 
+        imGuiManager.beginFrame();
+        imGuiManager.renderUI(viewport, mouse, sim);
+
+        render.draw(viewport.view, sim.state);
+
         wgpu::SurfaceTexture surfaceTex{};
         ctx.surface().getCurrentTexture(&surfaceTex);
-
         wgpu::raii::Texture target(surfaceTex.texture);
-        wgpu::TextureViewDescriptor viewDesc{};
-        viewDesc.mipLevelCount = 1;
-        viewDesc.arrayLayerCount = 1;
-        wgpu::raii::TextureView targetView = target->createView(viewDesc);
+        wgpu::raii::TextureView targetView = target->createView();
 
-        render.draw(targetView, sim.state);
+        wgpu::RenderPassColorAttachment att{};
+        att.view = *targetView;
+        att.loadOp = wgpu::LoadOp::Clear;
+        att.storeOp = WGPUStoreOp_Store;
+        att.clearValue = {0.1, 0.1, 0.1, 1.0};
+        att.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
+
+        wgpu::RenderPassDescriptor passDesc{};
+        passDesc.colorAttachmentCount = 1;
+        passDesc.colorAttachments = &att;
+
+        wgpu::raii::CommandEncoder enc = ctx.device().createCommandEncoder({});
+        wgpu::raii::RenderPassEncoder pass = enc->beginRenderPass(passDesc);
+        imGuiManager.endFrame(*pass);
+        pass->end();
+        wgpu::raii::CommandBuffer cmd = enc->finish({});
+        ctx.queue().submit(1, &*cmd);
+
         ctx.present();
     }
 

@@ -27,7 +27,7 @@ public:
     void draw(const wgpu::raii::TextureView& targetView, FluidState& fluid) {
         WGPUContext& ctx = WGPUContext::instance();
 
-        uint32_t dims[2] = {ctx.width(), ctx.height()};
+        uint32_t dims[2] = {fluid.width, fluid.height};
         ctx.queue().writeBuffer(*dimsBuffer_, 0, dims, sizeof(dims));
 
         wgpu::BindGroupEntry entries[3]{};
