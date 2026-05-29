@@ -12,14 +12,12 @@ class Application {
 public:
     Application(uint32_t width, uint32_t height, std::string_view title) {
         if (!glfwInit()) {
-            std::cerr << "Failed to init GLFW\n";
             throw std::runtime_error("Failed to init GLFW");
         }
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
         window = glfwCreateWindow(width, height, title.data(), nullptr, nullptr);
         if (!window) {
-            std::cerr << "Failed to create window\n";
             glfwTerminate();
             throw std::runtime_error("Failed to create window");
         }

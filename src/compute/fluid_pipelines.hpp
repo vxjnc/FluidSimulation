@@ -27,12 +27,13 @@ public:
 
         advect = createComputePipeline(device, advect_wgsl, "Advect",
                                        {wgpu::BufferBindingType::Uniform, wgpu::BufferBindingType::Uniform,
-                                        wgpu::BufferBindingType::ReadOnlyStorage, wgpu::BufferBindingType::Storage});
+                                        wgpu::BufferBindingType::ReadOnlyStorage, wgpu::BufferBindingType::Storage,
+                                        wgpu::BufferBindingType::ReadOnlyStorage});
 
         advectDye = createComputePipeline(device, advect_dye_wgsl, "AdvectDye",
                                           {wgpu::BufferBindingType::Uniform, wgpu::BufferBindingType::Uniform,
                                            wgpu::BufferBindingType::ReadOnlyStorage, wgpu::BufferBindingType::ReadOnlyStorage,
-                                           wgpu::BufferBindingType::Storage});
+                                           wgpu::BufferBindingType::Storage, wgpu::BufferBindingType::ReadOnlyStorage});
 
         divergence = createComputePipeline(
             device, divergence_wgsl, "Divergence",
@@ -44,10 +45,12 @@ public:
 
         subtract = createComputePipeline(device, subtract_wgsl, "Subtract",
                                          {wgpu::BufferBindingType::Uniform, wgpu::BufferBindingType::ReadOnlyStorage,
-                                          wgpu::BufferBindingType::ReadOnlyStorage, wgpu::BufferBindingType::Storage});
+                                          wgpu::BufferBindingType::ReadOnlyStorage, wgpu::BufferBindingType::Storage,
+                                          wgpu::BufferBindingType::ReadOnlyStorage});
 
-        boundary =
-            createComputePipeline(device, boundary_wgsl, "Boundary", {wgpu::BufferBindingType::Uniform, wgpu::BufferBindingType::Storage});
+        boundary = createComputePipeline(
+            device, boundary_wgsl, "Boundary",
+            {wgpu::BufferBindingType::Uniform, wgpu::BufferBindingType::Storage, wgpu::BufferBindingType::ReadOnlyStorage});
     }
 
     static wgpu::raii::ComputePipeline createComputePipeline(wgpu::Device device, std::string_view wgsl, std::string_view label,

@@ -19,17 +19,18 @@ public:
         width = w;
         height = h;
 
-        auto buf = [&](std::string_view label, size_t count) {
-            return makeBuffer(width * height * sizeof(float) * count, wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst, label);
+        auto buf = [&](std::string_view label, size_t sizeElement) {
+            return makeBuffer(width * height * sizeElement, wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst, label);
         };
 
-        velocity = buf("velocity", 2);
-        velocity_next = buf("velocity_next", 2);
-        pressure = buf("pressure", 1);
-        pressure_next = buf("pressure_next", 1);
-        divergence = buf("divergence", 1);
-        dye = buf("dye", 1);
-        dye_next = buf("dye_next", 1);
+        velocity = buf("velocity", 2 * sizeof(float));
+        velocity_next = buf("velocity_next", 2 * sizeof(float));
+        pressure = buf("pressure", 1 * sizeof(float));
+        pressure_next = buf("pressure_next", 1 * sizeof(float));
+        divergence = buf("divergence", 1 * sizeof(float));
+        dye = buf("dye", 1 * sizeof(float));
+        dye_next = buf("dye_next", 1 * sizeof(float));
+        obstacles = buf("obstacles", 1 * sizeof(uint32_t));
 
         uint32_t params[2] = {width, height};
         queue_.writeBuffer(*paramsBuffer, 0, params, sizeof(params));
@@ -42,6 +43,8 @@ public:
     wgpu::raii::Buffer pressure, pressure_next;
     wgpu::raii::Buffer divergence;
     wgpu::raii::Buffer dye, dye_next;
+
+    wgpu::raii::Buffer obstacles;
 
     wgpu::raii::Buffer paramsBuffer;
     wgpu::raii::Buffer dtBuffer;

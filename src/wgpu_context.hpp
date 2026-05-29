@@ -79,25 +79,8 @@ public:
         wgpu::SurfaceCapabilities caps{};
         surface_->getCapabilities(*adapter_, &caps);
         surfaceFormat_ = caps.formats[0];
-        for (size_t i = 0; i < caps.formatCount; ++i) {
-            if (caps.formats[i] == wgpu::TextureFormat::BGRA8Unorm || caps.formats[i] == wgpu::TextureFormat::RGBA8Unorm) {
-                surfaceFormat_ = caps.formats[i];
-                break;
-            }
-        }
-
-        wgpu::SurfaceConfiguration surfaceConfig{};
-        surfaceConfig.device = *device_;
-        surfaceConfig.format = surfaceFormat_;
-        surfaceConfig.usage = wgpu::TextureUsage::RenderAttachment | wgpu::TextureUsage::CopyDst;
-        surfaceConfig.width = width;
-        surfaceConfig.height = height;
-        surfaceConfig.presentMode = wgpu::PresentMode::Mailbox;
-        surface_->configure(surfaceConfig);
-
-        width_ = width;
-        height_ = height;
         initialized_ = true;
+        resize(width, height);
     }
 
     void resize(uint32_t width, uint32_t height) {
@@ -111,7 +94,7 @@ public:
         surfaceConfig.usage = wgpu::TextureUsage::RenderAttachment | wgpu::TextureUsage::CopyDst;
         surfaceConfig.width = width;
         surfaceConfig.height = height;
-        surfaceConfig.presentMode = wgpu::PresentMode::Mailbox;
+        surfaceConfig.presentMode = wgpu::PresentMode::Fifo;
         surface_->configure(surfaceConfig);
 
         width_ = width;

@@ -1,10 +1,14 @@
-struct Params { width: u32, height: u32 }
+struct Params {
+    width: u32,
+    height: u32,
+}
 
-@group(0) @binding(0) var<uniform>             params:   Params;
-@group(0) @binding(1) var<uniform>             dt:       f32;
-@group(0) @binding(2) var<storage, read>       velocity: array<vec2f>;
-@group(0) @binding(3) var<storage, read>       dye:      array<f32>;
+@group(0) @binding(0) var<uniform> params: Params;
+@group(0) @binding(1) var<uniform> dt: f32;
+@group(0) @binding(2) var<storage, read> velocity: array<vec2f>;
+@group(0) @binding(3) var<storage, read> dye: array<f32>;
 @group(0) @binding(4) var<storage, read_write> dye_next: array<f32>;
+@group(0) @binding(5) var<storage, read> obstacles: array<u32>;
 
 fn idx(x: u32, y: u32) -> u32 {
     return y * params.width + x;
@@ -12,12 +16,12 @@ fn idx(x: u32, y: u32) -> u32 {
 
 fn sample_dye(pos: vec2f) -> f32 {
     let max_bounds = vec2f(f32(params.width - 1u), f32(params.height - 1u));
-    
+
     let clamped_pos = clamp(pos, vec2f(0.0), max_bounds);
 
     let xy0_f = floor(clamped_pos);
 
-    let t = clamped_pos - xy0_f; 
+    let t = clamped_pos - xy0_f;
 
     let xy0 = vec2u(xy0_f);
     let xy1 = min(xy0 + vec2u(1u), vec2u(params.width - 1u, params.height - 1u));
@@ -32,12 +36,16 @@ fn sample_dye(pos: vec2f) -> f32 {
 
 @compute @workgroup_size(8, 8)
 fn main(@builtin(global_invocation_id) gid: vec3u) {
-    if (gid.x >= params.width || gid.y >= params.height) { return; }
+    if gid.x >= params.width || gid.y >= params.height { return; }
 
-    let pos     = vec2f(gid.xy);
-    let i       = idx(gid.x, gid.y);
-    let vel     = velocity[i];
+    let pos = vec2f(gid.xy);
+    let i = idx(gid.x, gid.y);
+    let vel = velocity[i];
     let src_pos = pos - vel * dt;
 
+    if obstacles[i] != 0u {
+        dye_next[i] = 0.0;
+        return;
+    }
     dye_next[i] = sample_dye(src_pos);
 }

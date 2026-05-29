@@ -134,7 +134,8 @@ private:
                                                  {{*state.paramsBuffer, 8},
                                                   {*state.dtBuffer, 4},
                                                   {*state.velocity, state.velocity->getSize()},
-                                                  {*state.velocity_next, state.velocity_next->getSize()}},
+                                                  {*state.velocity_next, state.velocity_next->getSize()},
+                                                  {*state.obstacles, state.obstacles->getSize()}},
                                                  "AdvectBindGroup");
         wgpu::raii::ComputePassEncoder pass = enc->beginComputePass();
         pipelines.dispatch(pass, pipelines.advect, bg, W, H);
@@ -147,7 +148,8 @@ private:
                                                   {*state.dtBuffer, 4},
                                                   {*state.velocity, state.velocity->getSize()},
                                                   {*state.dye, state.dye->getSize()},
-                                                  {*state.dye_next, state.dye_next->getSize()}},
+                                                  {*state.dye_next, state.dye_next->getSize()},
+                                                  {*state.obstacles, state.obstacles->getSize()}},
                                                  "AdvectDyeBindGroup");
         wgpu::raii::ComputePassEncoder pass = enc->beginComputePass({});
         pipelines.dispatch(pass, pipelines.advectDye, bg, W, H);
@@ -192,7 +194,8 @@ private:
                                                  {{*state.paramsBuffer, 8},
                                                   {*state.pressure, state.pressure->getSize()},
                                                   {*state.velocity, state.velocity->getSize()},
-                                                  {*state.velocity_next, state.velocity_next->getSize()}},
+                                                  {*state.velocity_next, state.velocity_next->getSize()},
+                                                  {*state.obstacles, state.obstacles->getSize()}},
                                                  "SubtractGradientBindGroup");
         wgpu::raii::ComputePassEncoder pass = enc->beginComputePass({});
         pipelines.dispatch(pass, pipelines.subtract, bg, W, H);
@@ -200,9 +203,10 @@ private:
     }
 
     void applyBoundary(wgpu::raii::CommandEncoder& enc, uint32_t W, uint32_t H) {
-        wgpu::raii::BindGroup bg =
-            makeBindGroup(device_, pipelines.boundary, {{*state.paramsBuffer, 8}, {*state.velocity, state.velocity->getSize()}},
-                          "ApplyBoundaryBindGroup");
+        wgpu::raii::BindGroup bg = makeBindGroup(
+            device_, pipelines.boundary,
+            {{*state.paramsBuffer, 8}, {*state.velocity, state.velocity->getSize()}, {*state.obstacles, state.obstacles->getSize()}},
+            "ApplyBoundaryBindGroup");
         wgpu::raii::ComputePassEncoder pass = enc->beginComputePass({});
         pipelines.dispatch(pass, pipelines.boundary, bg, W, H);
         pass->end();
