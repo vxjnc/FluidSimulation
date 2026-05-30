@@ -33,8 +33,9 @@ public:
 
         uint32_t sim_w = width - static_cast<uint32_t>(imguiManager.panelWidth());
         renderer.init();
-        simulation.init(ctx.device(), ctx.queue(), sim_w, height);
         viewport.init(ctx.device(), sim_w, height, ctx.surfaceFormat());
+
+        simulation.init(ctx.device(), ctx.queue(), sim_w * appSettings_.simScale, height * appSettings_.simScale);
 
         prevTime = glfwGetTime();
     };
@@ -71,17 +72,20 @@ public:
 
 private:
     void processInput() {
+        float sx = mouse.x * appSettings_.simScale;
+        float sy = (viewport.h - mouse.y) * appSettings_.simScale;
+        float sdx = mouse.dx * appSettings_.simScale;
+        float sdy = mouse.dy * appSettings_.simScale;
+        float sr = appSettings_.brushRadius * appSettings_.simScale;
+
         if (appSettings_.brushMode == BrushMode::Inject) {
             if (mouse.leftPressed) {
-                simulation.inject(static_cast<float>(mouse.x), static_cast<float>(viewport.h) - static_cast<float>(mouse.y),
-                                  static_cast<float>(mouse.dx) * appSettings_.brushStrength,
-                                  -static_cast<float>(mouse.dy) * appSettings_.brushStrength, appSettings_.brushRadius);
+                simulation.inject(sx, sy, sdx * appSettings_.brushStrength, -sdy * appSettings_.brushStrength, sr);
             }
         }
         else {
             if (mouse.leftPressed || mouse.rightPressed) {
-                simulation.paintObstacle(static_cast<uint32_t>(mouse.x), static_cast<uint32_t>(viewport.h) - static_cast<uint32_t>(mouse.y),
-                                         static_cast<uint32_t>(appSettings_.brushRadius), mouse.rightPressed);
+                simulation.paintObstacle(sx, sy, sr, mouse.rightPressed);
             }
         }
 

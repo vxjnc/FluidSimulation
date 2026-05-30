@@ -10,5 +10,7 @@ struct AppSettings {
     float brushRadius = 10.0f;
     float brushStrength = 10.0f;
 
+    float simScale = 0.5f;
+
     RenderSettings renderSettings;
 };

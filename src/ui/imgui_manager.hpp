@@ -55,7 +55,22 @@ public:
         ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
         {
             ImGui::Text("FPS: %.1f", io.Framerate);
-            ImGui::Text("Sim size: %ux%u = %u", viewport.w, viewport.h, viewport.w * viewport.h);
+            ImGui::Text("Sim size: %ux%u = %u", sim.state.width, sim.state.height, sim.state.width * sim.state.height);
+
+            ImGui::Separator();
+
+            float prevScale = settings.simScale;
+            if (ImGui::SliderFloat("Sim Scale", &settings.simScale, 0.1f, 1.0f)) {
+                float ratio = settings.simScale / prevScale;
+                for (auto& s : sim.sources) {
+                    s.x *= ratio;
+                    s.y *= ratio;
+                    s.vx *= ratio;
+                    s.vy *= ratio;
+                    s.radius *= ratio;
+                }
+                sim.resize(static_cast<uint32_t>(viewport.w * settings.simScale), static_cast<uint32_t>(viewport.h * settings.simScale));
+            }
 
             ImGui::Separator();
 
@@ -93,11 +108,30 @@ public:
                 ImGui::SameLine();
                 ImGui::Text("Source %zu", i + 1);
 
-                ImGui::SliderFloat("X", &s.x, 0.0f, static_cast<float>(viewport.w));
-                ImGui::SliderFloat("Y", &s.y, 0.0f, static_cast<float>(viewport.h));
-                ImGui::SliderFloat("VX", &s.vx, -200.0f, 200.0f);
-                ImGui::SliderFloat("VY", &s.vy, -200.0f, 200.0f);
-                ImGui::SliderFloat("Radius", &s.radius, 1.0f, 20.0f);
+                float display_x = s.x / settings.simScale;
+                if (ImGui::SliderFloat("X", &display_x, 0.0f, static_cast<float>(viewport.w))) {
+                    s.x = display_x * settings.simScale;
+                }
+
+                float display_y = s.y / settings.simScale;
+                if (ImGui::SliderFloat("Y", &display_y, 0.0f, static_cast<float>(viewport.h))) {
+                    s.y = display_y * settings.simScale;
+                }
+
+                float display_vx = s.vx / settings.simScale;
+                if (ImGui::SliderFloat("VX", &display_vx, -200.0f, 200.0f)) {
+                    s.vx = display_vx * settings.simScale;
+                }
+
+                float display_vy = s.vy / settings.simScale;
+                if (ImGui::SliderFloat("VY", &display_vy, -200.0f, 200.0f)) {
+                    s.vy = display_vy * settings.simScale;
+                }
+
+                float display_r = s.radius / settings.simScale;
+                if (ImGui::SliderFloat("Radius", &display_r, 1.0f, 20.0f)) {
+                    s.radius = display_r * settings.simScale;
+                }
 
                 if (ImGui::Button("Remove")) {
                     sim.sources.erase(std::next(sim.sources.begin(), i));
@@ -110,7 +144,8 @@ public:
             }
 
             if (ImGui::Button("Add Source")) {
-                sim.sources.emplace_back(static_cast<float>(viewport.w) / 2.f, static_cast<float>(viewport.h) / 2.f, 0, 100, 4);
+                sim.sources.emplace_back(static_cast<float>(viewport.w) / 2.f * settings.simScale,
+                                         static_cast<float>(viewport.h) / 2.f * settings.simScale, 0, 100, 4 * settings.simScale);
             }
         }
         ImGui::End();
@@ -131,7 +166,8 @@ public:
 
                 if (vw != viewport.w || vh != viewport.h) {
                     viewport.init(WGPUContext::instance().device(), vw, vh, WGPUContext::instance().surfaceFormat());
-                    sim.resize(vw, vh);
+                    sim.resize(static_cast<uint32_t>(static_cast<float>(vw) * settings.simScale),
+                               static_cast<uint32_t>(static_cast<float>(vh) * settings.simScale));
                 }
 
                 if (ImGui::IsWindowHovered()) {
