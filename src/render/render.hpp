@@ -65,6 +65,7 @@ public:
         color.loadOp = wgpu::LoadOp::Clear;
         color.storeOp = wgpu::StoreOp::Store;
         color.clearValue = {0, 0, 0, 1};
+        color.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
 
         wgpu::RenderPassDescriptor passDesc{};
         passDesc.label = wgpu::StringView("DrawPass");

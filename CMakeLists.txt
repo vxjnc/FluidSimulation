@@ -39,7 +39,7 @@ FetchContent_Declare(
     GIT_TAG        v0.3.0-gamma
     GIT_SHALLOW    ON
 )
-set(WEBGPU_BACKEND "WGPU" CACHE STRING "WebGPU backend" FORCE)
+set(WEBGPU_BACKEND "DAWN" CACHE STRING "WebGPU backend" FORCE)
 
 FetchContent_Declare(
     webgpu_cpp
@@ -70,7 +70,7 @@ target_include_directories(imgui PUBLIC
     ${imgui_SOURCE_DIR}
     ${imgui_SOURCE_DIR}/backends
 )
-target_compile_definitions(imgui PUBLIC IMGUI_IMPL_WEBGPU_BACKEND_WGPU)
+target_compile_definitions(imgui PUBLIC IMGUI_IMPL_WEBGPU_BACKEND_DAWN)
 target_link_libraries(imgui PUBLIC glfw webgpu)
 
 set(GENERATED_ROOT "${CMAKE_BINARY_DIR}/gen_includes")

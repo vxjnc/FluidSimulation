@@ -84,8 +84,18 @@ private:
                                          static_cast<uint32_t>(appSettings_.brushRadius), mouse.rightPressed);
             }
         }
+
+        if (ImGui::IsKeyPressed(ImGuiKey_Space)) {
+            appSettings_.paused = !appSettings_.paused;
+        }
     }
-    void update(float dt) { simulation.step(dt); }
+
+    void update(float dt) {
+        if (!appSettings_.paused) {
+            simulation.step(dt);
+        }
+    }
+
     void render() {
         WGPUContext& ctx = WGPUContext::instance();
 
@@ -100,7 +110,7 @@ private:
         att.view = *targetView;
         att.loadOp = wgpu::LoadOp::Clear;
         att.storeOp = WGPUStoreOp_Store;
-        att.clearValue = {0.1, 0.1, 0.1, 1.0};
+        att.clearValue = {0.0, 0.0, 0.0, 1.0};
         att.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
 
         wgpu::RenderPassDescriptor passDesc{};

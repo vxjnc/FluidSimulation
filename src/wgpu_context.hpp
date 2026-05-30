@@ -5,6 +5,8 @@
 
 #include <webgpu/webgpu-raii.hpp>
 
+#include "webgpu/webgpu.hpp"
+
 #if defined(__linux__)
 #define GLFW_EXPOSE_NATIVE_X11
 #elif defined(_WIN32)
@@ -62,9 +64,15 @@ public:
         }
 
         wgpu::DeviceDescriptor deviceDesc{};
+        deviceDesc.deviceLostCallbackInfo.mode = wgpu::CallbackMode::AllowSpontaneous;
         deviceDesc.deviceLostCallbackInfo.callback = [](WGPUDevice const*, WGPUDeviceLostReason reason, WGPUStringView msg, void*, void*) {
+            if (reason == wgpu::DeviceLostReason::Destroyed) {
+                return;
+            }
+
             std::cerr << "wgpu device lost (" << reason << "): " << std::string_view(msg.data, msg.length) << "\n";
         };
+
         deviceDesc.uncapturedErrorCallbackInfo.callback = [](WGPUDevice const*, WGPUErrorType type, WGPUStringView msg, void*, void*) {
             std::cerr << "wgpu error (" << type << "): " << std::string_view(msg.data, msg.length) << "\n";
         };
@@ -102,7 +110,7 @@ public:
     }
 
     void present() { surface_->present(); }
-    void processEvents() { device_->poll(false, nullptr); }
+    void processEvents() { device_->tick(); }
 
     wgpu::Device device() const { return *device_; }
     wgpu::Queue queue() const { return *queue_; }
