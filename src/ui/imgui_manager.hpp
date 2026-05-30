@@ -69,6 +69,7 @@ public:
             ImGui::Checkbox("Show Obstacles", &settings.renderSettings.showObstacles);
 
             ImGui::Separator();
+
             ImGui::Text("Brush");
             static const char* brushModes[] = {"Inject", "Paint Wall"};
             int bm = static_cast<int>(settings.brushMode);
@@ -78,6 +79,38 @@ public:
             ImGui::SliderFloat("Radius", &settings.brushRadius, 1.0f, 50.0f);
             if (settings.brushMode == BrushMode::Inject) {
                 ImGui::SliderFloat("Strength", &settings.brushStrength, 1.0f, 100.0f);
+            }
+
+            ImGui::Separator();
+
+            ImGui::Text("Sources");
+
+            for (size_t i = 0; i < sim.sources.size(); ++i) {
+                FluidSource& s = sim.sources[i];
+                ImGui::PushID(static_cast<int>(i));
+
+                ImGui::Checkbox("##active", &s.active);
+                ImGui::SameLine();
+                ImGui::Text("Source %zu", i + 1);
+
+                ImGui::SliderFloat("X", &s.x, 0.0f, static_cast<float>(viewport.w));
+                ImGui::SliderFloat("Y", &s.y, 0.0f, static_cast<float>(viewport.h));
+                ImGui::SliderFloat("VX", &s.vx, -200.0f, 200.0f);
+                ImGui::SliderFloat("VY", &s.vy, -200.0f, 200.0f);
+                ImGui::SliderFloat("Radius", &s.radius, 1.0f, 20.0f);
+
+                if (ImGui::Button("Remove")) {
+                    sim.sources.erase(std::next(sim.sources.begin(), i));
+                    ImGui::PopID();
+                    break;
+                }
+
+                ImGui::PopID();
+                ImGui::Separator();
+            }
+
+            if (ImGui::Button("Add Source")) {
+                sim.sources.emplace_back(static_cast<float>(viewport.w) / 2.f, static_cast<float>(viewport.h) / 2.f, 0, 100, 4);
             }
         }
         ImGui::End();
