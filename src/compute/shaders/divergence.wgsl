@@ -6,6 +6,7 @@ struct Params {
 @group(0) @binding(0) var<uniform> params: Params;
 @group(0) @binding(1) var<storage, read> velocity: array<vec2f>;
 @group(0) @binding(2) var<storage, read_write> divergence: array<f32>;
+@group(0) @binding(3) var<storage, read> obstacles: array<u32>;
 
 fn idx(x: u32, y: u32) -> u32 {
     return y * params.width + x;
@@ -17,13 +18,18 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
     let y = gid.y;
     if x >= params.width || y >= params.height { return; }
 
+    let i = idx(x, y);
+    if obstacles[i] != 0u { divergence[i] = 0.0; return; }
+
     let x0 = select(x - 1, x, x == 0);
     let x1 = select(x + 1, x, x == params.width - 1);
     let y0 = select(y - 1, y, y == 0);
     let y1 = select(y + 1, y, y == params.height - 1);
 
-    let dvx = velocity[idx(x1, y)].x - velocity[idx(x0, y)].x;
-    let dvy = velocity[idx(x, y1)].y - velocity[idx(x, y0)].y;
+    let vx1 = select(velocity[idx(x1, y)].x, 0.0, obstacles[idx(x1, y)] != 0u);
+    let vx0 = select(velocity[idx(x0, y)].x, 0.0, obstacles[idx(x0, y)] != 0u);
+    let vy1 = select(velocity[idx(x, y1)].y, 0.0, obstacles[idx(x, y1)] != 0u);
+    let vy0 = select(velocity[idx(x, y0)].y, 0.0, obstacles[idx(x, y0)] != 0u);
 
-    divergence[idx(x, y)] = 0.5 * (dvx + dvy);
+    divergence[i] = 0.5 * (vx1 - vx0 + vy1 - vy0);
 }

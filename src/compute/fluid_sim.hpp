@@ -168,10 +168,12 @@ private:
     }
 
     void computeDivergence(wgpu::raii::CommandEncoder& enc, uint32_t W, uint32_t H) {
-        wgpu::raii::BindGroup bg = makeBindGroup(
-            device_, pipelines.divergence,
-            {{*state.paramsBuffer, 8}, {*state.velocity, state.velocity->getSize()}, {*state.divergence, state.divergence->getSize()}},
-            "DivergenceBindGroup");
+        wgpu::raii::BindGroup bg = makeBindGroup(device_, pipelines.divergence,
+                                                 {{*state.paramsBuffer, 8},
+                                                  {*state.velocity, state.velocity->getSize()},
+                                                  {*state.divergence, state.divergence->getSize()},
+                                                  {*state.obstacles, state.obstacles->getSize()}},
+                                                 "DivergenceBindGroup");
         wgpu::raii::ComputePassEncoder pass = enc->beginComputePass({});
         pipelines.dispatch(pass, pipelines.divergence, bg, W, H);
         pass->end();
@@ -182,13 +184,15 @@ private:
                                                   {{*state.paramsBuffer, 8},
                                                    {*state.pressure, state.pressure->getSize()},
                                                    {*state.divergence, state.divergence->getSize()},
-                                                   {*state.pressure_next, state.pressure_next->getSize()}},
+                                                   {*state.pressure_next, state.pressure_next->getSize()},
+                                                   {*state.obstacles, state.obstacles->getSize()}},
                                                   "SolvePressureBindGroup0");
         wgpu::raii::BindGroup bg1 = makeBindGroup(device_, pipelines.pressure,
                                                   {{*state.paramsBuffer, 8},
                                                    {*state.pressure_next, state.pressure_next->getSize()},
                                                    {*state.divergence, state.divergence->getSize()},
-                                                   {*state.pressure, state.pressure->getSize()}},
+                                                   {*state.pressure, state.pressure->getSize()},
+                                                   {*state.obstacles, state.obstacles->getSize()}},
                                                   "SolvePressureBindGroup1");
 
         wgpu::raii::ComputePassEncoder pass = enc->beginComputePass({});

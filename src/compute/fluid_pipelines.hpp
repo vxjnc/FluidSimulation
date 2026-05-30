@@ -35,13 +35,14 @@ public:
                                            wgpu::BufferBindingType::ReadOnlyStorage, wgpu::BufferBindingType::ReadOnlyStorage,
                                            wgpu::BufferBindingType::Storage, wgpu::BufferBindingType::ReadOnlyStorage});
 
-        divergence = createComputePipeline(
-            device, divergence_wgsl, "Divergence",
-            {wgpu::BufferBindingType::Uniform, wgpu::BufferBindingType::ReadOnlyStorage, wgpu::BufferBindingType::Storage});
+        divergence = createComputePipeline(device, divergence_wgsl, "Divergence",
+                                           {wgpu::BufferBindingType::Uniform, wgpu::BufferBindingType::ReadOnlyStorage,
+                                            wgpu::BufferBindingType::Storage, wgpu::BufferBindingType::ReadOnlyStorage});
 
         pressure = createComputePipeline(device, pressure_wgsl, "Pressure",
                                          {wgpu::BufferBindingType::Uniform, wgpu::BufferBindingType::ReadOnlyStorage,
-                                          wgpu::BufferBindingType::ReadOnlyStorage, wgpu::BufferBindingType::Storage});
+                                          wgpu::BufferBindingType::ReadOnlyStorage, wgpu::BufferBindingType::Storage,
+                                          wgpu::BufferBindingType::ReadOnlyStorage});
 
         subtract = createComputePipeline(device, subtract_wgsl, "Subtract",
                                          {wgpu::BufferBindingType::Uniform, wgpu::BufferBindingType::ReadOnlyStorage,
