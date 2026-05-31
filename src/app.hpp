@@ -35,7 +35,7 @@ public:
         renderer.init();
         viewport.init(ctx.device(), sim_w, height, ctx.surfaceFormat());
 
-        simulation.init(ctx.device(), ctx.queue(), sim_w * appSettings_.simScale, height * appSettings_.simScale);
+        simulation.init(ctx.device(), ctx.queue(), sim_w * settings.simScale, height * settings.simScale);
 
         prevTime = glfwGetTime();
     };
@@ -64,7 +64,7 @@ public:
             update(dt);
 
             imguiManager.beginFrame();
-            imguiManager.renderUI(viewport, mouse, simulation, appSettings_);
+            imguiManager.renderUI(viewport, mouse, simulation, settings);
 
             render();
         }
@@ -72,15 +72,15 @@ public:
 
 private:
     void processInput() {
-        float sx = mouse.x * appSettings_.simScale;
-        float sy = (viewport.h - mouse.y) * appSettings_.simScale;
-        float sdx = mouse.dx * appSettings_.simScale;
-        float sdy = mouse.dy * appSettings_.simScale;
-        float sr = appSettings_.brushRadius * appSettings_.simScale;
+        float sx = mouse.x * settings.simScale;
+        float sy = (viewport.h - mouse.y) * settings.simScale;
+        float sdx = mouse.dx * settings.simScale;
+        float sdy = mouse.dy * settings.simScale;
+        float sr = settings.brushRadius * settings.simScale;
 
-        if (appSettings_.brushMode == BrushMode::Inject) {
+        if (settings.brushMode == BrushMode::Inject) {
             if (mouse.leftPressed) {
-                simulation.inject(sx, sy, sdx * appSettings_.brushStrength, -sdy * appSettings_.brushStrength, sr);
+                simulation.inject(sx, sy, sdx * settings.brushStrength, -sdy * settings.brushStrength, sr);
             }
         }
         else {
@@ -90,12 +90,24 @@ private:
         }
 
         if (ImGui::IsKeyPressed(ImGuiKey_Space)) {
-            appSettings_.paused = !appSettings_.paused;
+            settings.paused = !settings.paused;
+        }
+        if (ImGui::IsKeyPressed(ImGuiKey_D)) {
+            settings.renderSettings.mode = RenderMode::Dye;
+        }
+        if (ImGui::IsKeyPressed(ImGuiKey_V)) {
+            settings.renderSettings.mode = RenderMode::Velocity;
+        }
+        if (ImGui::IsKeyPressed(ImGuiKey_P)) {
+            settings.renderSettings.mode = RenderMode::Pressure;
+        }
+        if (ImGui::IsKeyPressed(ImGuiKey_G)) {
+            settings.renderSettings.mode = RenderMode::Divergence;
         }
     }
 
     void update(float dt) {
-        if (!appSettings_.paused) {
+        if (!settings.paused) {
             simulation.step(dt);
         }
     }
@@ -103,7 +115,7 @@ private:
     void render() {
         WGPUContext& ctx = WGPUContext::instance();
 
-        renderer.draw(viewport.view, simulation.state, appSettings_.renderSettings);
+        renderer.draw(viewport.view, simulation.state, settings.renderSettings);
 
         wgpu::SurfaceTexture surfaceTex{};
         ctx.surface().getCurrentTexture(&surfaceTex);
@@ -133,7 +145,7 @@ private:
 
     GLFWwindow* window = nullptr;
 
-    AppSettings appSettings_;
+    AppSettings settings;
 
     FluidSim simulation;
     Render renderer;
