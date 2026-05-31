@@ -11,16 +11,17 @@
 
 namespace {
     inline wgpu::BindGroup makeBindGroup(wgpu::Device device, wgpu::raii::ComputePipeline& pipeline,
-                                         std::initializer_list<std::pair<wgpu::Buffer, uint64_t>> buffers, std::string_view label) {
+                                         std::initializer_list<wgpu::Buffer> buffers, std::string_view label) {
         wgpu::raii::BindGroupLayout layout = pipeline->getBindGroupLayout(0);
 
         std::vector<wgpu::BindGroupEntry> entries;
+        entries.reserve(buffers.size());
         uint32_t binding = 0;
-        for (auto& [buf, size] : buffers) {
+        for (auto& buf : buffers) {
             wgpu::BindGroupEntry e{};
             e.binding = binding++;
             e.buffer = buf;
-            e.size = size;
+            e.size = buf.getSize();
             entries.emplace_back(e);
         }
 
@@ -80,21 +81,15 @@ public:
         wgpu::raii::CommandEncoder enc = device_.createCommandEncoder({});
         wgpu::raii::ComputePassEncoder pass = enc->beginComputePass({});
 
-        auto dispatch = [&](wgpu::raii::ComputePipeline& pipeline, wgpu::Buffer src, uint64_t srcSize, wgpu::Buffer dst, uint64_t dstSize) {
-            wgpu::raii::BindGroup bg = makeBindGroup(device_, pipeline,
-                                                     {
-                                                         {*paramsBuffer, sizeof(rp)},
-                                                         {src, srcSize},
-                                                         {dst, dstSize},
-                                                     },
-                                                     "ResampleBG");
+        auto dispatch = [&](wgpu::raii::ComputePipeline& pipeline, wgpu::Buffer src, wgpu::Buffer dst) {
+            wgpu::raii::BindGroup bg = makeBindGroup(device_, pipeline, {*paramsBuffer, src, dst}, "ResampleBG");
             FluidPipelines::dispatch(pass, pipeline, bg, W, H);
         };
 
-        dispatch(resamplePipelines.vec2f, *state.velocity, state.velocity->getSize(), *new_velocity, new_velocity->getSize());
-        dispatch(resamplePipelines.f32, *state.pressure, state.pressure->getSize(), *new_pressure, new_pressure->getSize());
-        dispatch(resamplePipelines.f32, *state.dye, state.dye->getSize(), *new_dye, new_dye->getSize());
-        dispatch(resamplePipelines.u32, *state.obstacles, state.obstacles->getSize(), *new_obstacles, new_obstacles->getSize());
+        dispatch(resamplePipelines.vec2f, *state.velocity, *new_velocity);
+        dispatch(resamplePipelines.f32, *state.pressure, *new_pressure);
+        dispatch(resamplePipelines.f32, *state.dye, *new_dye);
+        dispatch(resamplePipelines.u32, *state.obstacles, *new_obstacles);
 
         pass->end();
         wgpu::raii::CommandBuffer cmd = enc->finish({});
@@ -156,19 +151,15 @@ public:
         uint32_t H = (state.height + 7) / 8;
 
         {
-            wgpu::raii::BindGroup bg = makeBindGroup(
-                device_, pipelines.inject,
-                {{*state.paramsBuffer, 8}, {*state.injectBuffer, sizeof(InjectParams)}, {*state.velocity, state.velocity->getSize()}},
-                "InjectVelocityBindGroup");
+            wgpu::raii::BindGroup bg = makeBindGroup(device_, pipelines.inject, {*state.paramsBuffer, *state.injectBuffer, *state.velocity},
+                                                     "InjectVelocityBindGroup");
             wgpu::raii::ComputePassEncoder pass = enc->beginComputePass({});
             pipelines.dispatch(pass, pipelines.inject, bg, W, H);
             pass->end();
         }
         {
             wgpu::raii::BindGroup bg =
-                makeBindGroup(device_, pipelines.injectDye,
-                              {{*state.paramsBuffer, 8}, {*state.injectBuffer, sizeof(InjectParams)}, {*state.dye, state.dye->getSize()}},
-                              "InjectDyeBindGroup");
+                makeBindGroup(device_, pipelines.injectDye, {*state.paramsBuffer, *state.injectBuffer, *state.dye}, "InjectDyeBindGroup");
             wgpu::raii::ComputePassEncoder pass = enc->beginComputePass({});
             pipelines.dispatch(pass, pipelines.injectDye, bg, W, H);
             pass->end();
@@ -215,59 +206,39 @@ private:
     }
 
     void advect(wgpu::raii::CommandEncoder& enc, uint32_t W, uint32_t H) {
-        wgpu::raii::BindGroup bg = makeBindGroup(device_, pipelines.advect,
-                                                 {{*state.paramsBuffer, 8},
-                                                  {*state.dtBuffer, 4},
-                                                  {*state.velocity, state.velocity->getSize()},
-                                                  {*state.velocity_next, state.velocity_next->getSize()},
-                                                  {*state.obstacles, state.obstacles->getSize()}},
-                                                 "AdvectBindGroup");
+        wgpu::raii::BindGroup bg = makeBindGroup(
+            device_, pipelines.advect, {*state.paramsBuffer, *state.dtBuffer, *state.velocity, *state.velocity_next, *state.obstacles},
+            "AdvectBindGroup");
         wgpu::raii::ComputePassEncoder pass = enc->beginComputePass();
         pipelines.dispatch(pass, pipelines.advect, bg, W, H);
         pass->end();
     }
 
     void advectDye(wgpu::raii::CommandEncoder& enc, uint32_t W, uint32_t H) {
-        wgpu::raii::BindGroup bg = makeBindGroup(device_, pipelines.advectDye,
-                                                 {{*state.paramsBuffer, 8},
-                                                  {*state.dtBuffer, 4},
-                                                  {*state.velocity, state.velocity->getSize()},
-                                                  {*state.dye, state.dye->getSize()},
-                                                  {*state.dye_next, state.dye_next->getSize()},
-                                                  {*state.obstacles, state.obstacles->getSize()}},
-                                                 "AdvectDyeBindGroup");
+        wgpu::raii::BindGroup bg = makeBindGroup(
+            device_, pipelines.advectDye,
+            {*state.paramsBuffer, *state.dtBuffer, *state.velocity, *state.dye, *state.dye_next, *state.obstacles}, "AdvectDyeBindGroup");
         wgpu::raii::ComputePassEncoder pass = enc->beginComputePass({});
         pipelines.dispatch(pass, pipelines.advectDye, bg, W, H);
         pass->end();
     }
 
     void computeDivergence(wgpu::raii::CommandEncoder& enc, uint32_t W, uint32_t H) {
-        wgpu::raii::BindGroup bg = makeBindGroup(device_, pipelines.divergence,
-                                                 {{*state.paramsBuffer, 8},
-                                                  {*state.velocity, state.velocity->getSize()},
-                                                  {*state.divergence, state.divergence->getSize()},
-                                                  {*state.obstacles, state.obstacles->getSize()}},
-                                                 "DivergenceBindGroup");
+        wgpu::raii::BindGroup bg =
+            makeBindGroup(device_, pipelines.divergence, {*state.paramsBuffer, *state.velocity, *state.divergence, *state.obstacles},
+                          "DivergenceBindGroup");
         wgpu::raii::ComputePassEncoder pass = enc->beginComputePass({});
         pipelines.dispatch(pass, pipelines.divergence, bg, W, H);
         pass->end();
     }
 
     void solvePressure(wgpu::raii::CommandEncoder& enc, uint32_t W, uint32_t H) {
-        wgpu::raii::BindGroup bg0 = makeBindGroup(device_, pipelines.pressure,
-                                                  {{*state.paramsBuffer, 8},
-                                                   {*state.pressure, state.pressure->getSize()},
-                                                   {*state.divergence, state.divergence->getSize()},
-                                                   {*state.pressure_next, state.pressure_next->getSize()},
-                                                   {*state.obstacles, state.obstacles->getSize()}},
-                                                  "SolvePressureBindGroup0");
-        wgpu::raii::BindGroup bg1 = makeBindGroup(device_, pipelines.pressure,
-                                                  {{*state.paramsBuffer, 8},
-                                                   {*state.pressure_next, state.pressure_next->getSize()},
-                                                   {*state.divergence, state.divergence->getSize()},
-                                                   {*state.pressure, state.pressure->getSize()},
-                                                   {*state.obstacles, state.obstacles->getSize()}},
-                                                  "SolvePressureBindGroup1");
+        wgpu::raii::BindGroup bg0 = makeBindGroup(
+            device_, pipelines.pressure, {*state.paramsBuffer, *state.pressure, *state.divergence, *state.pressure_next, *state.obstacles},
+            "SolvePressureBindGroup0");
+        wgpu::raii::BindGroup bg1 = makeBindGroup(
+            device_, pipelines.pressure, {*state.paramsBuffer, *state.pressure_next, *state.divergence, *state.pressure, *state.obstacles},
+            "SolvePressureBindGroup1");
 
         wgpu::raii::ComputePassEncoder pass = enc->beginComputePass({});
         pass->setPipeline(*pipelines.pressure);
@@ -279,23 +250,17 @@ private:
     }
 
     void subtractGradient(wgpu::raii::CommandEncoder& enc, uint32_t W, uint32_t H) {
-        wgpu::raii::BindGroup bg = makeBindGroup(device_, pipelines.subtract,
-                                                 {{*state.paramsBuffer, 8},
-                                                  {*state.pressure, state.pressure->getSize()},
-                                                  {*state.velocity, state.velocity->getSize()},
-                                                  {*state.velocity_next, state.velocity_next->getSize()},
-                                                  {*state.obstacles, state.obstacles->getSize()}},
-                                                 "SubtractGradientBindGroup");
+        wgpu::raii::BindGroup bg = makeBindGroup(
+            device_, pipelines.subtract, {*state.paramsBuffer, *state.pressure, *state.velocity, *state.velocity_next, *state.obstacles},
+            "SubtractGradientBindGroup");
         wgpu::raii::ComputePassEncoder pass = enc->beginComputePass({});
         pipelines.dispatch(pass, pipelines.subtract, bg, W, H);
         pass->end();
     }
 
     void applyBoundary(wgpu::raii::CommandEncoder& enc, uint32_t W, uint32_t H) {
-        wgpu::raii::BindGroup bg = makeBindGroup(
-            device_, pipelines.boundary,
-            {{*state.paramsBuffer, 8}, {*state.velocity, state.velocity->getSize()}, {*state.obstacles, state.obstacles->getSize()}},
-            "ApplyBoundaryBindGroup");
+        wgpu::raii::BindGroup bg =
+            makeBindGroup(device_, pipelines.boundary, {*state.paramsBuffer, *state.velocity, *state.obstacles}, "ApplyBoundaryBindGroup");
         wgpu::raii::ComputePassEncoder pass = enc->beginComputePass({});
         pipelines.dispatch(pass, pipelines.boundary, bg, W, H);
         pass->end();
