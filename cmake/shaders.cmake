@@ -22,7 +22,7 @@ function(compile_wgsl_to_header WGSL_FILE OUT_HEADERS_VAR)
     set(${OUT_HEADERS_VAR} ${${OUT_HEADERS_VAR}} ${H_FILE} PARENT_SCOPE)
 endfunction()
 
-file(GLOB WGSL_SOURCES
+file(GLOB_RECURSE WGSL_SOURCES
     "${CMAKE_SOURCE_DIR}/src/render/shaders/*.wgsl"
     "${CMAKE_SOURCE_DIR}/src/compute/shaders/*.wgsl"
 )

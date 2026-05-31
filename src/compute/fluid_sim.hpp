@@ -7,6 +7,7 @@
 #include "src/compute/fluid_pipelines.hpp"
 #include "src/compute/fluid_source.hpp"
 #include "src/compute/fluid_state.hpp"
+#include "src/compute/resample_pipelines.hpp"
 
 namespace {
     inline wgpu::BindGroup makeBindGroup(wgpu::Device device, wgpu::raii::ComputePipeline& pipeline,
@@ -39,9 +40,81 @@ public:
         queue_ = queue;
         state.init(device, queue, width, height);
         pipelines.init(device);
+        resamplePipelines.init(device);
     }
 
-    void resize(uint32_t width, uint32_t height) { state.resize(width, height); }
+    void resize(uint32_t w, uint32_t h) {
+        if (w != state.width || h == state.height) {
+            state.resize(w, h);
+        }
+    }
+
+    void resizeWithResample(uint32_t w, uint32_t h) {
+        struct ResampleParams {
+            uint32_t src_w, src_h, dst_w, dst_h;
+        };
+        ResampleParams rp{state.width, state.height, w, h};
+        wgpu::BufferDescriptor pbDesc{};
+        pbDesc.size = sizeof(rp);
+        pbDesc.usage = wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst;
+        pbDesc.label = wgpu::StringView("ResampleParams");
+        wgpu::raii::Buffer paramsBuffer = device_.createBuffer(pbDesc);
+        queue_.writeBuffer(*paramsBuffer, 0, &rp, sizeof(rp));
+
+        auto makeBuf = [&](size_t elementSize, std::string_view label) {
+            wgpu::BufferDescriptor desc{};
+            desc.size = w * h * elementSize;
+            desc.usage = wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst;
+            desc.label = wgpu::StringView(label);
+            return device_.createBuffer(desc);
+        };
+
+        wgpu::raii::Buffer new_velocity = makeBuf(2 * sizeof(float), "velocity_new");
+        wgpu::raii::Buffer new_pressure = makeBuf(sizeof(float), "pressure_new");
+        wgpu::raii::Buffer new_dye = makeBuf(sizeof(float), "dye_new");
+        wgpu::raii::Buffer new_obstacles = makeBuf(sizeof(uint32_t), "obstacles_new");
+
+        uint32_t W = (w + 7) / 8;
+        uint32_t H = (h + 7) / 8;
+
+        wgpu::raii::CommandEncoder enc = device_.createCommandEncoder({});
+        wgpu::raii::ComputePassEncoder pass = enc->beginComputePass({});
+
+        auto dispatch = [&](wgpu::raii::ComputePipeline& pipeline, wgpu::Buffer src, uint64_t srcSize, wgpu::Buffer dst, uint64_t dstSize) {
+            wgpu::raii::BindGroup bg = makeBindGroup(device_, pipeline,
+                                                     {
+                                                         {*paramsBuffer, sizeof(rp)},
+                                                         {src, srcSize},
+                                                         {dst, dstSize},
+                                                     },
+                                                     "ResampleBG");
+            FluidPipelines::dispatch(pass, pipeline, bg, W, H);
+        };
+
+        dispatch(resamplePipelines.vec2f, *state.velocity, state.velocity->getSize(), *new_velocity, new_velocity->getSize());
+        dispatch(resamplePipelines.f32, *state.pressure, state.pressure->getSize(), *new_pressure, new_pressure->getSize());
+        dispatch(resamplePipelines.f32, *state.dye, state.dye->getSize(), *new_dye, new_dye->getSize());
+        dispatch(resamplePipelines.u32, *state.obstacles, state.obstacles->getSize(), *new_obstacles, new_obstacles->getSize());
+
+        pass->end();
+        wgpu::raii::CommandBuffer cmd = enc->finish({});
+        queue_.submit(1, &*cmd);
+
+        state.width = w;
+        state.height = h;
+        state.velocity = std::move(new_velocity);
+        state.pressure = std::move(new_pressure);
+        state.dye = std::move(new_dye);
+        state.obstacles = std::move(new_obstacles);
+
+        state.velocity_next = makeBuf(2 * sizeof(float), "velocity_next");
+        state.pressure_next = makeBuf(sizeof(float), "pressure_next");
+        state.divergence = makeBuf(sizeof(float), "divergence");
+        state.dye_next = makeBuf(sizeof(float), "dye_next");
+
+        uint32_t params[2] = {w, h};
+        queue_.writeBuffer(*state.paramsBuffer, 0, params, sizeof(params));
+    }
 
     void step(float dt) {
         queue_.writeBuffer(*state.dtBuffer, 0, &dt, sizeof(dt));
@@ -129,6 +202,7 @@ public:
 
     FluidState state;
     FluidPipelines pipelines;
+    ResamplePipelines resamplePipelines;
 
 private:
     wgpu::Device device_;

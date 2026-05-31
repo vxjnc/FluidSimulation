@@ -69,7 +69,8 @@ public:
                     s.vy *= ratio;
                     s.radius *= ratio;
                 }
-                sim.resize(static_cast<uint32_t>(viewport.w * settings.simScale), static_cast<uint32_t>(viewport.h * settings.simScale));
+                sim.resizeWithResample(static_cast<uint32_t>(viewport.w * settings.simScale),
+                                       static_cast<uint32_t>(viewport.h * settings.simScale));
             }
 
             ImGui::Separator();
@@ -166,8 +167,8 @@ public:
 
                 if (vw != viewport.w || vh != viewport.h) {
                     viewport.init(WGPUContext::instance().device(), vw, vh, WGPUContext::instance().surfaceFormat());
-                    sim.resize(static_cast<uint32_t>(static_cast<float>(vw) * settings.simScale),
-                               static_cast<uint32_t>(static_cast<float>(vh) * settings.simScale));
+                    sim.resizeWithResample(static_cast<uint32_t>(static_cast<float>(vw) * settings.simScale),
+                                           static_cast<uint32_t>(static_cast<float>(vh) * settings.simScale));
                 }
 
                 if (ImGui::IsWindowHovered()) {
