@@ -36,8 +36,6 @@ public:
         viewport.init(ctx.device(), sim_w, height, ctx.surfaceFormat());
 
         simulation.init(ctx.device(), ctx.queue(), sim_w * settings.simScale, height * settings.simScale);
-
-        prevTime = glfwGetTime();
     };
 
     ~Application() {
@@ -55,13 +53,9 @@ public:
             glfwPollEvents();
             ctx.processEvents();
 
-            double now = glfwGetTime();
-            float dt = static_cast<float>(now - prevTime);
-            prevTime = now;
-
             processInput();
 
-            update(dt);
+            update(settings.dt);
 
             imguiManager.beginFrame();
             imguiManager.renderUI(viewport, mouse, simulation, settings);
@@ -155,5 +149,4 @@ private:
     FluidViewport viewport;
     ImGuiManager imguiManager;
     MouseState mouse;
-    double prevTime = 0.0;
 };

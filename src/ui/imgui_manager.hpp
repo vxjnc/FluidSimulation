@@ -73,6 +73,10 @@ public:
                                        static_cast<uint32_t>(viewport.h * settings.simScale));
             }
 
+            if (ImGui::SliderFloat("Sim dt", &settings.dt, 0.001f, 0.1f)) {
+                // pass
+            }
+
             if (ImGui::Button("Clear")) {
                 sim.state.clear();
             }
