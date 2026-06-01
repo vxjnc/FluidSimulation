@@ -2,15 +2,22 @@
 
 #include <webgpu/webgpu-raii.hpp>
 
+#include "src/compute/wgpu_helper.hpp"
+
 class FluidState {
 public:
     void init(wgpu::Device device, wgpu::Queue queue, uint32_t w, uint32_t h) {
         device_ = device;
         queue_ = queue;
 
-        paramsBuffer = makeBuffer(2 * sizeof(uint32_t), wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst, "sim_params");
-        dtBuffer = makeBuffer(sizeof(float), wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst, "dt");
-        injectBuffer = makeBuffer(5 * sizeof(float), wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst, "inject_params");
+        paramsBuffer =
+            WGPUHelper::makeBuffer(device, 2 * sizeof(uint32_t),
+                                   wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst, "sim_params");
+        dtBuffer = WGPUHelper::makeBuffer(device, sizeof(float),
+                                          wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst, "dt");
+        injectBuffer =
+            WGPUHelper::makeBuffer(device, 5 * sizeof(float),
+                                   wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst, "inject_params");
 
         resize(w, h);
     }
@@ -20,7 +27,8 @@ public:
         height = h;
 
         auto buf = [&](std::string_view label, size_t sizeElement) {
-            return makeBuffer(width * height * sizeElement, wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst, label);
+            return WGPUHelper::makeBuffer(device_, width * height * sizeElement,
+                                          wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst, label);
         };
 
         velocity = buf("velocity", 2 * sizeof(float));
@@ -74,14 +82,6 @@ public:
     wgpu::raii::Buffer injectBuffer;
 
 private:
-    wgpu::Buffer makeBuffer(size_t bytes, wgpu::BufferUsage usage, std::string_view label) {
-        wgpu::BufferDescriptor desc{};
-        desc.label = wgpu::StringView(label);
-        desc.size = bytes;
-        desc.usage = usage;
-        return device_.createBuffer(desc);
-    }
-
     wgpu::Device device_;
     wgpu::Queue queue_;
 };

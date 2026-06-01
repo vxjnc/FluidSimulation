@@ -119,37 +119,6 @@ public:
     uint32_t width() const { return width_; }
     uint32_t height() const { return height_; }
 
-    wgpu::Buffer createBuffer(size_t bytes, wgpu::BufferUsage usage, std::string_view label, bool mappedAtCreation = false) {
-        wgpu::BufferDescriptor desc{};
-        desc.label = wgpu::StringView(label);
-        desc.size = bytes;
-        desc.usage = usage;
-        desc.mappedAtCreation = mappedAtCreation;
-        return device_->createBuffer(desc);
-    }
-
-    wgpu::BindGroup makeBindGroup(wgpu::raii::ComputePipeline& pipeline, std::initializer_list<std::pair<wgpu::Buffer, uint64_t>> buffers,
-                                  std::string_view label) {
-        wgpu::raii::BindGroupLayout layout = pipeline->getBindGroupLayout(0);
-
-        std::vector<wgpu::BindGroupEntry> entries;
-        uint32_t binding = 0;
-        for (auto& [buf, size] : buffers) {
-            wgpu::BindGroupEntry e{};
-            e.binding = binding++;
-            e.buffer = buf;
-            e.size = size;
-            entries.emplace_back(e);
-        }
-
-        wgpu::BindGroupDescriptor desc{};
-        desc.layout = *layout;
-        desc.entryCount = entries.size();
-        desc.entries = entries.data();
-        desc.label = wgpu::StringView(label);
-        return device_->createBindGroup(desc);
-    }
-
 private:
     WGPUContext() = default;
 
