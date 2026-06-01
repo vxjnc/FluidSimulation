@@ -133,7 +133,10 @@ private:
         passDesc.colorAttachmentCount = 1;
         passDesc.colorAttachments = &att;
 
-        wgpu::raii::CommandEncoder enc = ctx.device().createCommandEncoder({});
+        wgpu::CommandEncoderDescriptor cmdDesc{};
+        cmdDesc.label = wgpu::StringView("CommandEncoder");
+
+        wgpu::raii::CommandEncoder enc = ctx.device().createCommandEncoder(cmdDesc);
         wgpu::raii::RenderPassEncoder pass = enc->beginRenderPass(passDesc);
         imguiManager.endFrame(*pass);
         pass->end();

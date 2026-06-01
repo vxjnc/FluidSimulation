@@ -36,6 +36,29 @@ public:
         queue_.writeBuffer(*paramsBuffer, 0, params, sizeof(params));
     }
 
+    void clear() {
+        wgpu::CommandEncoderDescriptor encoderDesc{};
+        encoderDesc.label = wgpu::StringView("FluidClearEncoder");
+        wgpu::CommandEncoder encoder = device_.createCommandEncoder(encoderDesc);
+
+        size_t numPixels = static_cast<size_t>(width) * height;
+
+        encoder.clearBuffer(*velocity, 0, numPixels * 2 * sizeof(float));
+        encoder.clearBuffer(*velocity_next, 0, numPixels * 2 * sizeof(float));
+        encoder.clearBuffer(*pressure, 0, numPixels * 1 * sizeof(float));
+        encoder.clearBuffer(*pressure_next, 0, numPixels * 1 * sizeof(float));
+        encoder.clearBuffer(*divergence, 0, numPixels * 1 * sizeof(float));
+        encoder.clearBuffer(*dye, 0, numPixels * 1 * sizeof(float));
+        encoder.clearBuffer(*dye_next, 0, numPixels * 1 * sizeof(float));
+        encoder.clearBuffer(*obstacles, 0, numPixels * 1 * sizeof(uint32_t));
+
+        wgpu::CommandBufferDescriptor cmdBufferDesc{};
+        cmdBufferDesc.label = wgpu::StringView("FluidClear");
+        wgpu::CommandBuffer commands = encoder.finish(cmdBufferDesc);
+
+        queue_.submit(1, &commands);
+    }
+
     uint32_t width = 0;
     uint32_t height = 0;
 

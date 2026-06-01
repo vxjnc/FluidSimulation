@@ -73,6 +73,10 @@ public:
                                        static_cast<uint32_t>(viewport.h * settings.simScale));
             }
 
+            if (ImGui::Button("Clear")) {
+                sim.state.clear();
+            }
+
             ImGui::Separator();
 
             ImGui::Text("Render Mode");
