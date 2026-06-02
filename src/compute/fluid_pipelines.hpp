@@ -1,8 +1,7 @@
 #pragma once
 #include <array>
-#include <initializer_list>
 #include <string_view>
-#include <vector>
+#include <variant>
 
 #include <webgpu/webgpu-raii.hpp>
 
@@ -15,6 +14,8 @@
 #include "generated/shaders/pressure.wgsl.h"
 #include "generated/shaders/subtract.wgsl.h"
 #include "src/compute/wgpu_helper.hpp"
+
+using BindingType = std::variant<wgpu::BufferBindingType, wgpu::TextureSampleType>;
 
 class FluidPipelines {
 public:
@@ -64,11 +65,28 @@ public:
             WGPUHelper::makeShaderModule(device, wgsl, std::format("Shader{}", label));
 
         constexpr size_t N = sizeof...(Args);
-        std::array<wgpu::BindGroupLayoutEntry, N> entries;
-        uint32_t binding = 0;
-        ((entries[binding].binding = binding, entries[binding].visibility = wgpu::ShaderStage::Compute,
-          entries[binding].buffer.type = bindings, binding++),
-         ...);
+        std::array<wgpu::BindGroupLayoutEntry, N> entries{};
+
+        std::array<BindingType, N> bindingTypes{bindings...};
+
+        for (uint32_t binding = 0; binding < N; ++binding) {
+            entries[binding].binding = binding;
+            entries[binding].visibility = wgpu::ShaderStage::Compute;
+
+            std::visit(
+                [&entry = entries[binding]](auto&& arg) {
+                    using T = std::decay_t<decltype(arg)>;
+                    if constexpr (std::is_same_v<T, wgpu::BufferBindingType>) {
+                        entry.buffer.type = arg;
+                    }
+                    else if constexpr (std::is_same_v<T, wgpu::TextureSampleType>) {
+                        entry.buffer.type = wgpu::BufferBindingType::BindingNotUsed;
+                        entry.texture.sampleType = arg;
+                        entry.texture.viewDimension = wgpu::TextureViewDimension::_2D;
+                    }
+                },
+                bindingTypes[binding]);
+        }
 
         wgpu::BindGroupLayoutDescriptor bglDesc{};
         bglDesc.entryCount = entries.size();

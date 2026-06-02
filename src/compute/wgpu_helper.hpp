@@ -1,22 +1,38 @@
 #pragma once
+#include <array>
+#include <span>
+
 #include <webgpu/webgpu-raii.hpp>
 
+#include "webgpu/webgpu.hpp"
+
 namespace WGPUHelper {
+    using BindGroupResource = std::variant<wgpu::Buffer, wgpu::TextureView>;
+    template <size_t N>
     inline wgpu::BindGroup makeBindGroup(wgpu::Device device, wgpu::raii::ComputePipeline& pipeline,
-                                         std::initializer_list<wgpu::Buffer> buffers,
+                                         std::span<const BindGroupResource, N> resources,
                                          std::string_view label) {
         wgpu::raii::BindGroupLayout layout = pipeline->getBindGroupLayout(0);
 
-        std::vector<wgpu::BindGroupEntry> entries;
-        entries.reserve(buffers.size());
+        std::array<wgpu::BindGroupEntry, N> entries;
 
         uint32_t binding = 0;
-        for (auto& buf : buffers) {
+        for (const auto& res : resources) {
             wgpu::BindGroupEntry e{};
             e.binding = binding++;
-            e.buffer = buf;
-            e.size = buf.getSize();
-            entries.emplace_back(e);
+            std::visit(
+                [&e](auto&& arg) {
+                    using T = std::decay_t<decltype(arg)>;
+                    if constexpr (std::is_same_v<T, wgpu::Buffer>) {
+                        e.buffer = arg;
+                        e.size = arg.getSize();
+                    }
+                    else if constexpr (std::is_same_v<T, wgpu::TextureView>) {
+                        e.textureView = arg;
+                    }
+                },
+                res);
+            entries[binding - 1] = std::move(e);
         }
 
         wgpu::BindGroupDescriptor desc{};
@@ -25,6 +41,11 @@ namespace WGPUHelper {
         desc.entries = entries.data();
         desc.label = wgpu::StringView(label);
         return device.createBindGroup(desc);
+    }
+    template <size_t N>
+    inline wgpu::BindGroup makeBindGroup(wgpu::Device device, wgpu::raii::ComputePipeline& pipeline,
+                                         const BindGroupResource (&resources)[N], std::string_view label) {
+        return makeBindGroup(device, pipeline, std::span<const BindGroupResource, N>(resources), label);
     }
 
     inline wgpu::Buffer makeBuffer(wgpu::Device device, size_t bytes, wgpu::BufferUsage usage,
@@ -35,6 +56,22 @@ namespace WGPUHelper {
         desc.usage = usage;
         desc.mappedAtCreation = mappedAtCreation;
         return device.createBuffer(desc);
+    }
+
+    inline wgpu::Texture makeTexture(wgpu::Device device, wgpu::Extent3D size, wgpu::TextureFormat format,
+                                     wgpu::TextureUsage usage, std::string_view label,
+                                     wgpu::TextureDimension dimension = wgpu::TextureDimension::_2D,
+                                     uint32_t mipLevelCount = 1, uint32_t sampleCount = 1) {
+        wgpu::TextureDescriptor texDesc = {};
+        texDesc.label = wgpu::StringView(label);
+        texDesc.dimension = dimension;
+        texDesc.size = size;
+        texDesc.format = format;
+        texDesc.mipLevelCount = mipLevelCount;
+        texDesc.sampleCount = sampleCount;
+        texDesc.usage = usage;
+
+        return device.createTexture(texDesc);
     }
 
     inline wgpu::ShaderModule makeShaderModule(wgpu::Device device, std::string_view wgsl,
