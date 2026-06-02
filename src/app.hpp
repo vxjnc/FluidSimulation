@@ -6,6 +6,7 @@
 #include "compute/fluid_sim.hpp"
 #include "render/render.hpp"
 #include "src/app_settings.hpp"
+#include "src/compute/fluid_source.hpp"
 #include "ui/fluid_viewport.hpp"
 #include "ui/imgui_manager.hpp"
 
@@ -39,8 +40,9 @@ public:
 
         simulation.init(ctx.device(), ctx.queue(), sim_w * settings.simScale, height * settings.simScale);
 
-        simulation.sources.emplace_back(0, height * settings.simScale * 0.5f, 200.f, 0, 50.f);
-        simulation.paintObstacle(300 * settings.simScale, height * settings.simScale * 0.5f, 100.f);
+        simulation.sources.emplace_back(1, height * settings.simScale * 0.5f, 200.f, 0, 50.f,
+                                        FluidSource::Form::LINE);
+        simulation.paintObstacle(300.f * settings.simScale, height * settings.simScale * 0.5f, 100.f);
     };
 
     ~Application() {
@@ -79,7 +81,7 @@ private:
 
         if (settings.brushMode == BrushMode::Inject) {
             if (mouse.leftPressed) {
-                simulation.inject(sx, sy, sdx * settings.brushStrength, -sdy * settings.brushStrength, sr);
+                simulation.inject({sx, sy, sdx * settings.brushStrength, -sdy * settings.brushStrength, sr});
             }
         }
         else {

@@ -10,7 +10,6 @@
 #include "generated/shaders/boundary.wgsl.h"
 #include "generated/shaders/divergence.wgsl.h"
 #include "generated/shaders/inject.wgsl.h"
-#include "generated/shaders/inject_dye.wgsl.h"
 #include "generated/shaders/pressure.wgsl.h"
 #include "generated/shaders/subtract.wgsl.h"
 #include "src/compute/wgpu_helper.hpp"
@@ -21,11 +20,8 @@ class FluidPipelines {
 public:
     void init(wgpu::Device device) {
         inject = createComputePipeline(device, inject_wgsl, "Inject", wgpu::BufferBindingType::Uniform,
-                                       wgpu::BufferBindingType::Uniform, wgpu::BufferBindingType::Storage);
-
-        injectDye =
-            createComputePipeline(device, inject_dye_wgsl, "InjectDye", wgpu::BufferBindingType::Uniform,
-                                  wgpu::BufferBindingType::Uniform, wgpu::BufferBindingType::Storage);
+                                       wgpu::BufferBindingType::Uniform, wgpu::BufferBindingType::Storage,
+                                       wgpu::BufferBindingType::Storage);
 
         advect =
             createComputePipeline(device, advect_wgsl, "Advect", wgpu::BufferBindingType::Uniform,
@@ -115,7 +111,6 @@ public:
     }
 
     wgpu::raii::ComputePipeline inject;
-    wgpu::raii::ComputePipeline injectDye;
     wgpu::raii::ComputePipeline advect;
     wgpu::raii::ComputePipeline advectDye;
     wgpu::raii::ComputePipeline divergence;

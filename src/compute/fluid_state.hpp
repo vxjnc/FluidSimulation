@@ -16,7 +16,7 @@ public:
         dtBuffer = WGPUHelper::makeBuffer(device, sizeof(float),
                                           wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst, "dt");
         injectBuffer =
-            WGPUHelper::makeBuffer(device, 5 * sizeof(float),
+            WGPUHelper::makeBuffer(device, 5 * sizeof(float) + 2 * sizeof(uint32_t),
                                    wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst, "inject_params");
 
         resize(w, h);

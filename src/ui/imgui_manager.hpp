@@ -52,10 +52,12 @@ public:
         // --- Controls Panel ---
         ImGui::SetNextWindowPos(ImVec2(0, 0));
         ImGui::SetNextWindowSize(ImVec2(panelWidth_, screen_h));
-        ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
+        ImGui::Begin("Controls", nullptr,
+                     ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
         {
             ImGui::Text("FPS: %.1f", io.Framerate);
-            ImGui::Text("Sim size: %ux%u = %u", sim.state.width, sim.state.height, sim.state.width * sim.state.height);
+            ImGui::Text("Sim size: %ux%u = %u", sim.state.width, sim.state.height,
+                        sim.state.width * sim.state.height);
 
             ImGui::Separator();
 
@@ -73,9 +75,7 @@ public:
                                        static_cast<uint32_t>(viewport.h * settings.simScale));
             }
 
-            if (ImGui::SliderFloat("Sim dt", &settings.dt, 0.001f, 0.1f)) {
-                // pass
-            }
+            ImGui::SliderFloat("Sim dt", &settings.dt, 0.001f, 0.1f);
 
             if (ImGui::Button("Clear")) {
                 sim.state.clear();
@@ -117,6 +117,35 @@ public:
                 ImGui::SameLine();
                 ImGui::Text("Source %zu", i + 1);
 
+                int current_form = static_cast<int>(s.form);
+                const char* forms[] = {"Circle", "Line"};
+                if (ImGui::Combo("Form", &current_form, forms, sizeof(forms) / sizeof(forms[0]))) {
+                    s.form = static_cast<FluidSource::Form>(current_form);
+                }
+
+                bool has_velocity = (s.mode_mask & FluidSource::Mode::VELOCITY) != 0;
+                bool has_dye = (s.mode_mask & FluidSource::Mode::DYE) != 0;
+
+                ImGui::Text("Inject:");
+                ImGui::SameLine();
+                if (ImGui::Checkbox("Velocity", &has_velocity)) {
+                    if (has_velocity) {
+                        s.mode_mask |= FluidSource::Mode::VELOCITY;
+                    }
+                    else {
+                        s.mode_mask &= ~FluidSource::Mode::VELOCITY;
+                    }
+                }
+                ImGui::SameLine();
+                if (ImGui::Checkbox("Dye", &has_dye)) {
+                    if (has_dye) {
+                        s.mode_mask |= FluidSource::Mode::DYE;
+                    }
+                    else {
+                        s.mode_mask &= ~FluidSource::Mode::DYE;
+                    }
+                }
+
                 float display_x = s.x / settings.simScale;
                 if (ImGui::SliderFloat("X", &display_x, 0.0f, static_cast<float>(viewport.w))) {
                     s.x = display_x * settings.simScale;
@@ -127,18 +156,21 @@ public:
                     s.y = display_y * settings.simScale;
                 }
 
-                float display_vx = s.vx / settings.simScale;
-                if (ImGui::SliderFloat("VX", &display_vx, -200.0f, 200.0f)) {
-                    s.vx = display_vx * settings.simScale;
-                }
+                if (has_velocity || s.form == FluidSource::Form::LINE) {
+                    float display_vx = s.vx / settings.simScale;
+                    if (ImGui::SliderFloat("VX", &display_vx, -200.0f, 200.0f)) {
+                        s.vx = display_vx * settings.simScale;
+                    }
 
-                float display_vy = s.vy / settings.simScale;
-                if (ImGui::SliderFloat("VY", &display_vy, -200.0f, 200.0f)) {
-                    s.vy = display_vy * settings.simScale;
+                    float display_vy = s.vy / settings.simScale;
+                    if (ImGui::SliderFloat("VY", &display_vy, -200.0f, 200.0f)) {
+                        s.vy = display_vy * settings.simScale;
+                    }
                 }
 
                 float display_r = s.radius / settings.simScale;
-                if (ImGui::SliderFloat("Radius", &display_r, 1.0f, 20.0f)) {
+                const char* radius_label = (s.form == FluidSource::Form::LINE) ? "Length" : "Radius";
+                if (ImGui::SliderFloat(radius_label, &display_r, 1.0f, 20.0f)) {
                     s.radius = display_r * settings.simScale;
                 }
 
@@ -154,7 +186,8 @@ public:
 
             if (ImGui::Button("Add Source")) {
                 sim.sources.emplace_back(static_cast<float>(viewport.w) / 2.f * settings.simScale,
-                                         static_cast<float>(viewport.h) / 2.f * settings.simScale, 0, 100, 4 * settings.simScale);
+                                         static_cast<float>(viewport.h) / 2.f * settings.simScale, 0, 100,
+                                         4 * settings.simScale);
             }
         }
         ImGui::End();
@@ -165,7 +198,8 @@ public:
 
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
         ImGui::Begin("Viewport", nullptr,
-                     ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
+                     ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse |
+                         ImGuiWindowFlags_NoTitleBar);
         {
             ImVec2 size = ImGui::GetContentRegionAvail();
 
@@ -174,7 +208,8 @@ public:
                 uint32_t vh = static_cast<uint32_t>(size.y);
 
                 if (vw != viewport.w || vh != viewport.h) {
-                    viewport.init(WGPUContext::instance().device(), vw, vh, WGPUContext::instance().surfaceFormat());
+                    viewport.init(WGPUContext::instance().device(), vw, vh,
+                                  WGPUContext::instance().surfaceFormat());
                     sim.resizeWithResample(static_cast<uint32_t>(static_cast<float>(vw) * settings.simScale),
                                            static_cast<uint32_t>(static_cast<float>(vh) * settings.simScale));
                 }
@@ -203,7 +238,9 @@ public:
         ImGui::Render();
     }
 
-    void endFrame(WGPURenderPassEncoder passEncoder) { ImGui_ImplWGPU_RenderDrawData(ImGui::GetDrawData(), passEncoder); }
+    void endFrame(WGPURenderPassEncoder passEncoder) {
+        ImGui_ImplWGPU_RenderDrawData(ImGui::GetDrawData(), passEncoder);
+    }
 
     float panelWidth() const { return panelWidth_; }
 
