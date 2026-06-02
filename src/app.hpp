@@ -17,7 +17,8 @@ public:
         }
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-        window = glfwCreateWindow(static_cast<int>(width), static_cast<int>(height), title.data(), nullptr, nullptr);
+        window = glfwCreateWindow(static_cast<int>(width), static_cast<int>(height), title.data(), nullptr,
+                                  nullptr);
         if (!window) {
             glfwTerminate();
             throw std::runtime_error("Failed to create window");
@@ -28,14 +29,18 @@ public:
 
         imguiManager.init(window, ctx.device(), ctx.surfaceFormat());
 
-        glfwSetFramebufferSizeCallback(
-            window, [](GLFWwindow*, int w, int h) { WGPUContext::instance().resize(static_cast<uint32_t>(w), static_cast<uint32_t>(h)); });
+        glfwSetFramebufferSizeCallback(window, [](GLFWwindow*, int w, int h) {
+            WGPUContext::instance().resize(static_cast<uint32_t>(w), static_cast<uint32_t>(h));
+        });
 
         uint32_t sim_w = width - static_cast<uint32_t>(imguiManager.panelWidth());
         renderer.init();
         viewport.init(ctx.device(), sim_w, height, ctx.surfaceFormat());
 
         simulation.init(ctx.device(), ctx.queue(), sim_w * settings.simScale, height * settings.simScale);
+
+        simulation.sources.emplace_back(0, height * settings.simScale * 0.5f, 200.f, 0, 50.f);
+        simulation.paintObstacle(300 * settings.simScale, height * settings.simScale * 0.5f, 100.f);
     };
 
     ~Application() {
@@ -55,7 +60,7 @@ public:
 
             processInput();
 
-            update(settings.dt);
+            update();
 
             imguiManager.beginFrame();
             imguiManager.renderUI(viewport, mouse, simulation, settings);
@@ -100,9 +105,14 @@ private:
         }
     }
 
-    void update(float dt) {
+    void update() {
+        static float lastDt = 0.0f;
+        if (settings.dt != lastDt) {
+            simulation.setDt(settings.dt);
+            lastDt = settings.dt;
+        }
         if (!settings.paused) {
-            simulation.step(dt);
+            simulation.step();
         }
     }
 

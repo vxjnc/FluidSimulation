@@ -21,7 +21,7 @@ public:
     }
 
     void resize(uint32_t w, uint32_t h) {
-        if (w != state.width || h == state.height) {
+        if (w != state.width || h != state.height) {
             state.resize(w, h);
         }
     }
@@ -88,8 +88,10 @@ public:
         queue_.writeBuffer(*state.paramsBuffer, 0, params, sizeof(params));
     }
 
-    void step(float dt) {
-        queue_.writeBuffer(*state.dtBuffer, 0, &dt, sizeof(dt));
+    void setDt(float dt) { queue_.writeBuffer(*state.dtBuffer, 0, &dt, sizeof(dt)); }
+
+    void step() {
+        injectSource();
 
         wgpu::raii::CommandEncoder enc = device_.createCommandEncoder({});
 
@@ -97,9 +99,9 @@ public:
         uint32_t H = (state.height + 7) / 8;
 
         advect(enc, W, H);
-        std::swap(state.velocity, state.velocity_next);
-
         advectDye(enc, W, H);
+
+        std::swap(state.velocity, state.velocity_next);
         std::swap(state.dye, state.dye_next);
 
         computeDivergence(enc, W, H);
@@ -112,8 +114,6 @@ public:
 
         wgpu::raii::CommandBuffer cmd = enc->finish({});
         queue_.submit(1, &*cmd);
-
-        injectSource();
     }
 
     void inject(float x, float y, float vx, float vy, float radius) {
@@ -227,15 +227,15 @@ private:
             {*state.paramsBuffer, *state.pressure_next, *state.divergence, *state.pressure, *state.obstacles},
             "SolvePressureBindGroup1");
 
-        wgpu::raii::ComputePassEncoder pass = enc->beginComputePass({});
-        pass->setPipeline(*pipelines.pressure);
-        for (int i = 0; i < 31; ++i) {
-            pass->setBindGroup(0, i % 2 == 0 ? *bg0 : *bg1, 0, nullptr);
+        constexpr size_t ITERS = 40;
+        static_assert(ITERS % 2 == 0, "pressure iterations must be even");
+        for (size_t i = 0; i < ITERS; ++i) {
+            wgpu::raii::ComputePassEncoder pass = enc->beginComputePass({});
+            pass->setPipeline(*pipelines.pressure);
+            pass->setBindGroup(0, i % 2 ? *bg1 : *bg0, 0, nullptr);
             pass->dispatchWorkgroups(W, H, 1);
+            pass->end();
         }
-        pass->end();
-
-        std::swap(state.pressure, state.pressure_next);
     }
 
     void subtractGradient(wgpu::raii::CommandEncoder& enc, uint32_t W, uint32_t H) {
