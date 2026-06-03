@@ -9,6 +9,7 @@
 #include "src/compute/fluid_state.hpp"
 #include "src/compute/resample_pipelines.hpp"
 #include "src/compute/wgpu_helper.hpp"
+#include "webgpu/webgpu.hpp"
 
 class FluidSim {
 public:
@@ -192,7 +193,10 @@ private:
             device_, pipelines.advect,
             {*state.paramsBuffer, *state.dtBuffer, *state.velocity, *state.velocity_next, *state.obstacles},
             "AdvectBindGroup");
-        wgpu::raii::ComputePassEncoder pass = enc->beginComputePass();
+
+        wgpu::ComputePassDescriptor passDesc{};
+        passDesc.label = wgpu::StringView("AdvectPass");
+        wgpu::raii::ComputePassEncoder pass = enc->beginComputePass(passDesc);
         pipelines.dispatch(pass, pipelines.advect, bg, W, H);
         pass->end();
     }
@@ -203,7 +207,9 @@ private:
                                       {*state.paramsBuffer, *state.dtBuffer, *state.velocity, *state.dye,
                                        *state.dye_next, *state.obstacles},
                                       "AdvectDyeBindGroup");
-        wgpu::raii::ComputePassEncoder pass = enc->beginComputePass({});
+        wgpu::ComputePassDescriptor passDesc{};
+        passDesc.label = wgpu::StringView("AdvectDyePass");
+        wgpu::raii::ComputePassEncoder pass = enc->beginComputePass(passDesc);
         pipelines.dispatch(pass, pipelines.advectDye, bg, W, H);
         pass->end();
     }
@@ -213,7 +219,9 @@ private:
             device_, pipelines.divergence,
             {*state.paramsBuffer, *state.velocity, *state.divergence, *state.obstacles},
             "DivergenceBindGroup");
-        wgpu::raii::ComputePassEncoder pass = enc->beginComputePass({});
+        wgpu::ComputePassDescriptor passDesc{};
+        passDesc.label = wgpu::StringView("DivergencePass");
+        wgpu::raii::ComputePassEncoder pass = enc->beginComputePass(passDesc);
         pipelines.dispatch(pass, pipelines.divergence, bg, W, H);
         pass->end();
     }
@@ -231,7 +239,9 @@ private:
         constexpr size_t ITERS = 40;
         static_assert(ITERS % 2 == 0, "pressure iterations must be even");
         for (size_t i = 0; i < ITERS; ++i) {
-            wgpu::raii::ComputePassEncoder pass = enc->beginComputePass({});
+            wgpu::ComputePassDescriptor passDesc{};
+            passDesc.label = wgpu::StringView("SolvePressurePass");
+            wgpu::raii::ComputePassEncoder pass = enc->beginComputePass(passDesc);
             pass->setPipeline(*pipelines.pressure);
             pass->setBindGroup(0, i % 2 ? *bg1 : *bg0, 0, nullptr);
             pass->dispatchWorkgroups(W, H, 1);
@@ -244,7 +254,9 @@ private:
             device_, pipelines.subtract,
             {*state.paramsBuffer, *state.pressure, *state.velocity, *state.velocity_next, *state.obstacles},
             "SubtractGradientBindGroup");
-        wgpu::raii::ComputePassEncoder pass = enc->beginComputePass({});
+        wgpu::ComputePassDescriptor passDesc{};
+        passDesc.label = wgpu::StringView("SubtractGradientPass");
+        wgpu::raii::ComputePassEncoder pass = enc->beginComputePass(passDesc);
         pipelines.dispatch(pass, pipelines.subtract, bg, W, H);
         pass->end();
     }
@@ -253,7 +265,9 @@ private:
         wgpu::raii::BindGroup bg = WGPUHelper::makeBindGroup(
             device_, pipelines.boundary, {*state.paramsBuffer, *state.velocity, *state.obstacles},
             "ApplyBoundaryBindGroup");
-        wgpu::raii::ComputePassEncoder pass = enc->beginComputePass({});
+        wgpu::ComputePassDescriptor passDesc{};
+        passDesc.label = wgpu::StringView("ApplyBoundaryPass");
+        wgpu::raii::ComputePassEncoder pass = enc->beginComputePass(passDesc);
         pipelines.dispatch(pass, pipelines.boundary, bg, W, H);
         pass->end();
     }

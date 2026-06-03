@@ -38,10 +38,28 @@ public:
         wgpu::InstanceDescriptor instanceDesc{};
 
 #ifndef NDEBUG
+
+#ifdef WEBGPU_BACKEND_WGPU
         WGPUInstanceExtras extras{};
         extras.chain.sType = static_cast<WGPUSType>(WGPUNativeSType::WGPUSType_InstanceExtras);
         extras.flags = WGPUInstanceFlag_Debug | WGPUInstanceFlag_Validation;
         instanceDesc.nextInChain = &extras.chain;
+#endif
+
+#ifdef WEBGPU_BACKEND_DAWN
+
+        static const char* enabledToggles[] = {
+            "use_user_defined_labels_in_backend",
+            "dump_shaders",
+            "validation_manual_triggering",
+        };
+        static wgpu::DawnTogglesDescriptor dawnToggles{};
+        dawnToggles.chain.sType = wgpu::SType::DawnTogglesDescriptor;
+        dawnToggles.enabledToggleCount = sizeof(enabledToggles) / sizeof(enabledToggles[0]);
+        dawnToggles.enabledToggles = enabledToggles;
+        instanceDesc.nextInChain = &dawnToggles.chain;
+#endif
+
 #endif
 
         instance_ = wgpu::createInstance(instanceDesc);
@@ -65,15 +83,18 @@ public:
 
         wgpu::DeviceDescriptor deviceDesc{};
         deviceDesc.deviceLostCallbackInfo.mode = wgpu::CallbackMode::AllowSpontaneous;
-        deviceDesc.deviceLostCallbackInfo.callback = [](WGPUDevice const*, WGPUDeviceLostReason reason, WGPUStringView msg, void*, void*) {
+        deviceDesc.deviceLostCallbackInfo.callback = [](WGPUDevice const*, WGPUDeviceLostReason reason,
+                                                        WGPUStringView msg, void*, void*) {
             if (reason == wgpu::DeviceLostReason::Destroyed) {
                 return;
             }
 
-            std::cerr << "wgpu device lost (" << reason << "): " << std::string_view(msg.data, msg.length) << "\n";
+            std::cerr << "wgpu device lost (" << reason << "): " << std::string_view(msg.data, msg.length)
+                      << "\n";
         };
 
-        deviceDesc.uncapturedErrorCallbackInfo.callback = [](WGPUDevice const*, WGPUErrorType type, WGPUStringView msg, void*, void*) {
+        deviceDesc.uncapturedErrorCallbackInfo.callback = [](WGPUDevice const*, WGPUErrorType type,
+                                                             WGPUStringView msg, void*, void*) {
             std::cerr << "wgpu error (" << type << "): " << std::string_view(msg.data, msg.length) << "\n";
         };
 

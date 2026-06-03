@@ -85,4 +85,17 @@ namespace WGPUHelper {
         desc.nextInChain = reinterpret_cast<WGPUChainedStruct*>(&wgslDesc);
         return device.createShaderModule(desc);
     }
+
+    inline wgpu::raii::ComputePipeline makeComputePipeline(wgpu::Device device, std::string_view wgsl,
+                                                           std::string_view label) {
+        wgpu::raii::ShaderModule shader = makeShaderModule(device, wgsl, std::format("Shader{}", label));
+
+        wgpu::ComputePipelineDescriptor pipeDesc{};
+        pipeDesc.label = wgpu::StringView(label);
+        pipeDesc.layout = nullptr;
+        pipeDesc.compute.module = *shader;
+        pipeDesc.compute.entryPoint = wgpu::StringView("main");
+
+        return device.createComputePipeline(pipeDesc);
+    }
 }

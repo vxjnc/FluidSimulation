@@ -15,23 +15,23 @@ fn idx(x: u32, y: u32) -> u32 {
 }
 
 fn sample_dye(pos: vec2f) -> f32 {
-    let max_bounds = vec2f(f32(params.width - 1u), f32(params.height - 1u));
+    let x = clamp(pos.x, 0.0, f32(params.width - 1));
+    let y = clamp(pos.y, 0.0, f32(params.height - 1));
 
-    let clamped_pos = clamp(pos, vec2f(0.0), max_bounds);
+    let x0 = u32(x);
+    let y0 = u32(y);
+    let x1 = min(x0 + 1, params.width - 1);
+    let y1 = min(y0 + 1, params.height - 1);
 
-    let xy0_f = floor(clamped_pos);
+    let tx = x - f32(x0);
+    let ty = y - f32(y0);
 
-    let t = clamped_pos - xy0_f;
+    let v00 = dye[idx(x0, y0)];
+    let v10 = dye[idx(x1, y0)];
+    let v01 = dye[idx(x0, y1)];
+    let v11 = dye[idx(x1, y1)];
 
-    let xy0 = vec2u(xy0_f);
-    let xy1 = min(xy0 + vec2u(1u), vec2u(params.width - 1u, params.height - 1u));
-
-    let d00 = dye[idx(xy0.x, xy0.y)];
-    let d10 = dye[idx(xy1.x, xy0.y)];
-    let d01 = dye[idx(xy0.x, xy1.y)];
-    let d11 = dye[idx(xy1.x, xy1.y)];
-
-    return mix(mix(d00, d10, t.x), mix(d01, d11, t.x), t.y);
+    return mix(mix(v00, v10, tx), mix(v01, v11, tx), ty);
 }
 
 @compute @workgroup_size(8, 8)
