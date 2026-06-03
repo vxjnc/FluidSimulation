@@ -7,6 +7,7 @@
 #include "generated/shaders/advect_dye.wgsl.h"
 #include "generated/shaders/boundary.wgsl.h"
 #include "generated/shaders/divergence.wgsl.h"
+#include "generated/shaders/fill_circle.wgsl.h"
 #include "generated/shaders/inject.wgsl.h"
 #include "generated/shaders/pressure.wgsl.h"
 #include "generated/shaders/subtract.wgsl.h"
@@ -16,6 +17,8 @@ class FluidPipelines {
 public:
     void init(wgpu::Device device) {
         inject = WGPUHelper::makeComputePipeline(device, inject_wgsl, "Inject");
+        fillCircle = WGPUHelper::makeComputePipeline(device, fill_circle_wgsl, "FillCircle");
+
         advect = WGPUHelper::makeComputePipeline(device, advect_wgsl, "Advect");
         advectDye = WGPUHelper::makeComputePipeline(device, advect_dye_wgsl, "AdvectDye");
         divergence = WGPUHelper::makeComputePipeline(device, divergence_wgsl, "Divergence");
@@ -32,6 +35,8 @@ public:
     }
 
     wgpu::raii::ComputePipeline inject;
+    wgpu::raii::ComputePipeline fillCircle;
+
     wgpu::raii::ComputePipeline advect;
     wgpu::raii::ComputePipeline advectDye;
     wgpu::raii::ComputePipeline divergence;

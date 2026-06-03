@@ -152,24 +152,30 @@ public:
     }
 
     void paintObstacle(uint32_t cx, uint32_t cy, uint32_t radius, bool erase = false) {
-        uint32_t val = erase ? 0u : 1u;
-        int r = static_cast<int>(radius);
+        struct FillCircleParams {
+            uint32_t cx, cy;
+            uint32_t radius;
+            uint32_t val;
+            uint32_t width, height;
+        };
 
-        for (int dy = -r; dy <= r; ++dy) {
-            for (int dx = -r; dx <= r; ++dx) {
-                if (dx * dx + dy * dy > r * r) {
-                    continue;
-                }
-                int x = static_cast<int>(cx) + dx;
-                int y = static_cast<int>(cy) + dy;
-                if (x < 0 || y < 0 || x >= static_cast<int>(state.width) ||
-                    y >= static_cast<int>(state.height)) {
-                    continue;
-                }
-                uint32_t idx = static_cast<uint32_t>(y) * state.width + static_cast<uint32_t>(x);
-                queue_.writeBuffer(*state.obstacles, idx * sizeof(uint32_t), &val, sizeof(uint32_t));
-            }
-        }
+        FillCircleParams p{cx, cy, radius, erase ? 0u : 1u, state.width, state.height};
+        queue_.writeBuffer(*state.fillCircleBuffer, 0, &p, sizeof(p));
+
+        wgpu::raii::CommandEncoder enc = device_.createCommandEncoder({});
+        uint32_t W = (state.width + 7) / 8;
+        uint32_t H = (state.height + 7) / 8;
+
+        wgpu::raii::BindGroup bg =
+            WGPUHelper::makeBindGroup(device_, pipelines.fillCircle,
+                                      {*state.fillCircleBuffer, *state.obstacles}, "FillCircleBindGroup");
+
+        wgpu::raii::ComputePassEncoder pass = enc->beginComputePass({});
+        pipelines.dispatch(pass, pipelines.fillCircle, bg, W, H);
+        pass->end();
+
+        wgpu::raii::CommandBuffer cmd = enc->finish({});
+        queue_.submit(1, &*cmd);
     }
 
     std::vector<FluidSource> sources;

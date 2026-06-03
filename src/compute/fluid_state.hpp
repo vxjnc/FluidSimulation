@@ -19,6 +19,10 @@ public:
             WGPUHelper::makeBuffer(device, 5 * sizeof(float) + 2 * sizeof(uint32_t),
                                    wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst, "inject_params");
 
+        fillCircleBuffer = WGPUHelper::makeBuffer(device, 6 * sizeof(uint32_t),
+                                                  wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst,
+                                                  "FillCircleParams");
+
         resize(w, h);
     }
 
@@ -80,6 +84,7 @@ public:
     wgpu::raii::Buffer paramsBuffer;
     wgpu::raii::Buffer dtBuffer;
     wgpu::raii::Buffer injectBuffer;
+    wgpu::raii::Buffer fillCircleBuffer;
 
 private:
     wgpu::Device device_;
