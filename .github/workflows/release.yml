@@ -22,15 +22,15 @@ jobs:
 
       - name: Package
         run: |
-          mkdir release
-          cp FluidSimulation release/
-          cp build/_deps/dawn-*/lib*/libwebgpu_dawn.so release/ 2>/dev/null || true
-          tar -czf FluidSimulation-linux.tar.gz -C release .
+          mkdir -p dist
+          cp FluidSimulation dist/
+          cp build/_deps/dawn-*/lib*/libwebgpu_dawn.so dist/ 2>/dev/null || true
+          tar -czf FluidSimulation-linux.tar.gz -C dist .
 
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: linux
+          name: FluidSimulation-linux
           path: FluidSimulation-linux.tar.gz
 
   build-windows:
@@ -47,15 +47,15 @@ jobs:
       - name: Package
         shell: bash
         run: |
-          mkdir release
-          cp FluidSimulation.exe release/
-          cp build/_deps/dawn-*/bin/*.dll release/ 2>/dev/null || true
-          cd release && 7z a ../FluidSimulation-windows.zip .
+          mkdir -p dist
+          cp Release/FluidSimulation.exe dist/
+          cp Release/*.dll dist/ 2>/dev/null || true
+          cd dist && 7z a ../FluidSimulation-windows.zip .
 
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: windows
+          name: FluidSimulation-windows
           path: FluidSimulation-windows.zip
 
   release:
@@ -66,9 +66,9 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
 
-      - name: Create Release
+      - name: Upload to Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            linux/FluidSimulation-linux.tar.gz
-            windows/FluidSimulation-windows.zip
+            FluidSimulation-linux/FluidSimulation-linux.tar.gz
+            FluidSimulation-windows/FluidSimulation-windows.zip

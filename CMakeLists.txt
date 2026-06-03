@@ -109,19 +109,20 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 
 target_copy_webgpu_binaries(${PROJECT_NAME})
 
-target_compile_options(${PROJECT_NAME} PRIVATE
-    -Wall
-    -Wextra
-    -Wpedantic
-    -Wold-style-cast
-    -Wconversion
-    $<$<NOT:$<BOOL:$ENV{CI}>>:-march=native>
-    $<$<NOT:$<BOOL:$ENV{CI}>>:-mtune=native>
-)
+if(NOT MSVC AND NOT DEFINED ENV{CI})
+    target_compile_options(${PROJECT_NAME} PRIVATE
+        -Wall -Wextra -Wconversion
+        -march=native -mtune=native
+    )
+endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
     message(STATUS "Configuring project ${PROJECT_NAME} for OPTIMIZATION mode (Release)")
-    target_compile_options(${PROJECT_NAME} PRIVATE -O3)
+    if(MSVC)
+        target_compile_options(${PROJECT_NAME} PRIVATE /O2)
+    else()
+        target_compile_options(${PROJECT_NAME} PRIVATE -O3)
+    endif()
     set_property(TARGET ${PROJECT_NAME} PROPERTY INTERPROCEDURAL_OPTIMIZATION ON)
     target_link_options(${PROJECT_NAME} PRIVATE -s)
 
@@ -134,5 +135,7 @@ else()
 endif()
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
+    INSTALL_RPATH "$ORIGIN"
+    BUILD_RPATH "$ORIGIN"
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}"
 )

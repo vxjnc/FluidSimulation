@@ -2,6 +2,7 @@
 #include <array>
 #include <format>
 #include <span>
+#include <variant>
 
 #include <webgpu/webgpu-raii.hpp>
 
