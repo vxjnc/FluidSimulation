@@ -26,10 +26,10 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
     let y0 = select(y - 1, y, y == 0);
     let y1 = select(y + 1, y, y == params.height - 1);
 
-    let vx1 = select(velocity[idx(x1, y)].x, 0.0, obstacles[idx(x1, y)] != 0u);
-    let vx0 = select(velocity[idx(x0, y)].x, 0.0, obstacles[idx(x0, y)] != 0u);
-    let vy1 = select(velocity[idx(x, y1)].y, 0.0, obstacles[idx(x, y1)] != 0u);
-    let vy0 = select(velocity[idx(x, y0)].y, 0.0, obstacles[idx(x, y0)] != 0u);
+    let vx1 = select(velocity[idx(x1, y)].x, -velocity[i].x, obstacles[idx(x1, y)] != 0u || x1 == x);
+    let vx0 = select(velocity[idx(x0, y)].x, -velocity[i].x, obstacles[idx(x0, y)] != 0u || x0 == x);
+    let vy1 = select(velocity[idx(x, y1)].y, -velocity[i].y, obstacles[idx(x, y1)] != 0u || y1 == y);
+    let vy0 = select(velocity[idx(x, y0)].y, -velocity[i].y, obstacles[idx(x, y0)] != 0u || y0 == y);
 
     divergence[i] = 0.5 * (vx1 - vx0 + vy1 - vy0);
 }

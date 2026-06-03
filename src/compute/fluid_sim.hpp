@@ -100,10 +100,7 @@ public:
         uint32_t H = (state.height + 7) / 8;
 
         advect(enc, W, H);
-        advectDye(enc, W, H);
-
         std::swap(state.velocity, state.velocity_next);
-        std::swap(state.dye, state.dye_next);
 
         computeDivergence(enc, W, H);
         solvePressure(enc, W, H);
@@ -112,6 +109,9 @@ public:
         std::swap(state.velocity, state.velocity_next);
 
         applyBoundary(enc, W, H);
+
+        advectDye(enc, W, H);
+        std::swap(state.dye, state.dye_next);
 
         wgpu::raii::CommandBuffer cmd = enc->finish({});
         queue_.submit(1, &*cmd);

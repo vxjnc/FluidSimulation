@@ -49,5 +49,6 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
     let vel = velocity[i];
     let src_pos = pos - vel * dt;
 
-    velocity_next[i] = sample_velocity(src_pos);
+    const DISSIPATION = 0.1;
+    velocity_next[i] = sample_velocity(src_pos) * (1.0 - DISSIPATION * dt);
 }

@@ -47,5 +47,7 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
         dye_next[i] = 0.0;
         return;
     }
-    dye_next[i] = sample_dye(src_pos);
+
+    const DISSIPATION = 0.2;
+    dye_next[i] = sample_dye(src_pos) * (1.0 - DISSIPATION * dt);
 }

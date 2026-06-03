@@ -41,12 +41,6 @@ public:
         simulation.init(ctx.device(), ctx.queue(),
                         static_cast<uint32_t>(static_cast<float>(sim_w) * settings.simScale),
                         static_cast<uint32_t>(static_cast<float>(height) * settings.simScale));
-
-        simulation.sources.emplace_back(5.f, static_cast<float>(height) * settings.simScale * 0.5f, 200.f, 0,
-                                        50.f, FluidSource::Form::LINE);
-        simulation.paintObstacle(static_cast<uint32_t>(300.f * settings.simScale),
-                                 static_cast<uint32_t>(static_cast<float>(height) * settings.simScale * 0.5f),
-                                 100.f);
     };
 
     ~Application() {

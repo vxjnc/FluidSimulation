@@ -30,10 +30,11 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
     let y0 = select(y - 1, y, y == 0);
     let y1 = select(y + 1, y, y == params.height - 1);
 
-    let grad = vec2f(
-        pressure[idx(x1, y)] - pressure[idx(x0, y)],
-        pressure[idx(x, y1)] - pressure[idx(x, y0)],
-    ) * 0.5;
+    let px0 = select(pressure[idx(x0, y)], pressure[i], obstacles[idx(x0, y)] != 0u || x0 == x);
+    let px1 = select(pressure[idx(x1, y)], pressure[i], obstacles[idx(x1, y)] != 0u || x1 == x);
+    let py0 = select(pressure[idx(x, y0)], pressure[i], obstacles[idx(x, y0)] != 0u || y0 == y);
+    let py1 = select(pressure[idx(x, y1)], pressure[i], obstacles[idx(x, y1)] != 0u || y1 == y);
 
+    let grad = vec2f(px1 - px0, py1 - py0) * 0.5;
     velocity_next[i] = velocity[i] - grad;
 }
