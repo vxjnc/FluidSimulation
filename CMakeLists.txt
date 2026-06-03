@@ -44,7 +44,7 @@ set(WEBGPU_BACKEND "DAWN" CACHE STRING "WebGPU backend" FORCE)
 FetchContent_Declare(
     webgpu_cpp
     GIT_REPOSITORY https://github.com/eliemichel/WebGPU-Cpp.git
-    GIT_TAG        wgpu-v24.0.3.1
+    GIT_TAG        dawn-7187
     GIT_SHALLOW    ON
 )
 
@@ -115,8 +115,8 @@ target_compile_options(${PROJECT_NAME} PRIVATE
     -Wpedantic
     -Wold-style-cast
     -Wconversion
-    -march=native
-    -mtune=native
+    $<$<NOT:$<BOOL:$ENV{CI}>>:-march=native>
+    $<$<NOT:$<BOOL:$ENV{CI}>>:-mtune=native>
 )
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")

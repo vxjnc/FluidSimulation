@@ -1,10 +1,9 @@
 #pragma once
 #include <array>
+#include <format>
 #include <span>
 
 #include <webgpu/webgpu-raii.hpp>
-
-#include "webgpu/webgpu.hpp"
 
 namespace WGPUHelper {
     using BindGroupResource = std::variant<wgpu::Buffer, wgpu::TextureView>;

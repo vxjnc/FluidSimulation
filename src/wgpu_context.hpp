@@ -145,34 +145,22 @@ private:
 
     wgpu::Surface createSurface(GLFWwindow* window) {
 #if defined(__linux__)
-        wgpu::SurfaceSourceXlibWindow xlibSrc = wgpu::Default;
-        xlibSrc.display = glfwGetX11Display();
-        xlibSrc.window = glfwGetX11Window(window);
-
-        wgpu::SurfaceDescriptor desc{};
-        desc.label = wgpu::StringView("Surface");
-        desc.nextInChain = &xlibSrc.chain;
-        return instance_->createSurface(desc);
-
+        wgpu::SurfaceSourceXlibWindow src = wgpu::Default;
+        src.display = glfwGetX11Display();
+        src.window = glfwGetX11Window(window);
 #elif defined(_WIN32)
-        wgpu::SurfaceSourceWindowsHWND hwndSrc{};
-        hwndSrc.hinstance = GetModuleHandle(nullptr);
-        hwndSrc.hwnd = glfwGetWin32Window(window);
-
-        wgpu::SurfaceDescriptor desc{};
-        desc.label = wgpu::StringView("Surface");
-        desc.nextInChain = &hwndSrc.chain;
-        return instance_.createSurface(desc);
-
+        wgpu::SurfaceSourceWindowsHWND src{};
+        src.hinstance = GetModuleHandle(nullptr);
+        src.hwnd = glfwGetWin32Window(window);
 #elif defined(__APPLE__)
-        wgpu::SurfaceSourceMetalLayer metalSrc{};
-        metalSrc.layer = glfwGetCocoaWindow(window);
+        wgpu::SurfaceSourceMetalLayer src{};
+        src.layer = glfwGetCocoaWindow(window);
+#endif
 
         wgpu::SurfaceDescriptor desc{};
         desc.label = wgpu::StringView("Surface");
-        desc.nextInChain = &metalSrc.chain;
-        return instance_.createSurface(desc);
-#endif
+        desc.nextInChain = &src.chain;
+        return instance_->createSurface(desc);
     }
 
     bool initialized_ = false;
