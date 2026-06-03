@@ -17,28 +17,28 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
     let y = gid.y;
     if x >= params.width || y >= params.height { return; }
 
-    let i = y * params.width + x;
+    let i = idx(x, y);
     if obstacles[i] != 0u {
         velocity[i] = vec2f(0.0);
         return;
     }
 
-    let vx_blocked = (x > 0u && obstacles[idx(x - 1u, y)] != 0u) ||
-                 (x < params.width - 1u && obstacles[idx(x + 1u, y)] != 0u);
-    let vy_blocked = (y > 0u && obstacles[idx(x, y - 1u)] != 0u) ||
-                 (y < params.height - 1u && obstacles[idx(x, y + 1u)] != 0u);
-
     var v = velocity[i];
-    if vx_blocked { v.x = 0.0; }
-    if vy_blocked { v.y = 0.0; }
 
-    let on_left = x == 0u;
-    let on_right = x == params.width - 1u;
-    let on_bottom = y == 0u;
-    let on_top = y == params.height - 1u;
+    let left_blocked = x > 0u && obstacles[idx(x - 1u, y)] != 0u;
+    let right_blocked = x < params.width - 1u && obstacles[idx(x + 1u, y)] != 0u;
+    let down_blocked = y > 0u && obstacles[idx(x, y - 1u)] != 0u;
+    let up_blocked = y < params.height - 1u && obstacles[idx(x, y + 1u)] != 0u;
 
-    if on_left || on_right { v.x = 0.0; }
-    if on_top || on_bottom { v.y = 0.0; }
+    if left_blocked { v.x = max(v.x, 0.0); }
+    if right_blocked { v.x = min(v.x, 0.0); }
+    if down_blocked { v.y = max(v.y, 0.0); }
+    if up_blocked { v.y = min(v.y, 0.0); }
+
+    if x == 0u { v.x = max(v.x, 0.0); }
+    if x == params.width - 1u { v.x = min(v.x, 0.0); }
+    if y == 0u { v.y = max(v.y, 0.0); }
+    if y == params.height - 1u { v.y = min(v.y, 0.0); }
 
     velocity[i] = v;
 }

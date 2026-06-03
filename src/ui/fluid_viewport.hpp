@@ -19,7 +19,7 @@ struct FluidViewport {
         texDesc.usage = wgpu::TextureUsage::RenderAttachment | wgpu::TextureUsage::TextureBinding;
         texture = device.createTexture(texDesc);
         view = texture->createView();
-        texId = (ImTextureID)(WGPUTextureView)*view;
+        texId = reinterpret_cast<ImTextureID>(static_cast<WGPUTextureView>(*view));
         w = width;
         h = height;
     }

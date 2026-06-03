@@ -38,11 +38,15 @@ public:
         renderer.init();
         viewport.init(ctx.device(), sim_w, height, ctx.surfaceFormat());
 
-        simulation.init(ctx.device(), ctx.queue(), sim_w * settings.simScale, height * settings.simScale);
+        simulation.init(ctx.device(), ctx.queue(),
+                        static_cast<uint32_t>(static_cast<float>(sim_w) * settings.simScale),
+                        static_cast<uint32_t>(static_cast<float>(height) * settings.simScale));
 
-        simulation.sources.emplace_back(1, height * settings.simScale * 0.5f, 200.f, 0, 50.f,
-                                        FluidSource::Form::LINE);
-        simulation.paintObstacle(300.f * settings.simScale, height * settings.simScale * 0.5f, 100.f);
+        simulation.sources.emplace_back(5.f, static_cast<float>(height) * settings.simScale * 0.5f, 200.f, 0,
+                                        50.f, FluidSource::Form::LINE);
+        simulation.paintObstacle(static_cast<uint32_t>(300.f * settings.simScale),
+                                 static_cast<uint32_t>(static_cast<float>(height) * settings.simScale * 0.5f),
+                                 100.f);
     };
 
     ~Application() {
@@ -74,7 +78,7 @@ public:
 private:
     void processInput() {
         float sx = mouse.x * settings.simScale;
-        float sy = (viewport.h - mouse.y) * settings.simScale;
+        float sy = (static_cast<float>(viewport.h) - mouse.y) * settings.simScale;
         float sdx = mouse.dx * settings.simScale;
         float sdy = mouse.dy * settings.simScale;
         float sr = settings.brushRadius * settings.simScale;
@@ -86,7 +90,8 @@ private:
         }
         else {
             if (mouse.leftPressed || mouse.rightPressed) {
-                simulation.paintObstacle(sx, sy, sr, mouse.rightPressed);
+                simulation.paintObstacle(static_cast<uint32_t>(sx), static_cast<uint32_t>(sy),
+                                         static_cast<uint32_t>(sr), mouse.rightPressed);
             }
         }
 

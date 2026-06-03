@@ -11,8 +11,8 @@
 #include "src/wgpu_context.hpp"
 
 struct MouseState {
-    double x = 0, y = 0;
-    double dx = 0, dy = 0;
+    float x = 0, y = 0;
+    float dx = 0, dy = 0;
     bool rightPressed = false;
     bool leftPressed = false;
 };
@@ -71,8 +71,9 @@ public:
                     s.vy *= ratio;
                     s.radius *= ratio;
                 }
-                sim.resizeWithResample(static_cast<uint32_t>(viewport.w * settings.simScale),
-                                       static_cast<uint32_t>(viewport.h * settings.simScale));
+                sim.resizeWithResample(
+                    static_cast<uint32_t>(static_cast<float>(viewport.w) * settings.simScale),
+                    static_cast<uint32_t>(static_cast<float>(viewport.h) * settings.simScale));
             }
 
             ImGui::SliderFloat("Sim dt", &settings.dt, 0.001f, 0.1f);
