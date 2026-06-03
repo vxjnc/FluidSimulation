@@ -57,6 +57,7 @@ FetchContent_Declare(
 )
 
 FetchContent_MakeAvailable(glfw webgpu_distribution webgpu_cpp imgui)
+set_target_properties(glfw webgpu PROPERTIES SYSTEM TRUE)
 
 add_library(imgui STATIC
     ${imgui_SOURCE_DIR}/imgui.cpp
@@ -66,7 +67,7 @@ add_library(imgui STATIC
     ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
     ${imgui_SOURCE_DIR}/backends/imgui_impl_wgpu.cpp
 )
-target_include_directories(imgui PUBLIC
+target_include_directories(imgui SYSTEM PUBLIC
     ${imgui_SOURCE_DIR}
     ${imgui_SOURCE_DIR}/backends
 )
