@@ -83,6 +83,7 @@ public:
 
             ImGui::SliderFloat("Velocity Dissipation", &settings.velDissipation, 0.0f, 4.0f);
             ImGui::SliderFloat("Dye Dissipation", &settings.dyeDissipation, 0.0f, 4.0f);
+            ImGui::SliderFloat("Curl Strength", &settings.curlStrength, 0.0f, 50.0f);
 
             if (ImGui::Button("Clear")) {
                 sim.state.clear();

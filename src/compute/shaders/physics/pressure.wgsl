@@ -1,6 +1,10 @@
 struct Params {
     width: u32,
     height: u32,
+    dt: f32,
+    vel_dissipation: f32,
+    dye_dissipation: f32,
+    curl_strength: f32,
 }
 
 @group(0) @binding(0) var<uniform> params: Params;

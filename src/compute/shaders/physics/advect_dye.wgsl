@@ -1,21 +1,17 @@
 struct Params {
     width: u32,
     height: u32,
-}
-
-struct AdvectParams {
     dt: f32,
     vel_dissipation: f32,
     dye_dissipation: f32,
-    _pad: f32,
+    curl_strength: f32,
 }
 
 @group(0) @binding(0) var<uniform> params: Params;
-@group(0) @binding(1) var<uniform> advect_params: AdvectParams;
-@group(0) @binding(2) var<storage, read> velocity: array<vec2f>;
-@group(0) @binding(3) var<storage, read> dye: array<vec4f>;
-@group(0) @binding(4) var<storage, read_write> dye_next: array<vec4f>;
-@group(0) @binding(5) var<storage, read> obstacles: array<u32>;
+@group(0) @binding(1) var<storage, read> velocity: array<vec2f>;
+@group(0) @binding(2) var<storage, read> dye: array<vec4f>;
+@group(0) @binding(3) var<storage, read_write> dye_next: array<vec4f>;
+@group(0) @binding(4) var<storage, read> obstacles: array<u32>;
 
 fn idx(x: u32, y: u32) -> u32 {
     return y * params.width + x;
@@ -48,12 +44,12 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
     let pos = vec2f(gid.xy);
     let i = idx(gid.x, gid.y);
     let vel = velocity[i];
-    let src_pos = pos - vel * advect_params.dt;
+    let src_pos = pos - vel * params.dt;
 
     if obstacles[i] != 0u {
         dye_next[i] = vec4f();
         return;
     }
 
-    dye_next[i] = sample_dye(src_pos) / (1.0 + advect_params.dye_dissipation * advect_params.dt);
+    dye_next[i] = sample_dye(src_pos) / (1.0 + params.dye_dissipation * params.dt);
 }

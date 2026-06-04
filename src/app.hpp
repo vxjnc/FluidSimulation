@@ -142,6 +142,7 @@ private:
         static float lastDt = 0.0f;
         static float lastDyeDissipation = 0.0f;
         static float lastVelDissipation = 0.0f;
+        static float lastCurlStrength = 0.0f;
         if (settings.dt != lastDt) {
             simulation.setDt(settings.dt);
             lastDt = settings.dt;
@@ -153,6 +154,10 @@ private:
         if (settings.velDissipation != lastVelDissipation) {
             simulation.setVelDissipation(settings.velDissipation);
             lastVelDissipation = settings.velDissipation;
+        }
+        if (settings.curlStrength != lastCurlStrength) {
+            simulation.setCurlStrength(settings.curlStrength);
+            lastCurlStrength = settings.curlStrength;
         }
 
         if (!settings.paused) {

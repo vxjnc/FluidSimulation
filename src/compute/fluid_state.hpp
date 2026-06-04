@@ -11,11 +11,8 @@ public:
         queue_ = queue;
 
         paramsBuffer =
-            WGPUHelper::makeBuffer(device, 2 * sizeof(uint32_t),
+            WGPUHelper::makeBuffer(device, 4 * sizeof(float) + 2 * sizeof(uint32_t),
                                    wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst, "sim_params");
-        advectParamsBuffer =
-            WGPUHelper::makeBuffer(device, 4 * sizeof(float),
-                                   wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst, "advect_params");
 
         injectBuffer = WGPUHelper::makeBuffer(
             device, 48, wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst, "inject_params");
@@ -41,6 +38,7 @@ public:
         pressure = buf("pressure", 1 * sizeof(float));
         pressure_next = buf("pressure_next", 1 * sizeof(float));
         divergence = buf("divergence", 1 * sizeof(float));
+        curl = buf("curl", 1 * sizeof(float));
         dye = buf("dye", 4 * sizeof(float));
         dye_next = buf("dye_next", 4 * sizeof(float));
         obstacles = buf("obstacles", 1 * sizeof(uint32_t));
@@ -54,16 +52,15 @@ public:
         encoderDesc.label = wgpu::StringView("FluidClearEncoder");
         wgpu::CommandEncoder encoder = device_.createCommandEncoder(encoderDesc);
 
-        size_t numPixels = static_cast<size_t>(width) * height;
-
-        encoder.clearBuffer(*velocity, 0, numPixels * 2 * sizeof(float));
-        encoder.clearBuffer(*velocity_next, 0, numPixels * 2 * sizeof(float));
-        encoder.clearBuffer(*pressure, 0, numPixels * 1 * sizeof(float));
-        encoder.clearBuffer(*pressure_next, 0, numPixels * 1 * sizeof(float));
-        encoder.clearBuffer(*divergence, 0, numPixels * 1 * sizeof(float));
-        encoder.clearBuffer(*dye, 0, numPixels * 4 * sizeof(float));
-        encoder.clearBuffer(*dye_next, 0, numPixels * 4 * sizeof(float));
-        encoder.clearBuffer(*obstacles, 0, numPixels * 1 * sizeof(uint32_t));
+        encoder.clearBuffer(*velocity, 0, velocity->getSize());
+        encoder.clearBuffer(*velocity_next, 0, velocity_next->getSize());
+        encoder.clearBuffer(*pressure, 0, pressure->getSize());
+        encoder.clearBuffer(*pressure_next, 0, pressure_next->getSize());
+        encoder.clearBuffer(*divergence, 0, divergence->getSize());
+        encoder.clearBuffer(*curl, 0, curl->getSize());
+        encoder.clearBuffer(*dye, 0, dye->getSize());
+        encoder.clearBuffer(*dye_next, 0, dye_next->getSize());
+        encoder.clearBuffer(*obstacles, 0, obstacles->getSize());
 
         wgpu::CommandBufferDescriptor cmdBufferDesc{};
         cmdBufferDesc.label = wgpu::StringView("FluidClear");
@@ -78,12 +75,12 @@ public:
     wgpu::raii::Buffer velocity, velocity_next;
     wgpu::raii::Buffer pressure, pressure_next;
     wgpu::raii::Buffer divergence;
+    wgpu::raii::Buffer curl;
     wgpu::raii::Buffer dye, dye_next;
 
     wgpu::raii::Buffer obstacles;
 
     wgpu::raii::Buffer paramsBuffer;
-    wgpu::raii::Buffer advectParamsBuffer;
     wgpu::raii::Buffer injectBuffer;
     wgpu::raii::Buffer fillCircleBuffer;
 

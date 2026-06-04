@@ -92,12 +92,15 @@ public:
         initBindGroups();
     }
 
-    void setDt(float dt) { queue_.writeBuffer(*state.advectParamsBuffer, 0, &dt, sizeof(dt)); }
+    void setDt(float dt) { queue_.writeBuffer(*state.paramsBuffer, 8, &dt, sizeof(dt)); }
     void setVelDissipation(float dissipation) {
-        queue_.writeBuffer(*state.advectParamsBuffer, sizeof(float), &dissipation, sizeof(dissipation));
+        queue_.writeBuffer(*state.paramsBuffer, 12, &dissipation, sizeof(dissipation));
     }
     void setDyeDissipation(float dissipation) {
-        queue_.writeBuffer(*state.advectParamsBuffer, 2 * sizeof(float), &dissipation, sizeof(dissipation));
+        queue_.writeBuffer(*state.paramsBuffer, 16, &dissipation, sizeof(dissipation));
+    }
+    void setCurlStrength(float strength) {
+        queue_.writeBuffer(*state.paramsBuffer, 20, &strength, sizeof(strength));
     }
 
     void step() {
@@ -117,6 +120,8 @@ public:
         solvePressure(pass, W, H);
         subtractGradient(pass, W, H);
         applyBoundary(pass, W, H);
+        computeCurl(pass, W, H);
+        applyVorticity(pass, W, H);
         advectDye(pass, W, H);
 
         pass->end();
@@ -209,12 +214,14 @@ private:
     wgpu::raii::BindGroup bg_boundary;
     wgpu::raii::BindGroup bg_advect_dye0; // dye -> dye_next
     wgpu::raii::BindGroup bg_advect_dye1; // dye_next -> dye
+    wgpu::raii::BindGroup bg_curl;
+    wgpu::raii::BindGroup bg_vorticity;
 
     void initBindGroups() {
-        bg_advect = WGPUHelper::makeBindGroup(device_, pipelines.advect,
-                                              {*state.paramsBuffer, *state.advectParamsBuffer,
-                                               *state.velocity, *state.velocity_next, *state.obstacles},
-                                              "AdvectBindGroup");
+        bg_advect = WGPUHelper::makeBindGroup(
+            device_, pipelines.advect,
+            {*state.paramsBuffer, *state.velocity, *state.velocity_next, *state.obstacles},
+            "AdvectBindGroup");
         bg_divergence = WGPUHelper::makeBindGroup(
             device_, pipelines.divergence,
             {*state.paramsBuffer, *state.velocity_next, *state.divergence, *state.obstacles},
@@ -234,16 +241,20 @@ private:
         bg_boundary = WGPUHelper::makeBindGroup(device_, pipelines.boundary,
                                                 {*state.paramsBuffer, *state.velocity, *state.obstacles},
                                                 "ApplyBoundaryBindGroup");
-        bg_advect_dye0 =
-            WGPUHelper::makeBindGroup(device_, pipelines.advectDye,
-                                      {*state.paramsBuffer, *state.advectParamsBuffer, *state.velocity,
-                                       *state.dye, *state.dye_next, *state.obstacles},
-                                      "AdvectDyeBindGroup0");
-        bg_advect_dye1 =
-            WGPUHelper::makeBindGroup(device_, pipelines.advectDye,
-                                      {*state.paramsBuffer, *state.advectParamsBuffer, *state.velocity,
-                                       *state.dye_next, *state.dye, *state.obstacles},
-                                      "AdvectDyeBindGroup1");
+        bg_advect_dye0 = WGPUHelper::makeBindGroup(
+            device_, pipelines.advectDye,
+            {*state.paramsBuffer, *state.velocity, *state.dye, *state.dye_next, *state.obstacles},
+            "AdvectDyeBindGroup0");
+        bg_advect_dye1 = WGPUHelper::makeBindGroup(
+            device_, pipelines.advectDye,
+            {*state.paramsBuffer, *state.velocity, *state.dye_next, *state.dye, *state.obstacles},
+            "AdvectDyeBindGroup1");
+
+        bg_curl = WGPUHelper::makeBindGroup(
+            device_, pipelines.curl, {*state.paramsBuffer, *state.velocity, *state.curl}, "CurlBindGroup");
+        bg_vorticity = WGPUHelper::makeBindGroup(device_, pipelines.vorticity,
+                                                 {*state.paramsBuffer, *state.curl, *state.velocity},
+                                                 "VorticityBindGroup");
     }
 
     void injectSource() {
@@ -280,5 +291,13 @@ private:
 
     void applyBoundary(wgpu::raii::ComputePassEncoder& pass, uint32_t W, uint32_t H) {
         pipelines.dispatch(pass, pipelines.boundary, bg_boundary, W, H);
+    }
+
+    void computeCurl(wgpu::raii::ComputePassEncoder& pass, uint32_t W, uint32_t H) {
+        pipelines.dispatch(pass, pipelines.curl, bg_curl, W, H);
+    }
+
+    void applyVorticity(wgpu::raii::ComputePassEncoder& pass, uint32_t W, uint32_t H) {
+        pipelines.dispatch(pass, pipelines.vorticity, bg_vorticity, W, H);
     }
 };

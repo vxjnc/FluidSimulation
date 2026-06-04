@@ -1,20 +1,16 @@
 struct Params {
     width: u32,
     height: u32,
-}
-
-struct AdvectParams {
     dt: f32,
     vel_dissipation: f32,
     dye_dissipation: f32,
-    _pad: f32,
+    curl_strength: f32,
 }
 
 @group(0) @binding(0) var<uniform> params: Params;
-@group(0) @binding(1) var<uniform> advect_params: AdvectParams;
-@group(0) @binding(2) var<storage, read> velocity: array<vec2f>;
-@group(0) @binding(3) var<storage, read_write> velocity_next: array<vec2f>;
-@group(0) @binding(4) var<storage, read> obstacles: array<u32>;
+@group(0) @binding(1) var<storage, read> velocity: array<vec2f>;
+@group(0) @binding(2) var<storage, read_write> velocity_next: array<vec2f>;
+@group(0) @binding(3) var<storage, read> obstacles: array<u32>;
 
 fn idx(x: u32, y: u32) -> u32 {
     return y * params.width + x;
@@ -54,7 +50,7 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
 
     let pos = vec2f(f32(x), f32(y));
     let vel = velocity[i];
-    let src_pos = pos - vel * advect_params.dt;
+    let src_pos = pos - vel * params.dt;
 
-    velocity_next[i] = sample_velocity(src_pos) / (1.0 + advect_params.vel_dissipation * advect_params.dt);
+    velocity_next[i] = sample_velocity(src_pos) / (1.0 + params.vel_dissipation * params.dt);
 }
