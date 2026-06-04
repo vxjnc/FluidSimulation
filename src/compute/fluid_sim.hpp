@@ -53,8 +53,8 @@ public:
         wgpu::raii::Buffer new_dye = makeBuf(sizeof(float), "dye_new");
         wgpu::raii::Buffer new_obstacles = makeBuf(sizeof(uint32_t), "obstacles_new");
 
-        uint32_t W = (w + 7) / 8;
-        uint32_t H = (h + 7) / 8;
+        uint32_t W = (w + 15) / 16;
+        uint32_t H = (h + 15) / 16;
 
         wgpu::raii::CommandEncoder enc = device_.createCommandEncoder({});
         wgpu::raii::ComputePassEncoder pass = enc->beginComputePass({});
@@ -99,8 +99,8 @@ public:
 
         wgpu::raii::CommandEncoder enc = device_.createCommandEncoder({});
 
-        uint32_t W = (state.width + 7) / 8;
-        uint32_t H = (state.height + 7) / 8;
+        uint32_t W = (state.width + 15) / 16;
+        uint32_t H = (state.height + 15) / 16;
 
         advect(enc, W, H);
         std::swap(state.velocity, state.velocity_next);
@@ -140,8 +140,8 @@ public:
         queue_.writeBuffer(*state.injectBuffer, 0, &p, sizeof(p));
 
         wgpu::raii::CommandEncoder enc = device_.createCommandEncoder({});
-        uint32_t W = (state.width + 7) / 8;
-        uint32_t H = (state.height + 7) / 8;
+        uint32_t W = (state.width + 15) / 16;
+        uint32_t H = (state.height + 15) / 16;
 
         wgpu::raii::BindGroup bg = WGPUHelper::makeBindGroup(
             device_, pipelines.inject,
@@ -167,8 +167,8 @@ public:
         queue_.writeBuffer(*state.fillCircleBuffer, 0, &p, sizeof(p));
 
         wgpu::raii::CommandEncoder enc = device_.createCommandEncoder({});
-        uint32_t W = (state.width + 7) / 8;
-        uint32_t H = (state.height + 7) / 8;
+        uint32_t W = (state.width + 15) / 16;
+        uint32_t H = (state.height + 15) / 16;
 
         wgpu::raii::BindGroup bg =
             WGPUHelper::makeBindGroup(device_, pipelines.fillCircle,

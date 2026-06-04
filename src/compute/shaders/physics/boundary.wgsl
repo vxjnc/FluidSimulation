@@ -11,7 +11,7 @@ fn idx(x: u32, y: u32) -> u32 {
     return y * params.width + x;
 }
 
-@compute @workgroup_size(8, 8)
+@compute @workgroup_size(16, 16)
 fn main(@builtin(global_invocation_id) gid: vec3u) {
     let x = gid.x;
     let y = gid.y;

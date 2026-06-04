@@ -34,7 +34,7 @@ fn sample_dye(pos: vec2f) -> f32 {
     return mix(mix(v00, v10, tx), mix(v01, v11, tx), ty);
 }
 
-@compute @workgroup_size(8, 8)
+@compute @workgroup_size(16, 16)
 fn main(@builtin(global_invocation_id) gid: vec3u) {
     if gid.x >= params.width || gid.y >= params.height { return; }
 
