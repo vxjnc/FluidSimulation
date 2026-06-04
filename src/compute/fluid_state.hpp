@@ -6,18 +6,42 @@
 
 class FluidState {
 public:
+    struct Params {
+        uint32_t width, height;
+        float dt;
+        float vel_dissipation;
+        float dye_dissipation;
+        float curl_strength;
+    };
+
+    struct FillCircleParams {
+        uint32_t cx, cy;
+        uint32_t radius;
+        uint32_t val;
+        uint32_t width, height;
+    };
+
+    struct alignas(16) InjectParams {
+        float color[4];
+        float x, y;
+        float vx, vy;
+        float radius;
+        uint32_t mode_mask;
+        uint32_t form;
+    };
+
     void init(wgpu::Device device, wgpu::Queue queue, uint32_t w, uint32_t h) {
         device_ = device;
         queue_ = queue;
 
-        paramsBuffer =
-            WGPUHelper::makeBuffer(device, 4 * sizeof(float) + 2 * sizeof(uint32_t),
-                                   wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst, "sim_params");
+        paramsBuffer = WGPUHelper::makeBuffer(
+            device, sizeof(Params), wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst, "Params");
 
-        injectBuffer = WGPUHelper::makeBuffer(
-            device, 48, wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst, "inject_params");
+        injectBuffer =
+            WGPUHelper::makeBuffer(device, sizeof(InjectParams),
+                                   wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst, "InjectParams");
 
-        fillCircleBuffer = WGPUHelper::makeBuffer(device, 6 * sizeof(uint32_t),
+        fillCircleBuffer = WGPUHelper::makeBuffer(device, sizeof(FillCircleParams),
                                                   wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst,
                                                   "FillCircleParams");
 

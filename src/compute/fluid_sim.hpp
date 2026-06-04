@@ -25,6 +25,7 @@ public:
     void resize(uint32_t w, uint32_t h) {
         if (w != state.width || h != state.height) {
             state.resize(w, h);
+            initBindGroups();
         }
     }
 
@@ -92,15 +93,20 @@ public:
         initBindGroups();
     }
 
-    void setDt(float dt) { queue_.writeBuffer(*state.paramsBuffer, 8, &dt, sizeof(dt)); }
+    void setDt(float dt) {
+        queue_.writeBuffer(*state.paramsBuffer, offsetof(FluidState::Params, dt), &dt, sizeof(dt));
+    }
     void setVelDissipation(float dissipation) {
-        queue_.writeBuffer(*state.paramsBuffer, 12, &dissipation, sizeof(dissipation));
+        queue_.writeBuffer(*state.paramsBuffer, offsetof(FluidState::Params, vel_dissipation), &dissipation,
+                           sizeof(dissipation));
     }
     void setDyeDissipation(float dissipation) {
-        queue_.writeBuffer(*state.paramsBuffer, 16, &dissipation, sizeof(dissipation));
+        queue_.writeBuffer(*state.paramsBuffer, offsetof(FluidState::Params, dye_dissipation), &dissipation,
+                           sizeof(dissipation));
     }
     void setCurlStrength(float strength) {
-        queue_.writeBuffer(*state.paramsBuffer, 20, &strength, sizeof(strength));
+        queue_.writeBuffer(*state.paramsBuffer, offsetof(FluidState::Params, curl_strength), &strength,
+                           sizeof(strength));
     }
 
     void step() {
@@ -132,23 +138,14 @@ public:
     }
 
     void inject(const FluidSource& source) {
-        struct alignas(16) InjectParams {
-            float color[4];
-            float x, y;
-            float vx, vy;
-            float radius;
-            uint32_t mode_mask;
-            uint32_t form;
-        };
-
-        InjectParams p{{source.color[0], source.color[1], source.color[2], 1.0f},
-                       source.x,
-                       source.y,
-                       source.vx,
-                       source.vy,
-                       source.radius,
-                       static_cast<uint32_t>(source.mode_mask),
-                       static_cast<uint32_t>(source.form)};
+        FluidState::InjectParams p{{source.color[0], source.color[1], source.color[2], 1.0f},
+                                   source.x,
+                                   source.y,
+                                   source.vx,
+                                   source.vy,
+                                   source.radius,
+                                   static_cast<uint32_t>(source.mode_mask),
+                                   static_cast<uint32_t>(source.form)};
         queue_.writeBuffer(*state.injectBuffer, 0, &p, sizeof(p));
 
         wgpu::raii::CommandEncoder enc = device_.createCommandEncoder({});
@@ -168,14 +165,7 @@ public:
     }
 
     void paintObstacle(uint32_t cx, uint32_t cy, uint32_t radius, bool erase = false) {
-        struct FillCircleParams {
-            uint32_t cx, cy;
-            uint32_t radius;
-            uint32_t val;
-            uint32_t width, height;
-        };
-
-        FillCircleParams p{cx, cy, radius, erase ? 0u : 1u, state.width, state.height};
+        FluidState::FillCircleParams p{cx, cy, radius, erase ? 0u : 1u, state.width, state.height};
         queue_.writeBuffer(*state.fillCircleBuffer, 0, &p, sizeof(p));
 
         wgpu::raii::CommandEncoder enc = device_.createCommandEncoder({});
