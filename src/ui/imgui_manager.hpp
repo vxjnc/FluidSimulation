@@ -15,6 +15,8 @@ struct MouseState {
     float dx = 0, dy = 0;
     bool rightPressed = false;
     bool leftPressed = false;
+
+    bool leftJustPressed = false;
 };
 
 class ImGuiManager {
@@ -179,6 +181,8 @@ public:
                     s.radius = display_r * settings.simScale;
                 }
 
+                ImGui::ColorEdit3("Color", s.color.data());
+
                 if (ImGui::Button("Remove")) {
                     sim.sources.erase(std::next(sim.sources.begin(), i));
                     ImGui::PopID();
@@ -192,7 +196,7 @@ public:
             if (ImGui::Button("Add Source")) {
                 sim.sources.emplace_back(static_cast<float>(viewport.w) / 2.f * settings.simScale,
                                          static_cast<float>(viewport.h) / 2.f * settings.simScale, 0, 100,
-                                         4 * settings.simScale);
+                                         4 * settings.simScale, std::array{1.f, 1.f, 1.f});
             }
         }
         ImGui::End();
@@ -226,7 +230,9 @@ public:
                     mouse.dy = io.MouseDelta.y;
                     mouse.x = mpos.x - origin.x;
                     mouse.y = mpos.y - origin.y;
+                    bool wasLeft = mouse.leftPressed;
                     mouse.leftPressed = ImGui::IsMouseDown(ImGuiMouseButton_Left);
+                    mouse.leftJustPressed = !wasLeft && mouse.leftPressed;
                     mouse.rightPressed = ImGui::IsMouseDown(ImGuiMouseButton_Right);
                 }
                 else {

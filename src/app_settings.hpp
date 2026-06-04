@@ -1,4 +1,6 @@
 #pragma once
+#include <array>
+
 #include "src/render/render_settings.hpp"
 
 enum class BrushMode { Inject, PaintWall };
@@ -13,6 +15,7 @@ struct AppSettings {
     BrushMode brushMode = BrushMode::Inject;
     float brushRadius = 10.0f;
     float brushStrength = 10.0f;
+    std::array<float, 3> brushColor;
 
     float simScale = 1.0f;
 

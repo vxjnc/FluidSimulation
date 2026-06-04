@@ -13,15 +13,15 @@ struct AdvectParams {
 @group(0) @binding(0) var<uniform> params: Params;
 @group(0) @binding(1) var<uniform> advect_params: AdvectParams;
 @group(0) @binding(2) var<storage, read> velocity: array<vec2f>;
-@group(0) @binding(3) var<storage, read> dye: array<f32>;
-@group(0) @binding(4) var<storage, read_write> dye_next: array<f32>;
+@group(0) @binding(3) var<storage, read> dye: array<vec4f>;
+@group(0) @binding(4) var<storage, read_write> dye_next: array<vec4f>;
 @group(0) @binding(5) var<storage, read> obstacles: array<u32>;
 
 fn idx(x: u32, y: u32) -> u32 {
     return y * params.width + x;
 }
 
-fn sample_dye(pos: vec2f) -> f32 {
+fn sample_dye(pos: vec2f) -> vec4f {
     let x = clamp(pos.x, 0.0, f32(params.width - 1));
     let y = clamp(pos.y, 0.0, f32(params.height - 1));
 
@@ -51,7 +51,7 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
     let src_pos = pos - vel * advect_params.dt;
 
     if obstacles[i] != 0u {
-        dye_next[i] = 0.0;
+        dye_next[i] = vec4f();
         return;
     }
 

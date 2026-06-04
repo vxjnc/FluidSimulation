@@ -17,9 +17,8 @@ public:
             WGPUHelper::makeBuffer(device, 4 * sizeof(float),
                                    wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst, "advect_params");
 
-        injectBuffer =
-            WGPUHelper::makeBuffer(device, 5 * sizeof(float) + 2 * sizeof(uint32_t),
-                                   wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst, "inject_params");
+        injectBuffer = WGPUHelper::makeBuffer(
+            device, 48, wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst, "inject_params");
 
         fillCircleBuffer = WGPUHelper::makeBuffer(device, 6 * sizeof(uint32_t),
                                                   wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst,
@@ -42,8 +41,8 @@ public:
         pressure = buf("pressure", 1 * sizeof(float));
         pressure_next = buf("pressure_next", 1 * sizeof(float));
         divergence = buf("divergence", 1 * sizeof(float));
-        dye = buf("dye", 1 * sizeof(float));
-        dye_next = buf("dye_next", 1 * sizeof(float));
+        dye = buf("dye", 4 * sizeof(float));
+        dye_next = buf("dye_next", 4 * sizeof(float));
         obstacles = buf("obstacles", 1 * sizeof(uint32_t));
 
         uint32_t params[2] = {width, height};
@@ -62,8 +61,8 @@ public:
         encoder.clearBuffer(*pressure, 0, numPixels * 1 * sizeof(float));
         encoder.clearBuffer(*pressure_next, 0, numPixels * 1 * sizeof(float));
         encoder.clearBuffer(*divergence, 0, numPixels * 1 * sizeof(float));
-        encoder.clearBuffer(*dye, 0, numPixels * 1 * sizeof(float));
-        encoder.clearBuffer(*dye_next, 0, numPixels * 1 * sizeof(float));
+        encoder.clearBuffer(*dye, 0, numPixels * 4 * sizeof(float));
+        encoder.clearBuffer(*dye_next, 0, numPixels * 4 * sizeof(float));
         encoder.clearBuffer(*obstacles, 0, numPixels * 1 * sizeof(uint32_t));
 
         wgpu::CommandBufferDescriptor cmdBufferDesc{};

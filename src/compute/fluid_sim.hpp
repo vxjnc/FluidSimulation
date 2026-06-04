@@ -48,10 +48,10 @@ public:
             return device_.createBuffer(desc);
         };
 
-        wgpu::raii::Buffer new_velocity = makeBuf(2 * sizeof(float), "velocity_new");
-        wgpu::raii::Buffer new_pressure = makeBuf(sizeof(float), "pressure_new");
-        wgpu::raii::Buffer new_dye = makeBuf(sizeof(float), "dye_new");
-        wgpu::raii::Buffer new_obstacles = makeBuf(sizeof(uint32_t), "obstacles_new");
+        wgpu::raii::Buffer new_velocity = makeBuf(2 * sizeof(float), "velocity");
+        wgpu::raii::Buffer new_pressure = makeBuf(sizeof(float), "pressure");
+        wgpu::raii::Buffer new_dye = makeBuf(4 * sizeof(float), "dye");
+        wgpu::raii::Buffer new_obstacles = makeBuf(sizeof(uint32_t), "obstacles");
 
         uint32_t W = (w + 15) / 16;
         uint32_t H = (h + 15) / 16;
@@ -67,7 +67,7 @@ public:
 
         dispatch(resamplePipelines.vec2f, *state.velocity, *new_velocity);
         dispatch(resamplePipelines.f32, *state.pressure, *new_pressure);
-        dispatch(resamplePipelines.f32, *state.dye, *new_dye);
+        dispatch(resamplePipelines.vec4f, *state.dye, *new_dye);
         dispatch(resamplePipelines.u32, *state.obstacles, *new_obstacles);
 
         pass->end();
@@ -84,7 +84,7 @@ public:
         state.velocity_next = makeBuf(2 * sizeof(float), "velocity_next");
         state.pressure_next = makeBuf(sizeof(float), "pressure_next");
         state.divergence = makeBuf(sizeof(float), "divergence");
-        state.dye_next = makeBuf(sizeof(float), "dye_next");
+        state.dye_next = makeBuf(4 * sizeof(float), "dye_next");
 
         uint32_t params[2] = {w, h};
         queue_.writeBuffer(*state.paramsBuffer, 0, params, sizeof(params));
@@ -127,7 +127,8 @@ public:
     }
 
     void inject(const FluidSource& source) {
-        struct InjectParams {
+        struct alignas(16) InjectParams {
+            float color[4];
             float x, y;
             float vx, vy;
             float radius;
@@ -135,7 +136,8 @@ public:
             uint32_t form;
         };
 
-        InjectParams p{source.x,
+        InjectParams p{{source.color[0], source.color[1], source.color[2], 1.0f},
+                       source.x,
                        source.y,
                        source.vx,
                        source.vy,
@@ -205,8 +207,8 @@ private:
     wgpu::raii::BindGroup bg_pressure1;
     wgpu::raii::BindGroup bg_subtract;
     wgpu::raii::BindGroup bg_boundary;
-    wgpu::raii::BindGroup bg_advect_dye0; // dye → dye_next
-    wgpu::raii::BindGroup bg_advect_dye1; // dye_next → dye
+    wgpu::raii::BindGroup bg_advect_dye0; // dye -> dye_next
+    wgpu::raii::BindGroup bg_advect_dye1; // dye_next -> dye
 
     void initBindGroups() {
         bg_advect = WGPUHelper::makeBindGroup(device_, pipelines.advect,

@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <numbers>
 
 #include <GLFW/glfw3.h>
 
@@ -79,30 +80,61 @@ private:
 
         if (settings.brushMode == BrushMode::Inject) {
             if (mouse.leftPressed) {
-                simulation.inject({sx, sy, sdx * settings.brushStrength, -sdy * settings.brushStrength, sr});
+                simulation.inject({sx, sy, sdx * settings.brushStrength, -sdy * settings.brushStrength, sr,
+                                   settings.brushColor});
             }
-        }
-        else {
-            if (mouse.leftPressed || mouse.rightPressed) {
-                simulation.paintObstacle(static_cast<uint32_t>(sx), static_cast<uint32_t>(sy),
-                                         static_cast<uint32_t>(sr), mouse.rightPressed);
+            else {
+                if (mouse.leftPressed || mouse.rightPressed) {
+                    simulation.paintObstacle(static_cast<uint32_t>(sx), static_cast<uint32_t>(sy),
+                                             static_cast<uint32_t>(sr), mouse.rightPressed);
+                }
             }
-        }
 
-        if (ImGui::IsKeyPressed(ImGuiKey_Space)) {
-            settings.paused = !settings.paused;
-        }
-        if (ImGui::IsKeyPressed(ImGuiKey_D)) {
-            settings.renderSettings.mode = RenderMode::Dye;
-        }
-        if (ImGui::IsKeyPressed(ImGuiKey_V)) {
-            settings.renderSettings.mode = RenderMode::Velocity;
-        }
-        if (ImGui::IsKeyPressed(ImGuiKey_P)) {
-            settings.renderSettings.mode = RenderMode::Pressure;
-        }
-        if (ImGui::IsKeyPressed(ImGuiKey_G)) {
-            settings.renderSettings.mode = RenderMode::Divergence;
+            if (ImGui::IsKeyPressed(ImGuiKey_Space)) {
+                settings.paused = !settings.paused;
+            }
+            if (ImGui::IsKeyPressed(ImGuiKey_D)) {
+                settings.renderSettings.mode = RenderMode::Dye;
+            }
+            if (ImGui::IsKeyPressed(ImGuiKey_V)) {
+                settings.renderSettings.mode = RenderMode::Velocity;
+            }
+            if (ImGui::IsKeyPressed(ImGuiKey_P)) {
+                settings.renderSettings.mode = RenderMode::Pressure;
+            }
+            if (ImGui::IsKeyPressed(ImGuiKey_G)) {
+                settings.renderSettings.mode = RenderMode::Divergence;
+            }
+
+            if (mouse.leftJustPressed) {
+                static float hue = 0.f;
+                hue = fmod(hue + std::numbers::phi_v<float>, 1.0f);
+                float h6 = hue * 6.0f;
+                int i = static_cast<int>(h6);
+                float f = h6 - static_cast<float>(i);
+                float q = 1.0f - f;
+                float t = f;
+                switch (i % 6) {
+                case 0:
+                    settings.brushColor = {1, t, 0};
+                    break;
+                case 1:
+                    settings.brushColor = {q, 1, 0};
+                    break;
+                case 2:
+                    settings.brushColor = {0, 1, t};
+                    break;
+                case 3:
+                    settings.brushColor = {0, q, 1};
+                    break;
+                case 4:
+                    settings.brushColor = {t, 0, 1};
+                    break;
+                default:
+                    settings.brushColor = {1, 0, q};
+                    break;
+                }
+            }
         }
     }
 

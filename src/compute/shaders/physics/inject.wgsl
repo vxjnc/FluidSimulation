@@ -4,6 +4,7 @@ struct Params {
 }
 
 struct Inject {
+    color: vec4f,
     x: f32,
     y: f32,
     vx: f32,
@@ -16,7 +17,7 @@ struct Inject {
 @group(0) @binding(0) var<uniform> params: Params;
 @group(0) @binding(1) var<uniform> inject: Inject;
 @group(0) @binding(2) var<storage, read_write> velocity: array<vec2f>;
-@group(0) @binding(3) var<storage, read_write> dye: array<f32>;
+@group(0) @binding(3) var<storage, read_write> dye: array<vec4f>;
 
 fn distance_to_segment(p: vec2f, a: vec2f, b: vec2f) -> f32 {
     let ba = b - a;
@@ -69,6 +70,6 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
 
     // Mode::DYE
     if (inject.mode_mask & 2u) != 0u {
-        dye[index] = min(dye[index] + falloff, 1.0);
+        dye[index] = min(dye[index] + vec4f(inject.color.rgb * falloff, falloff), vec4f(1.0));
     }
 }

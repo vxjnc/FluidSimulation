@@ -1,4 +1,4 @@
-@group(0) @binding(0) var<storage, read> dye: array<f32>;
+@group(0) @binding(0) var<storage, read> dye: array<vec4f>;
 @group(0) @binding(1) var<storage, read> velocity: array<vec2f>;
 @group(0) @binding(2) var<storage, read> pressure: array<f32>;
 @group(0) @binding(3) var<storage, read> divergence: array<f32>;
@@ -57,7 +57,7 @@ fn bilinear_t(uv: vec2f) -> vec2f {
     return fract(pos);
 }
 
-fn sample_dye(uv: vec2f) -> f32 {
+fn sample_dye(uv: vec2f) -> vec4f {
     let c = bilinear_coords(uv);
     let t = bilinear_t(uv);
     let d00 = dye[grid_idx(c.x, c.y)];
@@ -111,10 +111,8 @@ fn fs_main(in: VertOut) -> @location(0) vec4f {
     var color = vec4f(0.0, 0.0, 0.0, 1.0);
     switch dims.z {
         case 0u: {
-            let d = clamp(sample_dye(in.uv), 0.0, 1.0);
-            let v = sample_velocity(in.uv);
-            let hue = (atan2(v.y, v.x) / (2.0 * pi) + 1.0) % 1.0;
-            color = vec4f(hsv2rgb(hue, 1.0, d), 1.0);
+            let d = sample_dye(in.uv);
+            color = vec4f(d.rgb, 1.0);
         }
         case 1u: {
             let v = sample_velocity(in.uv);
