@@ -101,9 +101,14 @@ private:
             if (ImGui::IsKeyPressed(ImGuiKey_G)) {
                 settings.renderSettings.mode = RenderMode::Divergence;
             }
+            if (settings.paused && ImGui::IsKeyPressed(ImGuiKey_RightArrow)) {
+                settings.paused = false;
+                update();
+                settings.paused = true;
+            }
 
             if (mouse.leftJustPressed) {
-                static float hue = 0.f;
+                static float hue = static_cast<float>(time(nullptr));
                 hue = fmod(hue + std::numbers::phi_v<float>, 1.0f);
                 float h6 = hue * 6.0f;
                 int i = static_cast<int>(h6);
