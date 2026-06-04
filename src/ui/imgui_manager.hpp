@@ -101,7 +101,7 @@ public:
             ImGui::Separator();
 
             ImGui::Text("Render Mode");
-            static const char* modes[] = {"Dye", "Velocity", "Pressure", "Divergence"};
+            static const char* modes[] = {"Dye", "Velocity", "Pressure", "Divergence", "Curl"};
             int current = static_cast<int>(settings.renderSettings.mode);
             if (ImGui::Combo("##render_mode", &current, modes, sizeof(modes) / sizeof(modes[0]))) {
                 settings.renderSettings.mode = static_cast<RenderMode>(current);

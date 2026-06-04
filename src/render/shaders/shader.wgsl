@@ -7,12 +7,13 @@ struct Params {
     show_obstacles: u32,
 }
 
-@group(0) @binding(0) var<storage, read> dye: array<vec4f>;
-@group(0) @binding(1) var<storage, read> velocity: array<vec2f>;
-@group(0) @binding(2) var<storage, read> pressure: array<f32>;
-@group(0) @binding(3) var<storage, read> divergence: array<f32>;
-@group(0) @binding(4) var<storage, read> obstacles: array<u32>;
-@group(0) @binding(5) var<uniform> params: Params;
+@group(0) @binding(0) var<uniform> params: Params;
+@group(0) @binding(1) var<storage, read> dye: array<vec4f>;
+@group(0) @binding(2) var<storage, read> velocity: array<vec2f>;
+@group(0) @binding(3) var<storage, read> pressure: array<f32>;
+@group(0) @binding(4) var<storage, read> divergence: array<f32>;
+@group(0) @binding(5) var<storage, read> obstacles: array<u32>;
+@group(0) @binding(6) var<storage, read> curl: array<f32>;
 
 struct VertOut {
     @builtin(position) pos: vec4f,
@@ -149,6 +150,18 @@ fn fs_main(in: VertOut) -> @location(0) vec4f {
             let v = sample_velocity(in.uv);
             let hue = (atan2(v.y, v.x) / (2.0 * pi) + 1.0) % 1.0;
             color = vec4f(hsv2rgb(hue, 1.0, d), 1.0);
+        }
+        case 4u: {
+            let c = bilinear_phys(in.uv);
+            let t = bilinear_t_phys(in.uv);
+            let c00 = curl[phys_idx(c.x, c.y)];
+            let c10 = curl[phys_idx(c.z, c.y)];
+            let c01 = curl[phys_idx(c.x, c.w)];
+            let c11 = curl[phys_idx(c.z, c.w)];
+            let val = mix(mix(c00, c10, t.x), mix(c01, c11, t.x), t.y);
+            let pos = clamp(val * 0.1, 0.0, 1.0);
+            let neg = clamp(-val * 0.1, 0.0, 1.0);
+            color = vec4f(pos, 0.0, neg, 1.0);
         }
         default: {
             color = vec4f(0.0, 0.0, 0.0, 1.0);

@@ -101,6 +101,9 @@ private:
             if (ImGui::IsKeyPressed(ImGuiKey_G)) {
                 settings.renderSettings.mode = RenderMode::Divergence;
             }
+            if (ImGui::IsKeyPressed(ImGuiKey_C)) {
+                settings.renderSettings.mode = RenderMode::Curl;
+            }
             if (settings.paused && ImGui::IsKeyPressed(ImGuiKey_RightArrow)) {
                 settings.paused = false;
                 update();

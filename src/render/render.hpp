@@ -1,10 +1,11 @@
 #pragma once
 
 #include <webgpu/webgpu-raii.hpp>
-#include <webgpu/webgpu.hpp>
+#include <webgpu/webgpu.h>
 
 #include "generated/shaders/shader.wgsl.h"
 #include "src/compute/fluid_state.hpp"
+#include "src/compute/wgpu_helper.hpp"
 #include "src/render/render_settings.hpp"
 #include "src/wgpu_context.hpp"
 
@@ -21,46 +22,33 @@ public:
     void draw(const wgpu::raii::TextureView& targetView, FluidState& fluid, const RenderSettings& settings) {
         WGPUContext& ctx = WGPUContext::instance();
 
-        RenderParams p{fluid.width,
-                       fluid.height,
-                       fluid.dye_width,
-                       fluid.dye_height,
-                       static_cast<uint32_t>(settings.mode),
-                       settings.showObstacles};
-        ctx.queue().writeBuffer(*dimsBuffer, 0, &p, sizeof(p));
+        RenderParams p{
+            fluid.width,
+            fluid.height,
+            fluid.dye_width,
+            fluid.dye_height,
+            static_cast<uint32_t>(settings.mode),
+            settings.showObstacles,
+        };
+        ctx.queue().writeBuffer(*paramsBuffer, 0, &p, sizeof(p));
 
-        wgpu::BindGroupEntry entries[6]{};
-        entries[0].binding = 0;
-        entries[0].buffer = *fluid.dye;
-        entries[0].size = fluid.dye->getSize();
-        entries[1].binding = 1;
-        entries[1].buffer = *fluid.velocity;
-        entries[1].size = fluid.velocity->getSize();
-        entries[2].binding = 2;
-        entries[2].buffer = *fluid.pressure;
-        entries[2].size = fluid.pressure->getSize();
-        entries[3].binding = 3;
-        entries[3].buffer = *fluid.divergence;
-        entries[3].size = fluid.divergence->getSize();
-        entries[4].binding = 4;
-        entries[4].buffer = *fluid.obstacles;
-        entries[4].size = fluid.obstacles->getSize();
-        entries[5].binding = 5;
-        entries[5].buffer = *dimsBuffer;
-        entries[5].size = sizeof(p);
-
-        wgpu::BindGroupDescriptor bgDesc{};
-        bgDesc.layout = *bindGroupLayout;
-        bgDesc.entryCount = sizeof(entries) / sizeof(entries[0]);
-        bgDesc.entries = entries;
-        bgDesc.label = wgpu::StringView("DrawBindGroup");
-        wgpu::raii::BindGroup bindGroup = ctx.device().createBindGroup(bgDesc);
+        wgpu::raii::BindGroup bindGroup = WGPUHelper::makeBindGroup(ctx.device(), pipeline,
+                                                                    {
+                                                                        *paramsBuffer,
+                                                                        *fluid.dye,
+                                                                        *fluid.velocity,
+                                                                        *fluid.pressure,
+                                                                        *fluid.divergence,
+                                                                        *fluid.obstacles,
+                                                                        *fluid.curl,
+                                                                    },
+                                                                    "DrawBindGroup");
 
         wgpu::raii::CommandEncoder enc = ctx.device().createCommandEncoder();
 
         wgpu::RenderPassColorAttachment color{};
         color.view = *targetView;
-        color.loadOp = wgpu::LoadOp::Clear;
+        color.loadOp = wgpu::LoadOp::Load;
         color.storeOp = wgpu::StoreOp::Store;
         color.clearValue = {0, 0, 0, 1};
         color.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
@@ -86,39 +74,6 @@ private:
         wgpu::raii::ShaderModule shader =
             WGPUHelper::makeShaderModule(ctx.device(), shader_wgsl, "DrawShader");
 
-        wgpu::BindGroupLayoutEntry entries[6]{};
-        entries[0].binding = 0;
-        entries[0].visibility = wgpu::ShaderStage::Fragment;
-        entries[0].buffer.type = wgpu::BufferBindingType::ReadOnlyStorage;
-        entries[1].binding = 1;
-        entries[1].visibility = wgpu::ShaderStage::Fragment;
-        entries[1].buffer.type = wgpu::BufferBindingType::ReadOnlyStorage;
-        entries[2].binding = 2;
-        entries[2].visibility = wgpu::ShaderStage::Fragment;
-        entries[2].buffer.type = wgpu::BufferBindingType::ReadOnlyStorage;
-        entries[3].binding = 3;
-        entries[3].visibility = wgpu::ShaderStage::Fragment;
-        entries[3].buffer.type = wgpu::BufferBindingType::ReadOnlyStorage;
-        entries[4].binding = 4;
-        entries[4].visibility = wgpu::ShaderStage::Fragment;
-        entries[4].buffer.type = wgpu::BufferBindingType::ReadOnlyStorage;
-        entries[5].binding = 5;
-        entries[5].visibility = wgpu::ShaderStage::Fragment;
-        entries[5].buffer.type = wgpu::BufferBindingType::Uniform;
-        entries[5].buffer.minBindingSize = sizeof(RenderParams);
-
-        wgpu::BindGroupLayoutDescriptor bglDesc{};
-        bglDesc.label = wgpu::StringView("DrawBindGroupLayout");
-        bglDesc.entryCount = sizeof(entries) / sizeof(entries[0]);
-        bglDesc.entries = entries;
-        bindGroupLayout = ctx.device().createBindGroupLayout(bglDesc);
-
-        wgpu::PipelineLayoutDescriptor plDesc{};
-        plDesc.label = wgpu::StringView("DrawPipelineLayout");
-        plDesc.bindGroupLayoutCount = 1;
-        plDesc.bindGroupLayouts = reinterpret_cast<WGPUBindGroupLayout*>(&bindGroupLayout);
-        wgpu::raii::PipelineLayout pipelineLayout = ctx.device().createPipelineLayout(plDesc);
-
         wgpu::ColorTargetState colorTarget{};
         colorTarget.format = ctx.surfaceFormat();
         colorTarget.writeMask = wgpu::ColorWriteMask::All;
@@ -130,7 +85,7 @@ private:
         frag.targets = &colorTarget;
 
         wgpu::RenderPipelineDescriptor pipeDesc{};
-        pipeDesc.layout = *pipelineLayout;
+        pipeDesc.layout = nullptr;
         pipeDesc.vertex.module = *shader;
         pipeDesc.vertex.entryPoint = wgpu::StringView("vs_main");
         pipeDesc.primitive.topology = wgpu::PrimitiveTopology::TriangleStrip;
@@ -139,11 +94,12 @@ private:
         pipeDesc.fragment = &frag;
         pipeline = ctx.device().createRenderPipeline(pipeDesc);
 
-        dimsBuffer = WGPUHelper::makeBuffer(ctx.device(), sizeof(RenderParams),
-                                            wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst, "Dims");
+        paramsBuffer =
+            WGPUHelper::makeBuffer(ctx.device(), sizeof(RenderParams),
+                                   wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst, "Dims");
     }
 
     wgpu::raii::BindGroupLayout bindGroupLayout;
     wgpu::raii::RenderPipeline pipeline;
-    wgpu::raii::Buffer dimsBuffer;
+    wgpu::raii::Buffer paramsBuffer;
 };

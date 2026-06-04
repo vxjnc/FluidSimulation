@@ -7,6 +7,7 @@ enum class RenderMode : uint8_t {
     Velocity = 1,
     Pressure = 2,
     Divergence = 3,
+    Curl = 4,
 };
 
 struct RenderSettings {

@@ -9,8 +9,8 @@
 namespace WGPUHelper {
     using BindGroupResource = std::variant<wgpu::Buffer, wgpu::TextureView>;
 
-    template <size_t N>
-    inline wgpu::BindGroup makeBindGroup(wgpu::Device device, wgpu::raii::ComputePipeline& pipeline,
+    template <typename Pipeline, size_t N>
+    inline wgpu::BindGroup makeBindGroup(wgpu::Device device, Pipeline& pipeline,
                                          std::span<const BindGroupResource, N> resources,
                                          std::string_view label) {
         wgpu::raii::BindGroupLayout layout = pipeline->getBindGroupLayout(0);
@@ -43,8 +43,8 @@ namespace WGPUHelper {
         desc.label = wgpu::StringView(label);
         return device.createBindGroup(desc);
     }
-    template <size_t N>
-    inline wgpu::BindGroup makeBindGroup(wgpu::Device device, wgpu::raii::ComputePipeline& pipeline,
+    template <typename Pipeline, size_t N>
+    inline wgpu::BindGroup makeBindGroup(wgpu::Device device, Pipeline& pipeline,
                                          const BindGroupResource (&resources)[N], std::string_view label) {
         return makeBindGroup(device, pipeline, std::span<const BindGroupResource, N>(resources), label);
     }
