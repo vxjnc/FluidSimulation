@@ -60,6 +60,8 @@ public:
             ImGui::Text("FPS: %.1f", io.Framerate);
             ImGui::Text("Sim size: %ux%u = %u", sim.state.width, sim.state.height,
                         sim.state.width * sim.state.height);
+            ImGui::Text("Dye size: %ux%u = %u", sim.state.dye_width, sim.state.dye_height,
+                        sim.state.dye_width * sim.state.dye_height);
 
             ImGui::Separator();
             ImGui::Text("Simulation settings");
@@ -77,6 +79,13 @@ public:
                 sim.resizeWithResample(
                     static_cast<uint32_t>(static_cast<float>(viewport.w) * settings.simScale),
                     static_cast<uint32_t>(static_cast<float>(viewport.h) * settings.simScale));
+            }
+
+            if (ImGui::SliderFloat("Dye Scale", &settings.dyeScale, settings.simScale, 1.0f)) {
+                sim.resizeWithResample(
+                    sim.state.width, sim.state.height,
+                    static_cast<uint32_t>(static_cast<float>(viewport.w) * settings.dyeScale),
+                    static_cast<uint32_t>(static_cast<float>(viewport.h) * settings.dyeScale));
             }
 
             ImGui::SliderFloat("Sim dt", &settings.dt, 0.001f, 0.1f);
@@ -108,7 +117,7 @@ public:
             if (ImGui::Combo("##brush", &bm, brushModes, sizeof(brushModes) / sizeof(brushModes[0]))) {
                 settings.brushMode = static_cast<BrushMode>(bm);
             }
-            ImGui::SliderFloat("Radius", &settings.brushRadius, 1.0f, 50.0f);
+            ImGui::SliderFloat("Radius", &settings.brushRadius, 1.0f, 100.0f);
             if (settings.brushMode == BrushMode::Inject) {
                 ImGui::SliderFloat("Strength", &settings.brushStrength, 1.0f, 100.0f);
             }
@@ -221,7 +230,9 @@ public:
                     viewport.init(WGPUContext::instance().device(), vw, vh,
                                   WGPUContext::instance().surfaceFormat());
                     sim.resizeWithResample(static_cast<uint32_t>(static_cast<float>(vw) * settings.simScale),
-                                           static_cast<uint32_t>(static_cast<float>(vh) * settings.simScale));
+                                           static_cast<uint32_t>(static_cast<float>(vh) * settings.simScale),
+                                           static_cast<uint32_t>(static_cast<float>(vw) * settings.dyeScale),
+                                           static_cast<uint32_t>(static_cast<float>(vh) * settings.dyeScale));
                 }
 
                 if (ImGui::IsWindowHovered()) {

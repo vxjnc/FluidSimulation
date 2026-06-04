@@ -1,9 +1,18 @@
+struct Params {
+    width: u32,
+    height: u32,
+    dye_width: u32,
+    dye_height: u32,
+    mode: u32,
+    show_obstacles: u32,
+}
+
 @group(0) @binding(0) var<storage, read> dye: array<vec4f>;
 @group(0) @binding(1) var<storage, read> velocity: array<vec2f>;
 @group(0) @binding(2) var<storage, read> pressure: array<f32>;
 @group(0) @binding(3) var<storage, read> divergence: array<f32>;
 @group(0) @binding(4) var<storage, read> obstacles: array<u32>;
-@group(0) @binding(5) var<uniform> dims: vec4u; // width, height, mode, showObstacles
+@group(0) @binding(5) var<uniform> params: Params;
 
 struct VertOut {
     @builtin(position) pos: vec4f,
@@ -41,77 +50,86 @@ fn hsv2rgb(h: f32, s: f32, v: f32) -> vec3f {
     }
 }
 
-fn grid_idx(x: u32, y: u32) -> u32 {
-    return y * dims.x + x;
+fn dye_idx(x: u32, y: u32) -> u32 {
+    return y * params.dye_width + x;
 }
 
-fn bilinear_coords(uv: vec2f) -> vec4u {
-    let pos = clamp(uv * vec2f(dims.xy) - 0.5, vec2f(0.0), vec2f(dims.xy) - vec2f(1.0));
+fn phys_idx(x: u32, y: u32) -> u32 {
+    return y * params.width + x;
+}
+
+fn bilinear_dye(uv: vec2f) -> vec4f {
+    let pos = clamp(uv * vec2f(f32(params.dye_width), f32(params.dye_height)) - 0.5,
+        vec2f(0.0), vec2f(f32(params.dye_width) - 1.0, f32(params.dye_height) - 1.0));
     let xy0 = vec2u(pos);
-    let xy1 = min(xy0 + vec2u(1u), dims.xy - vec2u(1u));
-    return vec4u(xy0, xy1);
-}
-
-fn bilinear_t(uv: vec2f) -> vec2f {
-    let pos = clamp(uv * vec2f(dims.xy) - 0.5, vec2f(0.0), vec2f(dims.xy) - vec2f(1.0));
-    return fract(pos);
-}
-
-fn sample_dye(uv: vec2f) -> vec4f {
-    let c = bilinear_coords(uv);
-    let t = bilinear_t(uv);
-    let d00 = dye[grid_idx(c.x, c.y)];
-    let d10 = dye[grid_idx(c.z, c.y)];
-    let d01 = dye[grid_idx(c.x, c.w)];
-    let d11 = dye[grid_idx(c.z, c.w)];
+    let xy1 = min(xy0 + vec2u(1u), vec2u(params.dye_width - 1u, params.dye_height - 1u));
+    let t = fract(pos);
+    let d00 = dye[dye_idx(xy0.x, xy0.y)];
+    let d10 = dye[dye_idx(xy1.x, xy0.y)];
+    let d01 = dye[dye_idx(xy0.x, xy1.y)];
+    let d11 = dye[dye_idx(xy1.x, xy1.y)];
     return mix(mix(d00, d10, t.x), mix(d01, d11, t.x), t.y);
 }
 
+fn bilinear_phys(uv: vec2f) -> vec4u {
+    let pos = clamp(uv * vec2f(f32(params.width), f32(params.height)) - 0.5,
+        vec2f(0.0), vec2f(f32(params.width) - 1.0, f32(params.height) - 1.0));
+    let xy0 = vec2u(pos);
+    let xy1 = min(xy0 + vec2u(1u), vec2u(params.width - 1u, params.height - 1u));
+    return vec4u(xy0, xy1);
+}
+
+fn bilinear_t_phys(uv: vec2f) -> vec2f {
+    let pos = clamp(uv * vec2f(f32(params.width), f32(params.height)) - 0.5,
+        vec2f(0.0), vec2f(f32(params.width) - 1.0, f32(params.height) - 1.0));
+    return fract(pos);
+}
+
 fn sample_velocity(uv: vec2f) -> vec2f {
-    let c = bilinear_coords(uv);
-    let t = bilinear_t(uv);
-    let v00 = velocity[grid_idx(c.x, c.y)];
-    let v10 = velocity[grid_idx(c.z, c.y)];
-    let v01 = velocity[grid_idx(c.x, c.w)];
-    let v11 = velocity[grid_idx(c.z, c.w)];
+    let c = bilinear_phys(uv);
+    let t = bilinear_t_phys(uv);
+    let v00 = velocity[phys_idx(c.x, c.y)];
+    let v10 = velocity[phys_idx(c.z, c.y)];
+    let v01 = velocity[phys_idx(c.x, c.w)];
+    let v11 = velocity[phys_idx(c.z, c.w)];
     return mix(mix(v00, v10, t.x), mix(v01, v11, t.x), t.y);
 }
 
 fn sample_pressure(uv: vec2f) -> f32 {
-    let c = bilinear_coords(uv);
-    let t = bilinear_t(uv);
-    let p00 = pressure[grid_idx(c.x, c.y)];
-    let p10 = pressure[grid_idx(c.z, c.y)];
-    let p01 = pressure[grid_idx(c.x, c.w)];
-    let p11 = pressure[grid_idx(c.z, c.w)];
+    let c = bilinear_phys(uv);
+    let t = bilinear_t_phys(uv);
+    let p00 = pressure[phys_idx(c.x, c.y)];
+    let p10 = pressure[phys_idx(c.z, c.y)];
+    let p01 = pressure[phys_idx(c.x, c.w)];
+    let p11 = pressure[phys_idx(c.z, c.w)];
     return mix(mix(p00, p10, t.x), mix(p01, p11, t.x), t.y);
 }
 
 fn sample_divergence(uv: vec2f) -> f32 {
-    let c = bilinear_coords(uv);
-    let t = bilinear_t(uv);
-    let d00 = divergence[grid_idx(c.x, c.y)];
-    let d10 = divergence[grid_idx(c.z, c.y)];
-    let d01 = divergence[grid_idx(c.x, c.w)];
-    let d11 = divergence[grid_idx(c.z, c.w)];
+    let c = bilinear_phys(uv);
+    let t = bilinear_t_phys(uv);
+    let d00 = divergence[phys_idx(c.x, c.y)];
+    let d10 = divergence[phys_idx(c.z, c.y)];
+    let d01 = divergence[phys_idx(c.x, c.w)];
+    let d11 = divergence[phys_idx(c.z, c.w)];
     return mix(mix(d00, d10, t.x), mix(d01, d11, t.x), t.y);
 }
 
 @fragment
 fn fs_main(in: VertOut) -> @location(0) vec4f {
-    let i = vec2u(in.uv * vec2f(dims.xy));
-    let idx = i.y * dims.x + i.x;
+    let phys_i = vec2u(in.uv * vec2f(f32(params.width), f32(params.height)));
+    let obs_idx = phys_i.y * params.width + phys_i.x;
 
     const pi = 3.14159265;
 
-    if dims.w != 0u && obstacles[idx] != 0u {
+    if params.show_obstacles != 0u && obstacles[obs_idx] != 0u {
         return vec4f(1.0);
     }
 
     var color = vec4f(0.0, 0.0, 0.0, 1.0);
-    switch dims.z {
+    switch params.mode {
         case 0u: {
-            let d = sample_dye(in.uv);
+            let d = bilinear_dye(in.uv);
             color = vec4f(d.rgb, 1.0);
         }
         case 1u: {

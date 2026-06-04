@@ -9,15 +9,25 @@
 #include "src/wgpu_context.hpp"
 
 class Render {
+    struct RenderParams {
+        uint32_t width, height;
+        uint32_t dye_width, dye_height;
+        uint32_t mode, show_obstacles;
+    };
+
 public:
     void init() { initPipeline(); }
 
     void draw(const wgpu::raii::TextureView& targetView, FluidState& fluid, const RenderSettings& settings) {
         WGPUContext& ctx = WGPUContext::instance();
 
-        uint32_t dims[4] = {fluid.width, fluid.height, static_cast<uint32_t>(settings.mode),
-                            settings.showObstacles};
-        ctx.queue().writeBuffer(*dimsBuffer, 0, dims, sizeof(dims));
+        RenderParams p{fluid.width,
+                       fluid.height,
+                       fluid.dye_width,
+                       fluid.dye_height,
+                       static_cast<uint32_t>(settings.mode),
+                       settings.showObstacles};
+        ctx.queue().writeBuffer(*dimsBuffer, 0, &p, sizeof(p));
 
         wgpu::BindGroupEntry entries[6]{};
         entries[0].binding = 0;
@@ -37,7 +47,7 @@ public:
         entries[4].size = fluid.obstacles->getSize();
         entries[5].binding = 5;
         entries[5].buffer = *dimsBuffer;
-        entries[5].size = sizeof(dims);
+        entries[5].size = sizeof(p);
 
         wgpu::BindGroupDescriptor bgDesc{};
         bgDesc.layout = *bindGroupLayout;
@@ -95,7 +105,7 @@ private:
         entries[5].binding = 5;
         entries[5].visibility = wgpu::ShaderStage::Fragment;
         entries[5].buffer.type = wgpu::BufferBindingType::Uniform;
-        entries[5].buffer.minBindingSize = 16;
+        entries[5].buffer.minBindingSize = sizeof(RenderParams);
 
         wgpu::BindGroupLayoutDescriptor bglDesc{};
         bglDesc.label = wgpu::StringView("DrawBindGroupLayout");
@@ -129,7 +139,7 @@ private:
         pipeDesc.fragment = &frag;
         pipeline = ctx.device().createRenderPipeline(pipeDesc);
 
-        dimsBuffer = WGPUHelper::makeBuffer(ctx.device(), sizeof(uint32_t) * 4,
+        dimsBuffer = WGPUHelper::makeBuffer(ctx.device(), sizeof(RenderParams),
                                             wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst, "Dims");
     }
 

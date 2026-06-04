@@ -8,6 +8,7 @@ class FluidState {
 public:
     struct Params {
         uint32_t width, height;
+        uint32_t dye_width, dye_height;
         float dt;
         float vel_dissipation;
         float dye_dissipation;
@@ -30,7 +31,8 @@ public:
         uint32_t form;
     };
 
-    void init(wgpu::Device device, wgpu::Queue queue, uint32_t w, uint32_t h) {
+    void init(wgpu::Device device, wgpu::Queue queue, uint32_t w, uint32_t h, uint32_t dye_w,
+              uint32_t dye_h) {
         device_ = device;
         queue_ = queue;
 
@@ -46,6 +48,7 @@ public:
                                                   "FillCircleParams");
 
         resize(w, h);
+        resizeDye(dye_w, dye_h);
     }
 
     void resize(uint32_t w, uint32_t h) {
@@ -63,12 +66,26 @@ public:
         pressure_next = buf("pressure_next", 1 * sizeof(float));
         divergence = buf("divergence", 1 * sizeof(float));
         curl = buf("curl", 1 * sizeof(float));
-        dye = buf("dye", 4 * sizeof(float));
-        dye_next = buf("dye_next", 4 * sizeof(float));
         obstacles = buf("obstacles", 1 * sizeof(uint32_t));
 
         uint32_t params[2] = {width, height};
         queue_.writeBuffer(*paramsBuffer, 0, params, sizeof(params));
+    }
+
+    void resizeDye(uint32_t w, uint32_t h) {
+        dye_width = w;
+        dye_height = h;
+
+        auto buf = [&](std::string_view label, size_t sizeElement) {
+            return WGPUHelper::makeBuffer(device_, dye_width * dye_height * sizeElement,
+                                          wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst, label);
+        };
+
+        dye = buf("dye", 4 * sizeof(float));
+        dye_next = buf("dye_next", 4 * sizeof(float));
+
+        uint32_t params[2] = {dye_width, dye_height};
+        queue_.writeBuffer(*paramsBuffer, offsetof(Params, dye_width), params, sizeof(params));
     }
 
     void clear() {
@@ -95,6 +112,9 @@ public:
 
     uint32_t width = 0;
     uint32_t height = 0;
+
+    uint32_t dye_width = 0;
+    uint32_t dye_height = 0;
 
     wgpu::raii::Buffer velocity, velocity_next;
     wgpu::raii::Buffer pressure, pressure_next;

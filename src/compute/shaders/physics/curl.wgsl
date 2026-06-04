@@ -1,6 +1,8 @@
 struct Params {
     width: u32,
     height: u32,
+    dye_width: u32,
+    dye_height: u32,
     dt: f32,
     vel_dissipation: f32,
     dye_dissipation: f32,

@@ -41,7 +41,9 @@ public:
 
         simulation.init(ctx.device(), ctx.queue(),
                         static_cast<uint32_t>(static_cast<float>(sim_w) * settings.simScale),
-                        static_cast<uint32_t>(static_cast<float>(height) * settings.simScale));
+                        static_cast<uint32_t>(static_cast<float>(height) * settings.simScale),
+                        static_cast<uint32_t>(static_cast<float>(sim_w) * settings.dyeScale),
+                        static_cast<uint32_t>(static_cast<float>(height) * settings.dyeScale));
     };
 
     ~Application() {
@@ -82,12 +84,6 @@ private:
             if (mouse.leftPressed) {
                 simulation.inject({sx, sy, sdx * settings.brushStrength, -sdy * settings.brushStrength, sr,
                                    settings.brushColor});
-            }
-            else {
-                if (mouse.leftPressed || mouse.rightPressed) {
-                    simulation.paintObstacle(static_cast<uint32_t>(sx), static_cast<uint32_t>(sy),
-                                             static_cast<uint32_t>(sr), mouse.rightPressed);
-                }
             }
 
             if (ImGui::IsKeyPressed(ImGuiKey_Space)) {
@@ -134,6 +130,12 @@ private:
                     settings.brushColor = {1, 0, q};
                     break;
                 }
+            }
+        }
+        else if (settings.brushMode == BrushMode::PaintWall) {
+            if (mouse.leftPressed || mouse.rightPressed) {
+                simulation.paintObstacle(static_cast<uint32_t>(sx), static_cast<uint32_t>(sy),
+                                         static_cast<uint32_t>(sr), mouse.rightPressed);
             }
         }
     }
