@@ -8,6 +8,7 @@
 
 namespace WGPUHelper {
     using BindGroupResource = std::variant<wgpu::Buffer, wgpu::TextureView>;
+
     template <size_t N>
     inline wgpu::BindGroup makeBindGroup(wgpu::Device device, wgpu::raii::ComputePipeline& pipeline,
                                          std::span<const BindGroupResource, N> resources,
