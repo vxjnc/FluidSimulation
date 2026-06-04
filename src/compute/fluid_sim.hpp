@@ -102,19 +102,18 @@ public:
         uint32_t W = (state.width + 15) / 16;
         uint32_t H = (state.height + 15) / 16;
 
-        advect(enc, W, H);
-        std::swap(state.velocity, state.velocity_next);
+        wgpu::ComputePassDescriptor passDesc{};
+        passDesc.label = wgpu::StringView("FluidStepPass");
+        wgpu::raii::ComputePassEncoder pass = enc->beginComputePass(passDesc);
 
-        computeDivergence(enc, W, H);
-        solvePressure(enc, W, H);
+        advect(pass, W, H);
+        computeDivergence(pass, W, H);
+        solvePressure(pass, W, H);
+        subtractGradient(pass, W, H);
+        applyBoundary(pass, W, H);
+        advectDye(pass, W, H);
 
-        subtractGradient(enc, W, H);
-        std::swap(state.velocity, state.velocity_next);
-
-        applyBoundary(enc, W, H);
-
-        advectDye(enc, W, H);
-        std::swap(state.dye, state.dye_next);
+        pass->end();
 
         wgpu::raii::CommandBuffer cmd = enc->finish({});
         queue_.submit(1, &*cmd);
@@ -243,57 +242,33 @@ private:
         }
     }
 
-    void advect(wgpu::raii::CommandEncoder& enc, uint32_t W, uint32_t H) {
-        wgpu::ComputePassDescriptor passDesc{};
-        passDesc.label = wgpu::StringView("AdvectPass");
-        wgpu::raii::ComputePassEncoder pass = enc->beginComputePass(passDesc);
+    void advect(wgpu::raii::ComputePassEncoder& pass, uint32_t W, uint32_t H) {
         pipelines.dispatch(pass, pipelines.advect, bg_advect, W, H);
-        pass->end();
     }
 
-    void advectDye(wgpu::raii::CommandEncoder& enc, uint32_t W, uint32_t H) {
-        wgpu::ComputePassDescriptor passDesc{};
-        passDesc.label = wgpu::StringView("AdvectDyePass");
-        wgpu::raii::ComputePassEncoder pass = enc->beginComputePass(passDesc);
+    void advectDye(wgpu::raii::ComputePassEncoder& pass, uint32_t W, uint32_t H) {
         pipelines.dispatch(pass, pipelines.advectDye, frameIndex % 2 ? bg_advect_dye1 : bg_advect_dye0, W, H);
-        pass->end();
     }
 
-    void computeDivergence(wgpu::raii::CommandEncoder& enc, uint32_t W, uint32_t H) {
-        wgpu::ComputePassDescriptor passDesc{};
-        passDesc.label = wgpu::StringView("DivergencePass");
-        wgpu::raii::ComputePassEncoder pass = enc->beginComputePass(passDesc);
+    void computeDivergence(wgpu::raii::ComputePassEncoder& pass, uint32_t W, uint32_t H) {
         pipelines.dispatch(pass, pipelines.divergence, bg_divergence, W, H);
-        pass->end();
     }
 
-    void solvePressure(wgpu::raii::CommandEncoder& enc, uint32_t W, uint32_t H) {
+    void solvePressure(wgpu::raii::ComputePassEncoder& pass, uint32_t W, uint32_t H) {
         constexpr size_t ITERS = 30;
         static_assert(ITERS % 2 == 0, "pressure iterations must be even");
         for (size_t i = 0; i < ITERS; ++i) {
-            wgpu::ComputePassDescriptor passDesc{};
-            passDesc.label = wgpu::StringView("SolvePressurePass");
-            wgpu::raii::ComputePassEncoder pass = enc->beginComputePass(passDesc);
             pass->setPipeline(*pipelines.pressure);
             pass->setBindGroup(0, i % 2 ? *bg_pressure1 : *bg_pressure0, 0, nullptr);
             pass->dispatchWorkgroups(W, H, 1);
-            pass->end();
         }
     }
 
-    void subtractGradient(wgpu::raii::CommandEncoder& enc, uint32_t W, uint32_t H) {
-        wgpu::ComputePassDescriptor passDesc{};
-        passDesc.label = wgpu::StringView("SubtractGradientPass");
-        wgpu::raii::ComputePassEncoder pass = enc->beginComputePass(passDesc);
+    void subtractGradient(wgpu::raii::ComputePassEncoder& pass, uint32_t W, uint32_t H) {
         pipelines.dispatch(pass, pipelines.subtract, bg_subtract, W, H);
-        pass->end();
     }
 
-    void applyBoundary(wgpu::raii::CommandEncoder& enc, uint32_t W, uint32_t H) {
-        wgpu::ComputePassDescriptor passDesc{};
-        passDesc.label = wgpu::StringView("ApplyBoundaryPass");
-        wgpu::raii::ComputePassEncoder pass = enc->beginComputePass(passDesc);
+    void applyBoundary(wgpu::raii::ComputePassEncoder& pass, uint32_t W, uint32_t H) {
         pipelines.dispatch(pass, pipelines.boundary, bg_boundary, W, H);
-        pass->end();
     }
 };
