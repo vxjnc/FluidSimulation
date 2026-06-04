@@ -92,7 +92,13 @@ public:
         initBindGroups();
     }
 
-    void setDt(float dt) { queue_.writeBuffer(*state.dtBuffer, 0, &dt, sizeof(dt)); }
+    void setDt(float dt) { queue_.writeBuffer(*state.advectParamsBuffer, 0, &dt, sizeof(dt)); }
+    void setVelDissipation(float dissipation) {
+        queue_.writeBuffer(*state.advectParamsBuffer, sizeof(float), &dissipation, sizeof(dissipation));
+    }
+    void setDyeDissipation(float dissipation) {
+        queue_.writeBuffer(*state.advectParamsBuffer, 2 * sizeof(float), &dissipation, sizeof(dissipation));
+    }
 
     void step() {
         injectSource();
@@ -203,10 +209,10 @@ private:
     wgpu::raii::BindGroup bg_advect_dye1; // dye_next → dye
 
     void initBindGroups() {
-        bg_advect = WGPUHelper::makeBindGroup(
-            device_, pipelines.advect,
-            {*state.paramsBuffer, *state.dtBuffer, *state.velocity, *state.velocity_next, *state.obstacles},
-            "AdvectBindGroup");
+        bg_advect = WGPUHelper::makeBindGroup(device_, pipelines.advect,
+                                              {*state.paramsBuffer, *state.advectParamsBuffer,
+                                               *state.velocity, *state.velocity_next, *state.obstacles},
+                                              "AdvectBindGroup");
         bg_divergence = WGPUHelper::makeBindGroup(
             device_, pipelines.divergence,
             {*state.paramsBuffer, *state.velocity_next, *state.divergence, *state.obstacles},
@@ -226,14 +232,16 @@ private:
         bg_boundary = WGPUHelper::makeBindGroup(device_, pipelines.boundary,
                                                 {*state.paramsBuffer, *state.velocity, *state.obstacles},
                                                 "ApplyBoundaryBindGroup");
-        bg_advect_dye0 = WGPUHelper::makeBindGroup(device_, pipelines.advectDye,
-                                                   {*state.paramsBuffer, *state.dtBuffer, *state.velocity,
-                                                    *state.dye, *state.dye_next, *state.obstacles},
-                                                   "AdvectDyeBindGroup0");
-        bg_advect_dye1 = WGPUHelper::makeBindGroup(device_, pipelines.advectDye,
-                                                   {*state.paramsBuffer, *state.dtBuffer, *state.velocity,
-                                                    *state.dye_next, *state.dye, *state.obstacles},
-                                                   "AdvectDyeBindGroup1");
+        bg_advect_dye0 =
+            WGPUHelper::makeBindGroup(device_, pipelines.advectDye,
+                                      {*state.paramsBuffer, *state.advectParamsBuffer, *state.velocity,
+                                       *state.dye, *state.dye_next, *state.obstacles},
+                                      "AdvectDyeBindGroup0");
+        bg_advect_dye1 =
+            WGPUHelper::makeBindGroup(device_, pipelines.advectDye,
+                                      {*state.paramsBuffer, *state.advectParamsBuffer, *state.velocity,
+                                       *state.dye_next, *state.dye, *state.obstacles},
+                                      "AdvectDyeBindGroup1");
     }
 
     void injectSource() {

@@ -3,8 +3,15 @@ struct Params {
     height: u32,
 }
 
+struct AdvectParams {
+    dt: f32,
+    vel_dissipation: f32,
+    dye_dissipation: f32,
+    _pad: f32,
+}
+
 @group(0) @binding(0) var<uniform> params: Params;
-@group(0) @binding(1) var<uniform> dt: f32;
+@group(0) @binding(1) var<uniform> advect_params: AdvectParams;
 @group(0) @binding(2) var<storage, read> velocity: array<vec2f>;
 @group(0) @binding(3) var<storage, read> dye: array<f32>;
 @group(0) @binding(4) var<storage, read_write> dye_next: array<f32>;
@@ -41,13 +48,12 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
     let pos = vec2f(gid.xy);
     let i = idx(gid.x, gid.y);
     let vel = velocity[i];
-    let src_pos = pos - vel * dt;
+    let src_pos = pos - vel * advect_params.dt;
 
     if obstacles[i] != 0u {
         dye_next[i] = 0.0;
         return;
     }
 
-    const DISSIPATION = 0.2;
-    dye_next[i] = sample_dye(src_pos) * (1.0 - DISSIPATION * dt);
+    dye_next[i] = sample_dye(src_pos) / (1.0 + advect_params.dye_dissipation * advect_params.dt);
 }

@@ -108,10 +108,21 @@ private:
 
     void update() {
         static float lastDt = 0.0f;
+        static float lastDyeDissipation = 0.0f;
+        static float lastVelDissipation = 0.0f;
         if (settings.dt != lastDt) {
             simulation.setDt(settings.dt);
             lastDt = settings.dt;
         }
+        if (settings.dyeDissipation != lastDyeDissipation) {
+            simulation.setDyeDissipation(settings.dyeDissipation);
+            lastDyeDissipation = settings.dyeDissipation;
+        }
+        if (settings.velDissipation != lastVelDissipation) {
+            simulation.setVelDissipation(settings.velDissipation);
+            lastVelDissipation = settings.velDissipation;
+        }
+
         if (!settings.paused) {
             simulation.step();
         }

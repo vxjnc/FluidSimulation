@@ -17,7 +17,7 @@ public:
 
         uint32_t dims[4] = {fluid.width, fluid.height, static_cast<uint32_t>(settings.mode),
                             settings.showObstacles};
-        ctx.queue().writeBuffer(*dimsBuffer_, 0, dims, sizeof(dims));
+        ctx.queue().writeBuffer(*dimsBuffer, 0, dims, sizeof(dims));
 
         wgpu::BindGroupEntry entries[6]{};
         entries[0].binding = 0;
@@ -36,11 +36,11 @@ public:
         entries[4].buffer = *fluid.obstacles;
         entries[4].size = fluid.obstacles->getSize();
         entries[5].binding = 5;
-        entries[5].buffer = *dimsBuffer_;
+        entries[5].buffer = *dimsBuffer;
         entries[5].size = sizeof(dims);
 
         wgpu::BindGroupDescriptor bgDesc{};
-        bgDesc.layout = *bindGroupLayout_;
+        bgDesc.layout = *bindGroupLayout;
         bgDesc.entryCount = sizeof(entries) / sizeof(entries[0]);
         bgDesc.entries = entries;
         bgDesc.label = wgpu::StringView("DrawBindGroup");
@@ -61,7 +61,7 @@ public:
         passDesc.colorAttachments = &color;
 
         wgpu::raii::RenderPassEncoder pass = enc->beginRenderPass(passDesc);
-        pass->setPipeline(*pipeline_);
+        pass->setPipeline(*pipeline);
         pass->setBindGroup(0, *bindGroup, 0, nullptr);
         pass->draw(4, 1, 0, 0);
         pass->end();
@@ -101,12 +101,12 @@ private:
         bglDesc.label = wgpu::StringView("DrawBindGroupLayout");
         bglDesc.entryCount = sizeof(entries) / sizeof(entries[0]);
         bglDesc.entries = entries;
-        bindGroupLayout_ = ctx.device().createBindGroupLayout(bglDesc);
+        bindGroupLayout = ctx.device().createBindGroupLayout(bglDesc);
 
         wgpu::PipelineLayoutDescriptor plDesc{};
         plDesc.label = wgpu::StringView("DrawPipelineLayout");
         plDesc.bindGroupLayoutCount = 1;
-        plDesc.bindGroupLayouts = reinterpret_cast<WGPUBindGroupLayout*>(&bindGroupLayout_);
+        plDesc.bindGroupLayouts = reinterpret_cast<WGPUBindGroupLayout*>(&bindGroupLayout);
         wgpu::raii::PipelineLayout pipelineLayout = ctx.device().createPipelineLayout(plDesc);
 
         wgpu::ColorTargetState colorTarget{};
@@ -127,13 +127,13 @@ private:
         pipeDesc.multisample.count = 1;
         pipeDesc.multisample.mask = 0xFFFFFFFF;
         pipeDesc.fragment = &frag;
-        pipeline_ = ctx.device().createRenderPipeline(pipeDesc);
+        pipeline = ctx.device().createRenderPipeline(pipeDesc);
 
-        dimsBuffer_ = WGPUHelper::makeBuffer(ctx.device(), sizeof(uint32_t) * 4,
-                                             wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst, "Dims");
+        dimsBuffer = WGPUHelper::makeBuffer(ctx.device(), sizeof(uint32_t) * 4,
+                                            wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst, "Dims");
     }
 
-    wgpu::raii::BindGroupLayout bindGroupLayout_;
-    wgpu::raii::RenderPipeline pipeline_;
-    wgpu::raii::Buffer dimsBuffer_;
+    wgpu::raii::BindGroupLayout bindGroupLayout;
+    wgpu::raii::RenderPipeline pipeline;
+    wgpu::raii::Buffer dimsBuffer;
 };

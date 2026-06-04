@@ -60,6 +60,7 @@ public:
                         sim.state.width * sim.state.height);
 
             ImGui::Separator();
+            ImGui::Text("Simulation settings");
 
             float prevScale = settings.simScale;
             if (ImGui::SliderFloat("Sim Scale", &settings.simScale, 0.1f, 1.0f)) {
@@ -77,6 +78,9 @@ public:
             }
 
             ImGui::SliderFloat("Sim dt", &settings.dt, 0.001f, 0.1f);
+
+            ImGui::SliderFloat("Velocity Dissipation", &settings.velDissipation, 0.0f, 4.0f);
+            ImGui::SliderFloat("Dye Dissipation", &settings.dyeDissipation, 0.0f, 4.0f);
 
             if (ImGui::Button("Clear")) {
                 sim.state.clear();

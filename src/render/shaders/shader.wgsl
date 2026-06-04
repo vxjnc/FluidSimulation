@@ -12,7 +12,7 @@ struct VertOut {
 
 @vertex
 fn vs_main(@builtin(vertex_index) vi: u32) -> VertOut {
-    var positions = array<vec2f, 4>(
+    var positions = array(
         vec2f(-1.0, -1.0),
         vec2f(1.0, -1.0),
         vec2f(-1.0, 1.0),

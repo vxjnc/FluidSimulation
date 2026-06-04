@@ -13,8 +13,10 @@ public:
         paramsBuffer =
             WGPUHelper::makeBuffer(device, 2 * sizeof(uint32_t),
                                    wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst, "sim_params");
-        dtBuffer = WGPUHelper::makeBuffer(device, sizeof(float),
-                                          wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst, "dt");
+        advectParamsBuffer =
+            WGPUHelper::makeBuffer(device, 4 * sizeof(float),
+                                   wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst, "advect_params");
+
         injectBuffer =
             WGPUHelper::makeBuffer(device, 5 * sizeof(float) + 2 * sizeof(uint32_t),
                                    wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst, "inject_params");
@@ -82,7 +84,7 @@ public:
     wgpu::raii::Buffer obstacles;
 
     wgpu::raii::Buffer paramsBuffer;
-    wgpu::raii::Buffer dtBuffer;
+    wgpu::raii::Buffer advectParamsBuffer;
     wgpu::raii::Buffer injectBuffer;
     wgpu::raii::Buffer fillCircleBuffer;
 
