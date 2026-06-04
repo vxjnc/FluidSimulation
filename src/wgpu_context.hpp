@@ -131,7 +131,14 @@ public:
     }
 
     void present() { surface_->present(); }
-    void processEvents() { device_->tick(); }
+    void processEvents() {
+#ifdef WEBGPU_BACKEND_DAWN
+        device_->tick();
+#endif
+#ifdef WEBGPU_BACKEND_WGPU
+        device_->poll(false, nullptr);
+#endif
+    }
 
     wgpu::Device device() const { return *device_; }
     wgpu::Queue queue() const { return *queue_; }

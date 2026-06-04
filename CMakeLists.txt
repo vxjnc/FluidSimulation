@@ -16,6 +16,18 @@ endif()
 
 file(GLOB_RECURSE SOURCE_FILES "src/*.cpp")
 
+set(WEBGPU_BACKEND "DAWN" CACHE STRING "WebGPU backend")
+set_property(CACHE WEBGPU_BACKEND PROPERTY STRINGS "DAWN" "WGPU")
+if(WEBGPU_BACKEND STREQUAL "DAWN")
+    set(WEBGPU_CPP_TAG "dawn-7187")
+    set(IMGUI_WEBGPU_BACKEND "IMGUI_IMPL_WEBGPU_BACKEND_DAWN")
+elseif(WEBGPU_BACKEND STREQUAL "WGPU")
+    set(WEBGPU_CPP_TAG "wgpu-v24.0.3.1")
+    set(IMGUI_WEBGPU_BACKEND "IMGUI_IMPL_WEBGPU_BACKEND_WGPU")
+else()
+    message(FATAL_ERROR "Unknown WEBGPU_BACKEND: ${WEBGPU_BACKEND}")
+endif()
+
 include(FetchContent)
 
 # --- GLFW ---
@@ -39,12 +51,11 @@ FetchContent_Declare(
     GIT_TAG        v0.3.0-gamma
     GIT_SHALLOW    ON
 )
-set(WEBGPU_BACKEND "DAWN" CACHE STRING "WebGPU backend" FORCE)
 
 FetchContent_Declare(
     webgpu_cpp
     GIT_REPOSITORY https://github.com/eliemichel/WebGPU-Cpp.git
-    GIT_TAG        dawn-7187
+    GIT_TAG        ${WEBGPU_CPP_TAG}
     GIT_SHALLOW    ON
 )
 
@@ -71,7 +82,7 @@ target_include_directories(imgui SYSTEM PUBLIC
     ${imgui_SOURCE_DIR}
     ${imgui_SOURCE_DIR}/backends
 )
-target_compile_definitions(imgui PUBLIC IMGUI_IMPL_WEBGPU_BACKEND_DAWN)
+target_compile_definitions(imgui PUBLIC ${IMGUI_WEBGPU_BACKEND})
 target_link_libraries(imgui PUBLIC glfw webgpu)
 
 set(GENERATED_ROOT "${CMAKE_BINARY_DIR}/gen_includes")
