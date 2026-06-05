@@ -3,19 +3,10 @@
 #include <iostream>
 #include <stdexcept>
 
-#include <webgpu/webgpu-raii.hpp>
-
-#include "webgpu/webgpu.hpp"
-
-#if defined(__linux__)
-#define GLFW_EXPOSE_NATIVE_X11
-#elif defined(_WIN32)
-#define GLFW_EXPOSE_NATIVE_WIN32
-#elif defined(__APPLE__)
-#define GLFW_EXPOSE_NATIVE_COCOA
-#endif
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
+#include <glfw3webgpu.h>
+#include <webgpu/webgpu-raii.hpp>
 
 class WGPUContext {
 public:
@@ -67,7 +58,7 @@ public:
             throw std::runtime_error("wgpu: failed to create instance");
         }
 
-        surface_ = createSurface(window);
+        surface_ = wgpu::raii::Surface(glfwCreateWindowWGPUSurface(*instance_, window));
         if (!surface_) {
             throw std::runtime_error("wgpu: failed to create surface");
         }
@@ -149,26 +140,6 @@ public:
 
 private:
     WGPUContext() = default;
-
-    wgpu::Surface createSurface(GLFWwindow* window) {
-#if defined(__linux__)
-        wgpu::SurfaceSourceXlibWindow src = wgpu::Default;
-        src.display = glfwGetX11Display();
-        src.window = glfwGetX11Window(window);
-#elif defined(_WIN32)
-        wgpu::SurfaceSourceWindowsHWND src{};
-        src.hinstance = GetModuleHandle(nullptr);
-        src.hwnd = glfwGetWin32Window(window);
-#elif defined(__APPLE__)
-        wgpu::SurfaceSourceMetalLayer src{};
-        src.layer = glfwGetCocoaWindow(window);
-#endif
-
-        wgpu::SurfaceDescriptor desc{};
-        desc.label = wgpu::StringView("Surface");
-        desc.nextInChain = &src.chain;
-        return instance_->createSurface(desc);
-    }
 
     bool initialized_ = false;
 

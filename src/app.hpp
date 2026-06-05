@@ -122,30 +122,13 @@ private:
                 static float hue = static_cast<float>(time(nullptr));
                 hue = fmod(hue + std::numbers::phi_v<float>, 1.0f);
                 float h6 = hue * 6.0f;
-                int i = static_cast<int>(h6);
+                size_t i = static_cast<size_t>(h6);
                 float f = h6 - static_cast<float>(i);
                 float q = 1.0f - f;
                 float t = f;
-                switch (i % 6) {
-                case 0:
-                    settings.brushColor = {1, t, 0};
-                    break;
-                case 1:
-                    settings.brushColor = {q, 1, 0};
-                    break;
-                case 2:
-                    settings.brushColor = {0, 1, t};
-                    break;
-                case 3:
-                    settings.brushColor = {0, q, 1};
-                    break;
-                case 4:
-                    settings.brushColor = {t, 0, 1};
-                    break;
-                default:
-                    settings.brushColor = {1, 0, q};
-                    break;
-                }
+                settings.brushColor = std::array{std::array{1.0f, t, 0.0f}, std::array{q, 1.0f, 0.0f},
+                                                 std::array{0.0f, 1.0f, t}, std::array{0.0f, q, 1.0f},
+                                                 std::array{t, 0.0f, 1.0f}, std::array{1.0f, 0.0f, q}}[i % 6];
             }
         }
         else if (settings.brushMode == BrushMode::PaintWall) {

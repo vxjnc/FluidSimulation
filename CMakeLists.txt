@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.28)
 
-project(FluidSimulation CXX)
+project(FluidSimulation C CXX)
 
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 set(CMAKE_CXX_STANDARD 23)
@@ -67,7 +67,15 @@ FetchContent_Declare(
     GIT_SHALLOW    ON
 )
 
-FetchContent_MakeAvailable(glfw webgpu_distribution webgpu_cpp imgui)
+# --- glfw3webgpu ---
+FetchContent_Declare(
+    glfw3webgpu
+    GIT_REPOSITORY https://github.com/eliemichel/glfw3webgpu.git
+    GIT_TAG        fdcabcc54b56b50c12c10f5317abf8ae7ac32c29
+    GIT_SHALLOW    ON
+)
+
+FetchContent_MakeAvailable(glfw webgpu_distribution webgpu_cpp imgui glfw3webgpu)
 set_target_properties(glfw webgpu PROPERTIES SYSTEM TRUE)
 
 add_library(imgui STATIC
@@ -107,7 +115,7 @@ target_include_directories(fluid_gui INTERFACE
     ${webgpu_cpp_SOURCE_DIR}
     ${GENERATED_ROOT}
 )
-target_link_libraries(fluid_gui INTERFACE webgpu glfw imgui)
+target_link_libraries(fluid_gui INTERFACE webgpu glfw imgui glfw3webgpu)
 add_dependencies(fluid_gui wgsl_shaders)
 
 # --- Executable ---
