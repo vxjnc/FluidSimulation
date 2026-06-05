@@ -3,6 +3,8 @@
 #include <numbers>
 
 #include <GLFW/glfw3.h>
+#include <webgpu/webgpu-raii.hpp>
+#include <webgpu/webgpu.hpp>
 
 #include "compute/fluid_sim.hpp"
 #include "render/render.hpp"
@@ -61,19 +63,25 @@ public:
             glfwPollEvents();
             ctx.processEvents();
 
-            processInput();
+            wgpu::raii::CommandEncoder enc = ctx.device().createCommandEncoder();
 
-            update();
+            processInput(enc);
+            update(enc);
 
             imguiManager.beginFrame();
             imguiManager.renderUI(viewport, mouse, simulation, settings);
 
-            render();
+            render(enc);
+
+            wgpu::raii::CommandBuffer cmd = enc->finish({});
+            ctx.queue().submit(1, &*cmd);
+
+            ctx.present();
         }
     }
 
 private:
-    void processInput() {
+    void processInput(wgpu::raii::CommandEncoder& enc) {
         float sx = mouse.x * settings.simScale;
         float sy = (static_cast<float>(viewport.h) - mouse.y) * settings.simScale;
         float sdx = mouse.dx * settings.simScale;
@@ -82,8 +90,8 @@ private:
 
         if (settings.brushMode == BrushMode::Inject) {
             if (mouse.leftPressed) {
-                simulation.inject({sx, sy, sdx * settings.brushStrength, -sdy * settings.brushStrength, sr,
-                                   settings.brushColor});
+                simulation.inject(enc, {sx, sy, sdx * settings.brushStrength, -sdy * settings.brushStrength,
+                                        sr, settings.brushColor});
             }
 
             if (ImGui::IsKeyPressed(ImGuiKey_Space)) {
@@ -106,7 +114,7 @@ private:
             }
             if (settings.paused && ImGui::IsKeyPressed(ImGuiKey_RightArrow)) {
                 settings.paused = false;
-                update();
+                update(enc);
                 settings.paused = true;
             }
 
@@ -142,13 +150,13 @@ private:
         }
         else if (settings.brushMode == BrushMode::PaintWall) {
             if (mouse.leftPressed || mouse.rightPressed) {
-                simulation.paintObstacle(static_cast<uint32_t>(sx), static_cast<uint32_t>(sy),
+                simulation.paintObstacle(enc, static_cast<uint32_t>(sx), static_cast<uint32_t>(sy),
                                          static_cast<uint32_t>(sr), mouse.rightPressed);
             }
         }
     }
 
-    void update() {
+    void update(wgpu::raii::CommandEncoder& enc) {
         static float lastDt = 0.0f;
         static float lastDyeDissipation = 0.0f;
         static float lastVelDissipation = 0.0f;
@@ -171,14 +179,14 @@ private:
         }
 
         if (!settings.paused) {
-            simulation.step();
+            simulation.step(enc);
         }
     }
 
-    void render() {
+    void render(wgpu::raii::CommandEncoder& enc) {
         WGPUContext& ctx = WGPUContext::instance();
 
-        renderer.draw(viewport.view, simulation.state, settings.renderSettings);
+        renderer.draw(enc, viewport.view, simulation.state, settings.renderSettings);
 
         wgpu::SurfaceTexture surfaceTex{};
         ctx.surface().getCurrentTexture(&surfaceTex);
@@ -199,14 +207,9 @@ private:
         wgpu::CommandEncoderDescriptor cmdDesc{};
         cmdDesc.label = wgpu::StringView("CommandEncoder");
 
-        wgpu::raii::CommandEncoder enc = ctx.device().createCommandEncoder(cmdDesc);
         wgpu::raii::RenderPassEncoder pass = enc->beginRenderPass(passDesc);
         imguiManager.endFrame(*pass);
         pass->end();
-        wgpu::raii::CommandBuffer cmd = enc->finish({});
-        ctx.queue().submit(1, &*cmd);
-
-        ctx.present();
     }
 
     GLFWwindow* window = nullptr;

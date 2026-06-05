@@ -2,6 +2,7 @@
 
 #include <webgpu/webgpu-raii.hpp>
 #include <webgpu/webgpu.h>
+#include <webgpu/webgpu.hpp>
 
 #include "generated/shaders/shader.wgsl.h"
 #include "src/compute/fluid_state.hpp"
@@ -20,6 +21,20 @@ public:
     void init() { initPipeline(); }
 
     void draw(const wgpu::raii::TextureView& targetView, FluidState& fluid, const RenderSettings& settings) {
+        WGPUContext& ctx = WGPUContext::instance();
+
+        wgpu::CommandEncoderDescriptor cmdDesc{};
+        cmdDesc.label = wgpu::StringView("DrawEncoder");
+        wgpu::raii::CommandEncoder enc = ctx.device().createCommandEncoder(cmdDesc);
+
+        draw(enc, targetView, fluid, settings);
+
+        wgpu::raii::CommandBuffer cmd = enc->finish();
+        ctx.queue().submit(1, &*cmd);
+    }
+
+    void draw(wgpu::raii::CommandEncoder& enc, const wgpu::raii::TextureView& targetView, FluidState& fluid,
+              const RenderSettings& settings) {
         WGPUContext& ctx = WGPUContext::instance();
 
         RenderParams p{
@@ -44,8 +59,6 @@ public:
                                                                     },
                                                                     "DrawBindGroup");
 
-        wgpu::raii::CommandEncoder enc = ctx.device().createCommandEncoder();
-
         wgpu::RenderPassColorAttachment color{};
         color.view = *targetView;
         color.loadOp = wgpu::LoadOp::Load;
@@ -63,9 +76,6 @@ public:
         pass->setBindGroup(0, *bindGroup, 0, nullptr);
         pass->draw(4, 1, 0, 0);
         pass->end();
-
-        wgpu::raii::CommandBuffer cmd = enc->finish();
-        ctx.queue().submit(1, &*cmd);
     }
 
 private:

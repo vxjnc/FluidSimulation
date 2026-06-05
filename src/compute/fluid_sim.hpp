@@ -157,9 +157,16 @@ public:
     }
 
     void step() {
-        injectSource();
+        wgpu::CommandEncoderDescriptor desc{};
+        desc.label = wgpu::StringView("FluidStepEncoder");
+        wgpu::raii::CommandEncoder enc = device_.createCommandEncoder(desc);
+        step(enc);
+        wgpu::raii::CommandBuffer cmd = enc->finish({});
+        queue_.submit(1, &*cmd);
+    }
 
-        wgpu::raii::CommandEncoder enc = device_.createCommandEncoder({});
+    void step(wgpu::raii::CommandEncoder& enc) {
+        injectSource(enc);
 
         uint32_t W = (state.width + 15) / 16;
         uint32_t H = (state.height + 15) / 16;
@@ -181,13 +188,10 @@ public:
         advectDye(pass, DW, DH);
 
         pass->end();
-
-        wgpu::raii::CommandBuffer cmd = enc->finish({});
-        queue_.submit(1, &*cmd);
         ++frameIndex;
     }
 
-    void inject(const FluidSource& source) {
+    void inject(wgpu::raii::CommandEncoder& enc, const FluidSource& source) {
         FluidState::InjectParams p{{source.color[0], source.color[1], source.color[2], 1.0f},
                                    source.x,
                                    source.y,
@@ -198,7 +202,6 @@ public:
                                    static_cast<uint32_t>(source.form)};
         queue_.writeBuffer(*state.injectBuffer, 0, &p, sizeof(p));
 
-        wgpu::raii::CommandEncoder enc = device_.createCommandEncoder({});
         uint32_t W = (std::max(state.width, state.dye_width) + 15) / 16;
         uint32_t H = (std::max(state.height, state.dye_height) + 15) / 16;
 
@@ -210,16 +213,13 @@ public:
 
         pipelines.dispatch(pass, pipelines.inject, bg, W, H);
         pass->end();
-
-        wgpu::raii::CommandBuffer cmd = enc->finish({});
-        queue_.submit(1, &*cmd);
     }
 
-    void paintObstacle(uint32_t cx, uint32_t cy, uint32_t radius, bool erase = false) {
+    void paintObstacle(wgpu::raii::CommandEncoder& enc, uint32_t cx, uint32_t cy, uint32_t radius,
+                       bool erase = false) {
         FluidState::FillCircleParams p{cx, cy, radius, erase ? 0u : 1u, state.width, state.height};
         queue_.writeBuffer(*state.fillCircleBuffer, 0, &p, sizeof(p));
 
-        wgpu::raii::CommandEncoder enc = device_.createCommandEncoder({});
         uint32_t W = (state.width + 15) / 16;
         uint32_t H = (state.height + 15) / 16;
 
@@ -230,9 +230,6 @@ public:
         wgpu::raii::ComputePassEncoder pass = enc->beginComputePass({});
         pipelines.dispatch(pass, pipelines.fillCircle, bg, W, H);
         pass->end();
-
-        wgpu::raii::CommandBuffer cmd = enc->finish({});
-        queue_.submit(1, &*cmd);
     }
 
     std::vector<FluidSource> sources;
@@ -298,9 +295,9 @@ private:
                                                  "VorticityBindGroup");
     }
 
-    void injectSource() {
+    void injectSource(wgpu::raii::CommandEncoder& enc) {
         for (const FluidSource& s : sources | std::views::filter(&FluidSource::active)) {
-            inject(s);
+            inject(enc, s);
         }
     }
 
