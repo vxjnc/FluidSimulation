@@ -1,6 +1,8 @@
 #pragma once
+#include <array>
 #include <cstdint>
 #include <numbers>
+#include <vector>
 
 #include <GLFW/glfw3.h>
 #include <webgpu/webgpu-raii.hpp>
@@ -57,6 +59,7 @@ public:
 
     void run() {
         WGPUContext& ctx = WGPUContext::instance();
+        std::vector<FluidSource> frameSources;
 
         while (!glfwWindowShouldClose(window)) {
             glfwPollEvents();
@@ -64,11 +67,13 @@ public:
 
             wgpu::raii::CommandEncoder enc = ctx.device().createCommandEncoder();
 
-            processInput(enc);
-            update(enc);
+            frameSources = sources;
+
+            processInput(enc, frameSources);
+            update(enc, frameSources);
 
             imguiManager.beginFrame();
-            imguiManager.renderUI(viewport, mouse, simulation, settings);
+            imguiManager.renderUI(viewport, mouse, simulation, settings, sources);
 
             render(enc);
 
@@ -80,7 +85,7 @@ public:
     }
 
 private:
-    void processInput(wgpu::raii::CommandEncoder& enc) {
+    void processInput(wgpu::raii::CommandEncoder& enc, std::vector<FluidSource>& frameSources) {
         float sx = mouse.x * settings.simScale;
         float sy = (static_cast<float>(viewport.h) - mouse.y) * settings.simScale;
         float sdx = mouse.dx * settings.simScale;
@@ -89,8 +94,8 @@ private:
 
         if (settings.brushMode == BrushMode::Inject) {
             if (mouse.leftPressed) {
-                simulation.inject(enc, {sx, sy, sdx * settings.brushStrength, -sdy * settings.brushStrength,
-                                        sr, settings.brushColor});
+                frameSources.emplace_back(sx, sy, sdx * settings.brushStrength, -sdy * settings.brushStrength,
+                                          sr, settings.brushColor);
             }
 
             if (ImGui::IsKeyPressed(ImGuiKey_Space)) {
@@ -111,9 +116,10 @@ private:
             if (ImGui::IsKeyPressed(ImGuiKey_C)) {
                 settings.renderSettings.mode = RenderMode::Curl;
             }
+
             if (settings.paused && ImGui::IsKeyPressed(ImGuiKey_RightArrow)) {
                 settings.paused = false;
-                update(enc);
+                update(enc, frameSources);
                 settings.paused = true;
             }
 
@@ -138,11 +144,12 @@ private:
         }
     }
 
-    void update(wgpu::raii::CommandEncoder& enc) {
+    void update(wgpu::raii::CommandEncoder& enc, const std::vector<FluidSource>& frameSources) {
         static float lastDt = 0.0f;
         static float lastDyeDissipation = 0.0f;
         static float lastVelDissipation = 0.0f;
         static float lastCurlStrength = 0.0f;
+
         if (settings.dt != lastDt) {
             simulation.setDt(settings.dt);
             lastDt = settings.dt;
@@ -161,6 +168,7 @@ private:
         }
 
         if (!settings.paused) {
+            simulation.inject(enc, frameSources);
             simulation.step(enc);
         }
     }
@@ -186,16 +194,12 @@ private:
         passDesc.colorAttachmentCount = 1;
         passDesc.colorAttachments = &att;
 
-        wgpu::CommandEncoderDescriptor cmdDesc{};
-        cmdDesc.label = wgpu::StringView("CommandEncoder");
-
         wgpu::raii::RenderPassEncoder pass = enc->beginRenderPass(passDesc);
         imguiManager.endFrame(*pass);
         pass->end();
     }
 
     GLFWwindow* window = nullptr;
-
     AppSettings settings;
 
     FluidSim simulation;
@@ -203,4 +207,6 @@ private:
     FluidViewport viewport;
     ImGuiManager imguiManager;
     MouseState mouse;
+
+    std::vector<FluidSource> sources;
 };

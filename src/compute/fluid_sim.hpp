@@ -1,9 +1,12 @@
 #pragma once
 
+#include <ranges>
+#include <span>
+
 #include <webgpu/webgpu-raii.hpp>
 
 #include "src/compute/fluid_pipelines.hpp"
-#include "src/compute/fluid_source_list.hpp"
+#include "src/compute/fluid_source.hpp"
 #include "src/compute/fluid_state.hpp"
 #include "src/compute/resample_pipelines.hpp"
 #include "src/compute/wgpu_helper.hpp"
@@ -17,7 +20,6 @@ public:
         queue_ = queue;
         state.init(device, queue, width, height, dye_width, dye_height);
         pipelines.init(device);
-        sources.setDevice(device);
         resamplePipelines.init(device);
         initBindGroups();
     }
@@ -42,12 +44,12 @@ public:
             uint32_t src_w, src_h, dst_w, dst_h;
         };
 
-        auto makeResampleBuf = [&](wgpu::Device dev, const ResampleParams& rp) {
+        auto makeResampleBuf = [&](const ResampleParams& rp) {
             wgpu::BufferDescriptor pbDesc{};
             pbDesc.size = sizeof(rp);
             pbDesc.usage = wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst;
             pbDesc.label = wgpu::StringView("ResampleParams");
-            wgpu::raii::Buffer buf = dev.createBuffer(pbDesc);
+            wgpu::raii::Buffer buf = device_.createBuffer(pbDesc);
             queue_.writeBuffer(*buf, 0, &rp, sizeof(rp));
             return buf;
         };
@@ -63,11 +65,9 @@ public:
         wgpu::raii::CommandEncoder enc = device_.createCommandEncoder({});
         wgpu::raii::ComputePassEncoder pass = enc->beginComputePass({});
 
-        // --- physics ---
         if (w != state.width || h != state.height) {
-            wgpu::raii::Buffer physParams = makeResampleBuf(device_, {state.width, state.height, w, h});
-            uint32_t W = (w + 15) / 16;
-            uint32_t H = (h + 15) / 16;
+            wgpu::raii::Buffer physParams = makeResampleBuf({state.width, state.height, w, h});
+            uint32_t W = (w + 15) / 16, H = (h + 15) / 16;
 
             wgpu::raii::Buffer new_velocity = makeBuf(w, h, 2 * sizeof(float), "velocity");
             wgpu::raii::Buffer new_pressure = makeBuf(w, h, sizeof(float), "pressure");
@@ -78,7 +78,6 @@ public:
                     WGPUHelper::makeBindGroup(device_, pipeline, {*physParams, src, dst}, "ResampleBG");
                 FluidPipelines::dispatch(pass, pipeline, bg, W, H);
             };
-
             dispatch(resamplePipelines.vec2f, *state.velocity, *new_velocity);
             dispatch(resamplePipelines.f32, *state.pressure, *new_pressure);
             dispatch(resamplePipelines.u32, *state.obstacles, *new_obstacles);
@@ -104,15 +103,11 @@ public:
             pass = enc->beginComputePass({});
         }
 
-        // --- dye ---
         if (dye_w != state.dye_width || dye_h != state.dye_height) {
-            wgpu::raii::Buffer dyeParams =
-                makeResampleBuf(device_, {state.dye_width, state.dye_height, dye_w, dye_h});
-            uint32_t W = (dye_w + 15) / 16;
-            uint32_t H = (dye_h + 15) / 16;
+            wgpu::raii::Buffer dyeParams = makeResampleBuf({state.dye_width, state.dye_height, dye_w, dye_h});
+            uint32_t W = (dye_w + 15) / 16, H = (dye_h + 15) / 16;
 
             wgpu::raii::Buffer new_dye = makeBuf(dye_w, dye_h, 4 * sizeof(float), "dye");
-
             wgpu::raii::BindGroup bg = WGPUHelper::makeBindGroup(
                 device_, resamplePipelines.vec4f, {*dyeParams, *state.dye, *new_dye}, "ResampleBG");
             FluidPipelines::dispatch(pass, resamplePipelines.vec4f, bg, W, H);
@@ -142,17 +137,14 @@ public:
     void setDt(float dt) {
         queue_.writeBuffer(*state.paramsBuffer, offsetof(FluidState::Params, dt), &dt, sizeof(dt));
     }
-    void setVelDissipation(float dissipation) {
-        queue_.writeBuffer(*state.paramsBuffer, offsetof(FluidState::Params, vel_dissipation), &dissipation,
-                           sizeof(dissipation));
+    void setVelDissipation(float d) {
+        queue_.writeBuffer(*state.paramsBuffer, offsetof(FluidState::Params, vel_dissipation), &d, sizeof(d));
     }
-    void setDyeDissipation(float dissipation) {
-        queue_.writeBuffer(*state.paramsBuffer, offsetof(FluidState::Params, dye_dissipation), &dissipation,
-                           sizeof(dissipation));
+    void setDyeDissipation(float d) {
+        queue_.writeBuffer(*state.paramsBuffer, offsetof(FluidState::Params, dye_dissipation), &d, sizeof(d));
     }
-    void setCurlStrength(float strength) {
-        queue_.writeBuffer(*state.paramsBuffer, offsetof(FluidState::Params, curl_strength), &strength,
-                           sizeof(strength));
+    void setCurlStrength(float s) {
+        queue_.writeBuffer(*state.paramsBuffer, offsetof(FluidState::Params, curl_strength), &s, sizeof(s));
     }
 
     void step() {
@@ -165,8 +157,6 @@ public:
     }
 
     void step(wgpu::raii::CommandEncoder& enc) {
-        injectSource(enc);
-
         uint32_t W = (state.width + 15) / 16;
         uint32_t H = (state.height + 15) / 16;
 
@@ -190,8 +180,16 @@ public:
         ++frameIndex;
     }
 
-    void inject(wgpu::raii::CommandEncoder& enc, const FluidSource& source) {
-        inject(enc, source, state.injectBuffer);
+    void inject(wgpu::raii::CommandEncoder& enc, std::span<const FluidSource> batch) {
+        if (batch.empty()) {
+            return;
+        }
+
+        auto params = std::ranges::to<std::vector<FluidState::InjectParams>>(
+            batch | std::views::filter(&FluidSource::active) |
+            std::views::transform([](const auto& s) { return toParams(s); }));
+
+        injectBatch(enc, params);
     }
 
     void paintObstacle(wgpu::raii::CommandEncoder& enc, uint32_t cx, uint32_t cy, uint32_t radius,
@@ -211,8 +209,6 @@ public:
         pass->end();
     }
 
-    FluidSourceList sources;
-
     FluidState state;
     FluidPipelines pipelines;
     ResamplePipelines resamplePipelines;
@@ -225,14 +221,24 @@ private:
 
     wgpu::raii::BindGroup bg_advect;
     wgpu::raii::BindGroup bg_divergence;
-    wgpu::raii::BindGroup bg_pressure0;
-    wgpu::raii::BindGroup bg_pressure1;
+    wgpu::raii::BindGroup bg_pressure0, bg_pressure1;
     wgpu::raii::BindGroup bg_subtract;
     wgpu::raii::BindGroup bg_boundary;
-    wgpu::raii::BindGroup bg_advect_dye0; // dye -> dye_next
-    wgpu::raii::BindGroup bg_advect_dye1; // dye_next -> dye
+    wgpu::raii::BindGroup bg_advect_dye0, bg_advect_dye1;
     wgpu::raii::BindGroup bg_curl;
     wgpu::raii::BindGroup bg_vorticity;
+
+    static FluidState::InjectParams toParams(const FluidSource& s) {
+        return {{s.color[0], s.color[1], s.color[2], 1.0f},
+                s.x,
+                s.y,
+                s.vx,
+                s.vy,
+                s.radius,
+                static_cast<uint32_t>(s.mode_mask),
+                static_cast<uint32_t>(s.form),
+                0u};
+    }
 
     void initBindGroups() {
         bg_advect = WGPUHelper::makeBindGroup(
@@ -274,32 +280,19 @@ private:
                                                  "VorticityBindGroup");
     }
 
-    void injectSource(wgpu::raii::CommandEncoder& enc) {
-        for (auto [s, buf] : sources.zip()) {
-            if (!s.active) {
-                continue;
-            }
-            inject(enc, s, buf);
+    void injectBatch(wgpu::raii::CommandEncoder& enc, std::span<const FluidState::InjectParams> params) {
+        if (!state.uploadInjects(params)) {
+            return;
         }
-    }
-
-    void inject(wgpu::raii::CommandEncoder& enc, const FluidSource& source, wgpu::raii::Buffer& buf) {
-        FluidState::InjectParams p{{source.color[0], source.color[1], source.color[2], 1.0f},
-                                   source.x,
-                                   source.y,
-                                   source.vx,
-                                   source.vy,
-                                   source.radius,
-                                   static_cast<uint32_t>(source.mode_mask),
-                                   static_cast<uint32_t>(source.form)};
-        queue_.writeBuffer(*buf, 0, &p, sizeof(p));
 
         uint32_t W = (std::max(state.width, state.dye_width) + 15) / 16;
         uint32_t H = (std::max(state.height, state.dye_height) + 15) / 16;
 
-        wgpu::raii::BindGroup bg = WGPUHelper::makeBindGroup(
-            device_, pipelines.inject, {*state.paramsBuffer, *buf, *state.velocity, *state.dye},
-            "InjectBindGroup");
+        wgpu::raii::BindGroup bg =
+            WGPUHelper::makeBindGroup(device_, pipelines.inject,
+                                      {*state.paramsBuffer, *state.injectCountBuffer, *state.injectsBuffer,
+                                       *state.velocity, *state.dye},
+                                      "InjectBindGroup");
 
         wgpu::raii::ComputePassEncoder pass = enc->beginComputePass({});
         pipelines.dispatch(pass, pipelines.inject, bg, W, H);

@@ -25,7 +25,6 @@ public:
     void init(GLFWwindow* window, wgpu::Device device, wgpu::TextureFormat surfaceFormat) {
         ImGui::CreateContext();
         ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_DockingEnable;
-        ImGui::GetIO().IniFilename = nullptr;
         ImGui_ImplGlfw_InitForOther(window, true);
 
         ImGui_ImplWGPU_InitInfo wgpuInfo{};
@@ -47,7 +46,8 @@ public:
         ImGui::NewFrame();
     }
 
-    void renderUI(FluidViewport& viewport, MouseState& mouse, FluidSim& sim, AppSettings& settings) {
+    void renderUI(FluidViewport& viewport, MouseState& mouse, FluidSim& sim, AppSettings& settings,
+                  std::vector<FluidSource>& sources) {
         ImGuiIO& io = ImGui::GetIO();
 
         ImGuiID dockspaceId = ImGui::DockSpaceOverViewport(ImGui::GetMainViewport()->ID);
@@ -67,7 +67,7 @@ public:
             ImGui::DockBuilderFinish(dockspaceId);
         }
 
-        controlsPanel.render(viewport, sim, settings);
+        controlsPanel.render(viewport, sim, settings, sources);
 
         // --- Viewport Panel ---
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));

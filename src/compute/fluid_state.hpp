@@ -1,5 +1,7 @@
 #pragma once
 
+#include <span>
+
 #include <webgpu/webgpu-raii.hpp>
 
 #include "src/compute/wgpu_helper.hpp"
@@ -29,6 +31,7 @@ public:
         float radius;
         uint32_t mode_mask;
         uint32_t form;
+        uint32_t _pad;
     };
 
     void init(wgpu::Device device, wgpu::Queue queue, uint32_t w, uint32_t h, uint32_t dye_w,
@@ -39,16 +42,38 @@ public:
         paramsBuffer = WGPUHelper::makeBuffer(
             device, sizeof(Params), wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst, "Params");
 
-        injectBuffer =
-            WGPUHelper::makeBuffer(device, sizeof(InjectParams),
-                                   wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst, "InjectParams");
+        injectCountBuffer = WGPUHelper::makeBuffer(
+            device, sizeof(uint32_t), wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst, "InjectCount");
+
+        injectsBuffer = WGPUHelper::makeBuffer(
+            device, sizeof(InjectParams), wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst, "Injects");
+        injectsCapacity_ = 1;
 
         fillCircleBuffer = WGPUHelper::makeBuffer(device, sizeof(FillCircleParams),
-                                                  wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst,
+                                                  wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst,
                                                   "FillCircleParams");
 
         resize(w, h);
         resizeDye(dye_w, dye_h);
+    }
+
+    bool uploadInjects(std::span<const InjectParams> sources) {
+        uint32_t count = static_cast<uint32_t>(sources.size());
+        queue_.writeBuffer(*injectCountBuffer, 0, &count, sizeof(count));
+
+        if (count == 0) {
+            return false;
+        }
+
+        if (count > injectsCapacity_) {
+            injectsCapacity_ = count;
+            injectsBuffer =
+                WGPUHelper::makeBuffer(device_, sizeof(InjectParams) * injectsCapacity_,
+                                       wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst, "Injects");
+        }
+
+        queue_.writeBuffer(*injectsBuffer, 0, sources.data(), sizeof(InjectParams) * count);
+        return true;
     }
 
     void resize(uint32_t w, uint32_t h) {
@@ -110,25 +135,23 @@ public:
         queue_.submit(1, &commands);
     }
 
-    uint32_t width = 0;
-    uint32_t height = 0;
-
-    uint32_t dye_width = 0;
-    uint32_t dye_height = 0;
+    uint32_t width = 0, height = 0;
+    uint32_t dye_width = 0, dye_height = 0;
 
     wgpu::raii::Buffer velocity, velocity_next;
     wgpu::raii::Buffer pressure, pressure_next;
     wgpu::raii::Buffer divergence;
     wgpu::raii::Buffer curl;
     wgpu::raii::Buffer dye, dye_next;
-
     wgpu::raii::Buffer obstacles;
 
     wgpu::raii::Buffer paramsBuffer;
-    wgpu::raii::Buffer injectBuffer;
+    wgpu::raii::Buffer injectCountBuffer;
+    wgpu::raii::Buffer injectsBuffer;
     wgpu::raii::Buffer fillCircleBuffer;
 
 private:
+    uint32_t injectsCapacity_ = 0;
     wgpu::Device device_;
     wgpu::Queue queue_;
 };
