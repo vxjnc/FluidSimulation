@@ -3,12 +3,14 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_wgpu.h>
 #include <imgui_internal.h>
+#include <stb_image_resize2.h>
 #include <webgpu/webgpu.hpp>
 
 #include "src/app_settings.hpp"
 #include "src/compute/fluid_sim.hpp"
 #include "src/ui/controls/controls_panel.hpp"
 #include "src/ui/fluid_viewport.hpp"
+#include "src/ui/import/import_panel.hpp"
 #include "src/ui/random_splat/splat_panel.hpp"
 #include "src/wgpu_context.hpp"
 
@@ -23,6 +25,7 @@ struct MouseState {
 struct PanelVisibility {
     bool controls = true;
     bool randomSplat = false;
+    bool import = false;
 };
 
 class ImGuiManager {
@@ -91,6 +94,26 @@ public:
             splatPanel.render(visibility.randomSplat, settings.splatSettings, viewport,
                               settings.ui.velocityMode);
         }
+        if (visibility.import) {
+            if (auto dye = importPanel.render(visibility.import)) {
+                uint32_t dw = sim.state.dye_width;
+                uint32_t dh = sim.state.dye_height;
+
+                std::vector<float> resized(dw * dh * 4);
+                stbir_resize_float_linear(dye->pixels.data(), static_cast<int>(dye->w),
+                                          static_cast<int>(dye->h), 0, resized.data(), static_cast<int>(dw),
+                                          static_cast<int>(dh), 0, STBIR_RGBA);
+                for (uint32_t y = 0; y < dh / 2; ++y) {
+                    float* row1 = resized.data() + y * dw * 4;
+                    float* row2 = resized.data() + (dh - 1 - y) * dw * 4;
+                    std::swap_ranges(row1, row1 + dw * 4, row2);
+                }
+
+                dyeToApply = std::move(resized);
+                dyeToApplyW = dw;
+                dyeToApplyH = dh;
+            }
+        }
 
         // --- Viewport Panel ---
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
@@ -144,6 +167,7 @@ public:
     PanelVisibility visibility;
     ControlsPanel controlsPanel;
     SplatPanel splatPanel;
+    ImportPanel importPanel;
 
     bool menuBarVisible = true;
     bool settingsOpen = false;
@@ -151,6 +175,9 @@ public:
 
     bool screenshotRequested = false;
     bool saveScreenshotRequested = false;
+
+    std::optional<std::vector<float>> dyeToApply;
+    uint32_t dyeToApplyW = 0, dyeToApplyH = 0;
 
 private:
     void renderMenuBar() {
@@ -178,6 +205,7 @@ private:
         if (ImGui::BeginMenu("View")) {
             ImGui::MenuItem("Controls", nullptr, &visibility.controls);
             ImGui::MenuItem("Random Splat", nullptr, &visibility.randomSplat);
+            ImGui::MenuItem("Import", nullptr, &visibility.import);
             ImGui::Separator();
             if (ImGui::MenuItem("Reset Layout")) {
                 dockInitialized = false;

@@ -67,6 +67,12 @@ public:
             ctx.processEvents();
             imguiManager.beginFrame();
 
+            if (imguiManager.dyeToApply) {
+                ctx.queue().writeBuffer(*simulation.getCurrentDye(), 0, imguiManager.dyeToApply->data(),
+                                        imguiManager.dyeToApply->size() * sizeof(float));
+                imguiManager.dyeToApply.reset();
+            }
+
             wgpu::raii::CommandEncoder enc = ctx.device().createCommandEncoder();
 
             frameSources = sources;
