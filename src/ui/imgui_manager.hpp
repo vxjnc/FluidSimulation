@@ -7,8 +7,8 @@
 
 #include "src/app_settings.hpp"
 #include "src/compute/fluid_sim.hpp"
-#include "src/render/render_settings.hpp"
 #include "src/ui/controls/brush_widget.hpp"
+#include "src/ui/controls/render_widget.hpp"
 #include "src/ui/controls/simulation_widget.hpp"
 #include "src/ui/controls/source_widget.hpp"
 #include "src/ui/fluid_viewport.hpp"
@@ -85,14 +85,7 @@ public:
 
             ImGui::Separator();
 
-            ImGui::Text("Render Mode");
-            static const char* modes[] = {"Dye", "Velocity", "Pressure", "Divergence", "Curl"};
-            int current = static_cast<int>(settings.renderSettings.mode);
-            if (ImGui::Combo("##render_mode", &current, modes, sizeof(modes) / sizeof(modes[0]))) {
-                settings.renderSettings.mode = static_cast<RenderMode>(current);
-            }
-
-            ImGui::Checkbox("Show Obstacles", &settings.renderSettings.showObstacles);
+            renderWidget.render(settings.renderSettings);
 
             ImGui::Separator();
 
@@ -172,6 +165,7 @@ public:
 
 private:
     SimulationWidget simulationWidget;
+    RenderWidget renderWidget;
     BrushWidget brushWidget;
     SourceWidget sourceWidget;
 };
