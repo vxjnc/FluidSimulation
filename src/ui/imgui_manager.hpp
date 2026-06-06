@@ -7,10 +7,7 @@
 
 #include "src/app_settings.hpp"
 #include "src/compute/fluid_sim.hpp"
-#include "src/ui/controls/brush_widget.hpp"
-#include "src/ui/controls/render_widget.hpp"
-#include "src/ui/controls/simulation_widget.hpp"
-#include "src/ui/controls/source_widget.hpp"
+#include "src/ui/controls/controls_panel.hpp"
 #include "src/ui/fluid_viewport.hpp"
 #include "src/wgpu_context.hpp"
 
@@ -55,8 +52,8 @@ public:
 
         ImGuiID dockspaceId = ImGui::DockSpaceOverViewport(ImGui::GetMainViewport()->ID);
 
-        if (!dockInitialized_) {
-            dockInitialized_ = true;
+        if (!dockInitialized) {
+            dockInitialized = true;
 
             ImGui::DockBuilderRemoveNode(dockspaceId);
             ImGui::DockBuilderAddNode(dockspaceId, ImGuiDockNodeFlags_DockSpace);
@@ -70,47 +67,7 @@ public:
             ImGui::DockBuilderFinish(dockspaceId);
         }
 
-        // --- Controls Panel ---
-        ImGui::Begin("Controls");
-        {
-            ImGui::Text("FPS: %.1f", io.Framerate);
-            ImGui::Text("Sim size: %ux%u = %u", sim.state.width, sim.state.height,
-                        sim.state.width * sim.state.height);
-            ImGui::Text("Dye size: %ux%u = %u", sim.state.dye_width, sim.state.dye_height,
-                        sim.state.dye_width * sim.state.dye_height);
-
-            ImGui::Separator();
-
-            simulationWidget.render(settings, sim, viewport);
-
-            ImGui::Separator();
-
-            renderWidget.render(settings.renderSettings);
-
-            ImGui::Separator();
-
-            ImGui::Text("Brush");
-            brushWidget.render(settings);
-
-            ImGui::Separator();
-
-            ImGui::Text("Sources");
-            for (size_t i = 0; i < sim.sources.size();) {
-                if (sourceWidget.render(sim.sources[i], i, viewport, settings)) {
-                    ++i;
-                }
-                else {
-                    sim.sources.erase(i);
-                }
-            }
-
-            if (ImGui::Button("Add Source")) {
-                sim.sources.add(FluidSource(static_cast<float>(viewport.w) / 2.f * settings.simScale,
-                                            static_cast<float>(viewport.h) / 2.f * settings.simScale, 0, 100,
-                                            10 * settings.simScale, std::array{1.f, 1.f, 1.f}));
-            }
-        }
-        ImGui::End();
+        controlsPanel.render(viewport, sim, settings);
 
         // --- Viewport Panel ---
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
@@ -157,15 +114,12 @@ public:
         ImGui::Render();
     }
 
-    bool dockInitialized_ = false;
+    bool dockInitialized = false;
 
     void endFrame(WGPURenderPassEncoder passEncoder) {
         ImGui_ImplWGPU_RenderDrawData(ImGui::GetDrawData(), passEncoder);
     }
 
 private:
-    SimulationWidget simulationWidget;
-    RenderWidget renderWidget;
-    BrushWidget brushWidget;
-    SourceWidget sourceWidget;
+    ControlsPanel controlsPanel;
 };
