@@ -3,6 +3,7 @@
 #include <vector>
 
 #include <GLFW/glfw3.h>
+#include <nfd.hpp>
 #include <webgpu/webgpu-raii.hpp>
 #include <webgpu/webgpu.hpp>
 
@@ -85,7 +86,12 @@ public:
             }
             if (imguiManager.saveScreenshotRequested) {
                 imguiManager.saveScreenshotRequested = false;
-                screenshotCapture.request(viewport, ScreenshotCapture::Mode::File);
+                NFD::UniquePath outPath;
+                nfdu8filteritem_t filters[] = {{"PNG Image", "png"}};
+                if (NFD::SaveDialog(outPath, filters, sizeof(filters) / sizeof(filters[0]), nullptr,
+                                    "screenshot.png") == NFD_OKAY) {
+                    screenshotCapture.request(viewport, ScreenshotCapture::Mode::File, outPath.get());
+                }
             }
 
             render(enc);
@@ -215,6 +221,8 @@ private:
     }
 
     GLFWwindow* window = nullptr;
+    NFD::Guard nfdGuard;
+
     AppSettings settings;
 
     FluidSim simulation;
