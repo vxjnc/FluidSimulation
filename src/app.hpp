@@ -37,14 +37,13 @@ public:
             WGPUContext::instance().resize(static_cast<uint32_t>(w), static_cast<uint32_t>(h));
         });
 
-        uint32_t sim_w = width - static_cast<uint32_t>(imguiManager.panelWidth());
         renderer.init();
-        viewport.init(ctx.device(), sim_w, height, ctx.surfaceFormat());
+        viewport.init(ctx.device(), width, height, ctx.surfaceFormat());
 
         simulation.init(ctx.device(), ctx.queue(),
-                        static_cast<uint32_t>(static_cast<float>(sim_w) * settings.simScale),
+                        static_cast<uint32_t>(static_cast<float>(width) * settings.simScale),
                         static_cast<uint32_t>(static_cast<float>(height) * settings.simScale),
-                        static_cast<uint32_t>(static_cast<float>(sim_w) * settings.dyeScale),
+                        static_cast<uint32_t>(static_cast<float>(width) * settings.dyeScale),
                         static_cast<uint32_t>(static_cast<float>(height) * settings.dyeScale));
     };
 

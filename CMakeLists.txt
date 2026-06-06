@@ -63,7 +63,7 @@ FetchContent_Declare(
 FetchContent_Declare(
     imgui
     GIT_REPOSITORY https://github.com/ocornut/imgui.git
-    GIT_TAG        v1.92.8
+    GIT_TAG        v1.92.8-docking
     GIT_SHALLOW    ON
 )
 

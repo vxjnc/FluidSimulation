@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <print>
 #include <stdexcept>
 
 #include <GLFW/glfw3.h>
@@ -80,13 +81,14 @@ public:
                 return;
             }
 
-            std::cerr << "wgpu device lost (" << reason << "): " << std::string_view(msg.data, msg.length)
-                      << "\n";
+            std::print(std::cerr, "wgpu device lost({}): {}\n", static_cast<int>(reason),
+                       std::string_view(msg.data, msg.length));
         };
 
         deviceDesc.uncapturedErrorCallbackInfo.callback = [](WGPUDevice const*, WGPUErrorType type,
                                                              WGPUStringView msg, void*, void*) {
-            std::cerr << "wgpu error (" << type << "): " << std::string_view(msg.data, msg.length) << "\n";
+            std::print(std::cerr, "wgpu error ({}): {}\n", static_cast<int>(type),
+                       std::string_view(msg.data, msg.length));
         };
 
         device_ = adapter_->requestDevice(deviceDesc);

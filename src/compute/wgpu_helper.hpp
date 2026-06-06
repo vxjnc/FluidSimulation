@@ -7,7 +7,7 @@
 #include <webgpu/webgpu-raii.hpp>
 
 namespace WGPUHelper {
-    using BindGroupResource = std::variant<wgpu::Buffer, wgpu::TextureView>;
+    using BindGroupResource = std::variant<wgpu::Buffer, wgpu::TextureView, wgpu::Sampler>;
 
     template <typename Pipeline, size_t N>
     inline wgpu::BindGroup makeBindGroup(wgpu::Device device, Pipeline& pipeline,
@@ -30,6 +30,9 @@ namespace WGPUHelper {
                     }
                     else if constexpr (std::is_same_v<T, wgpu::TextureView>) {
                         e.textureView = arg;
+                    }
+                    else if constexpr (std::is_same_v<T, wgpu::Sampler>) {
+                        e.sampler = arg;
                     }
                 },
                 res);

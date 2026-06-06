@@ -2,6 +2,7 @@
 #include <GLFW/glfw3.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_wgpu.h>
+#include <imgui_internal.h>
 #include <webgpu/webgpu.hpp>
 
 #include "src/app_settings.hpp"
@@ -23,7 +24,7 @@ class ImGuiManager {
 public:
     void init(GLFWwindow* window, wgpu::Device device, wgpu::TextureFormat surfaceFormat) {
         ImGui::CreateContext();
-        ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+        ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_DockingEnable;
         ImGui::GetIO().IniFilename = nullptr;
         ImGui_ImplGlfw_InitForOther(window, true);
 
@@ -48,14 +49,26 @@ public:
 
     void renderUI(FluidViewport& viewport, MouseState& mouse, FluidSim& sim, AppSettings& settings) {
         ImGuiIO& io = ImGui::GetIO();
-        float screen_w = io.DisplaySize.x;
-        float screen_h = io.DisplaySize.y;
+
+        ImGuiID dockspaceId = ImGui::DockSpaceOverViewport(ImGui::GetMainViewport()->ID);
+
+        if (!dockInitialized_) {
+            dockInitialized_ = true;
+
+            ImGui::DockBuilderRemoveNode(dockspaceId);
+            ImGui::DockBuilderAddNode(dockspaceId, ImGuiDockNodeFlags_DockSpace);
+            ImGui::DockBuilderSetNodeSize(dockspaceId, ImGui::GetMainViewport()->Size);
+
+            ImGuiID dockLeft, dockRight;
+            ImGui::DockBuilderSplitNode(dockspaceId, ImGuiDir_Left, 0.22f, &dockLeft, &dockRight);
+
+            ImGui::DockBuilderDockWindow("Controls", dockLeft);
+            ImGui::DockBuilderDockWindow("Viewport", dockRight);
+            ImGui::DockBuilderFinish(dockspaceId);
+        }
 
         // --- Controls Panel ---
-        ImGui::SetNextWindowPos(ImVec2(0, 0));
-        ImGui::SetNextWindowSize(ImVec2(panelWidth_, screen_h));
-        ImGui::Begin("Controls", nullptr,
-                     ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
+        ImGui::Begin("Controls");
         {
             ImGui::Text("FPS: %.1f", io.Framerate);
             ImGui::Text("Sim size: %ux%u = %u", sim.state.width, sim.state.height,
@@ -89,7 +102,6 @@ public:
             }
 
             ImGui::SliderFloat("Sim dt", &settings.dt, 0.001f, 0.1f);
-
             ImGui::SliderFloat("Velocity Dissipation", &settings.velDissipation, 0.0f, 4.0f);
             ImGui::SliderFloat("Dye Dissipation", &settings.dyeDissipation, 0.0f, 4.0f);
             ImGui::SliderFloat("Curl Strength", &settings.curlStrength, 0.0f, 50.0f);
@@ -212,13 +224,8 @@ public:
         ImGui::End();
 
         // --- Viewport Panel ---
-        ImGui::SetNextWindowPos(ImVec2(panelWidth_, 0));
-        ImGui::SetNextWindowSize(ImVec2(screen_w - panelWidth_, screen_h));
-
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-        ImGui::Begin("Viewport", nullptr,
-                     ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse |
-                         ImGuiWindowFlags_NoTitleBar);
+        ImGui::Begin("Viewport", nullptr, ImGuiWindowFlags_NoTitleBar);
         {
             ImVec2 size = ImGui::GetContentRegionAvail();
 
@@ -261,12 +268,9 @@ public:
         ImGui::Render();
     }
 
+    bool dockInitialized_ = false;
+
     void endFrame(WGPURenderPassEncoder passEncoder) {
         ImGui_ImplWGPU_RenderDrawData(ImGui::GetDrawData(), passEncoder);
     }
-
-    float panelWidth() const { return panelWidth_; }
-
-private:
-    static constexpr float panelWidth_ = 280.f;
 };
