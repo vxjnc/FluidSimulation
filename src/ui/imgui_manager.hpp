@@ -140,10 +140,19 @@ public:
     bool menuBarVisible = true;
     bool dockInitialized = false;
 
+    bool screenshotRequested = false;
+
 private:
     void renderMenuBar() {
         if (!ImGui::BeginMainMenuBar()) {
             return;
+        }
+
+        if (ImGui::BeginMenu("File")) {
+            if (ImGui::MenuItem("Copy to Clipboard", "F12")) {
+                screenshotRequested = true;
+            }
+            ImGui::EndMenu();
         }
 
         if (ImGui::BeginMenu("View")) {

@@ -16,7 +16,8 @@ struct FluidViewport {
         texDesc.mipLevelCount = 1;
         texDesc.sampleCount = 1;
         texDesc.format = format;
-        texDesc.usage = wgpu::TextureUsage::RenderAttachment | wgpu::TextureUsage::TextureBinding;
+        texDesc.usage = wgpu::TextureUsage::RenderAttachment | wgpu::TextureUsage::TextureBinding |
+                        wgpu::TextureUsage::CopySrc;
         texture = device.createTexture(texDesc);
         view = texture->createView();
         texId = reinterpret_cast<ImTextureID>(static_cast<WGPUTextureView>(*view));

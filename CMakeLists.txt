@@ -75,7 +75,25 @@ FetchContent_Declare(
     GIT_SHALLOW    ON
 )
 
-FetchContent_MakeAvailable(glfw webgpu_distribution webgpu_cpp imgui glfw3webgpu)
+# --- clip ---
+FetchContent_Declare(
+    clip
+    GIT_REPOSITORY https://github.com/dacap/clip.git
+    GIT_TAG        v1.15
+    GIT_SHALLOW    ON
+)
+set(CLIP_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(CLIP_TESTS    OFF CACHE BOOL "" FORCE)
+
+# --- stb ---
+FetchContent_Declare(
+    stb
+    GIT_REPOSITORY https://github.com/nothings/stb.git
+    GIT_TAG        master
+    GIT_SHALLOW    ON
+)
+
+FetchContent_MakeAvailable(glfw webgpu_distribution webgpu_cpp imgui glfw3webgpu clip stb)
 set_target_properties(glfw webgpu PROPERTIES SYSTEM TRUE)
 
 add_library(imgui STATIC
@@ -92,6 +110,9 @@ target_include_directories(imgui SYSTEM PUBLIC
 )
 target_compile_definitions(imgui PUBLIC ${IMGUI_WEBGPU_BACKEND})
 target_link_libraries(imgui PUBLIC glfw webgpu)
+
+add_library(stb_headers INTERFACE)
+target_include_directories(stb_headers SYSTEM INTERFACE ${stb_SOURCE_DIR})
 
 set(GENERATED_ROOT "${CMAKE_BINARY_DIR}/gen_includes")
 set(GENERATED_DIR  "${GENERATED_ROOT}/generated")
@@ -115,7 +136,7 @@ target_include_directories(fluid_gui INTERFACE
     ${webgpu_cpp_SOURCE_DIR}
     ${GENERATED_ROOT}
 )
-target_link_libraries(fluid_gui INTERFACE webgpu glfw imgui glfw3webgpu)
+target_link_libraries(fluid_gui INTERFACE webgpu glfw imgui glfw3webgpu clip stb_headers)
 add_dependencies(fluid_gui wgsl_shaders)
 
 # --- Executable ---

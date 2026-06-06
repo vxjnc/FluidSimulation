@@ -7,6 +7,7 @@
 #include <webgpu/webgpu.hpp>
 
 #include "src/app_settings.hpp"
+#include "src/capture/screenshot_capture.hpp"
 #include "src/color_generator.hpp"
 #include "src/compute/fluid_sim.hpp"
 #include "src/compute/fluid_source.hpp"
@@ -78,6 +79,10 @@ public:
             update(enc, frameSources);
 
             imguiManager.renderUI(viewport, mouse, simulation, settings, sources);
+            if (imguiManager.screenshotRequested) {
+                imguiManager.screenshotRequested = false;
+                screenshotCapture.request(viewport);
+            }
 
             render(enc);
 
@@ -101,46 +106,50 @@ private:
                 frameSources.emplace_back(sx, sy, sdx * settings.brushStrength, -sdy * settings.brushStrength,
                                           sr, settings.brushColor);
             }
-
-            if (ImGui::IsKeyPressed(ImGuiKey_Space)) {
-                settings.paused = !settings.paused;
-            }
-            if (ImGui::IsKeyPressed(ImGuiKey_D)) {
-                settings.renderSettings.mode = RenderMode::Dye;
-            }
-            if (ImGui::IsKeyPressed(ImGuiKey_V)) {
-                settings.renderSettings.mode = RenderMode::Velocity;
-            }
-            if (ImGui::IsKeyPressed(ImGuiKey_P)) {
-                settings.renderSettings.mode = RenderMode::Pressure;
-            }
-            if (ImGui::IsKeyPressed(ImGuiKey_G)) {
-                settings.renderSettings.mode = RenderMode::Divergence;
-            }
-            if (ImGui::IsKeyPressed(ImGuiKey_C)) {
-                settings.renderSettings.mode = RenderMode::Curl;
-            }
-
-            if (ImGui::IsKeyPressed(ImGuiKey_LeftAlt) || ImGui::IsKeyPressed(ImGuiKey_RightAlt)) {
-                imguiManager.menuBarVisible = !imguiManager.menuBarVisible;
-            }
-
-            if (settings.paused && ImGui::IsKeyPressed(ImGuiKey_RightArrow)) {
-                settings.paused = false;
-                update(enc, frameSources);
-                settings.paused = true;
-            }
-
-            if (mouse.leftJustPressed) {
-                static float hue = static_cast<float>(time(nullptr));
-                settings.brushColor = ColorUtils::Generator::nextGoldenRatioColor(hue);
-            }
         }
         else if (settings.brushMode == BrushMode::PaintWall) {
             if (mouse.leftPressed || mouse.rightPressed) {
                 simulation.paintObstacle(enc, static_cast<uint32_t>(sx), static_cast<uint32_t>(sy),
                                          static_cast<uint32_t>(sr), mouse.rightPressed);
             }
+        }
+
+        if (ImGui::IsKeyPressed(ImGuiKey_Space)) {
+            settings.paused = !settings.paused;
+        }
+        if (ImGui::IsKeyPressed(ImGuiKey_D)) {
+            settings.renderSettings.mode = RenderMode::Dye;
+        }
+        if (ImGui::IsKeyPressed(ImGuiKey_V)) {
+            settings.renderSettings.mode = RenderMode::Velocity;
+        }
+        if (ImGui::IsKeyPressed(ImGuiKey_P)) {
+            settings.renderSettings.mode = RenderMode::Pressure;
+        }
+        if (ImGui::IsKeyPressed(ImGuiKey_G)) {
+            settings.renderSettings.mode = RenderMode::Divergence;
+        }
+        if (ImGui::IsKeyPressed(ImGuiKey_C)) {
+            settings.renderSettings.mode = RenderMode::Curl;
+        }
+
+        if (ImGui::IsKeyPressed(ImGuiKey_LeftAlt) || ImGui::IsKeyPressed(ImGuiKey_RightAlt)) {
+            imguiManager.menuBarVisible = !imguiManager.menuBarVisible;
+        }
+
+        if (ImGui::IsKeyPressed(ImGuiKey_F12)) {
+            screenshotCapture.request(viewport);
+        }
+
+        if (settings.paused && ImGui::IsKeyPressed(ImGuiKey_RightArrow)) {
+            settings.paused = false;
+            update(enc, frameSources);
+            settings.paused = true;
+        }
+
+        if (mouse.leftJustPressed) {
+            static float hue = static_cast<float>(time(nullptr));
+            settings.brushColor = ColorUtils::Generator::nextGoldenRatioColor(hue);
         }
     }
 
@@ -205,10 +214,12 @@ private:
     AppSettings settings;
 
     FluidSim simulation;
+    std::vector<FluidSource> sources;
+
     Render renderer;
     FluidViewport viewport;
     ImGuiManager imguiManager;
     MouseState mouse;
 
-    std::vector<FluidSource> sources;
+    ScreenshotCapture screenshotCapture;
 };
