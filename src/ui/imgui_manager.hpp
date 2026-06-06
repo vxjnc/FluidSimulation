@@ -33,6 +33,41 @@ public:
     void init(GLFWwindow* window, wgpu::Device device, wgpu::TextureFormat surfaceFormat) {
         ImGui::CreateContext();
         ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_DockingEnable;
+
+        ImGuiSettingsHandler handler{};
+        handler.TypeName = "FluidSim";
+        handler.TypeHash = ImHashStr("FluidSim");
+        handler.ReadOpenFn = [](ImGuiContext*, ImGuiSettingsHandler*, const char*) -> void* {
+            return (void*)1;
+        };
+
+        handler.ReadLineFn = [](ImGuiContext*, ImGuiSettingsHandler* h, void*, const char* line) {
+            auto* self = static_cast<ImGuiManager*>(h->UserData);
+            int v = 0;
+            if (sscanf(line, "controls=%d", &v) == 1) {
+                self->visibility.controls = v;
+            }
+            if (sscanf(line, "randomSplat=%d", &v) == 1) {
+                self->visibility.randomSplat = v;
+            }
+            if (sscanf(line, "import=%d", &v) == 1) {
+                self->visibility.import = v;
+            }
+            if (sscanf(line, "dockInitialized=%d", &v) == 1) {
+                self->dockInitialized = v;
+            }
+        };
+        handler.WriteAllFn = [](ImGuiContext*, ImGuiSettingsHandler* h, ImGuiTextBuffer* buf) {
+            auto* self = static_cast<ImGuiManager*>(h->UserData);
+            buf->appendf("[FluidSim][Visibility]\n");
+            buf->appendf("controls=%d\n", self->visibility.controls ? 1 : 0);
+            buf->appendf("randomSplat=%d\n", self->visibility.randomSplat ? 1 : 0);
+            buf->appendf("import=%d\n", self->visibility.import ? 1 : 0);
+            buf->appendf("dockInitialized=%d\n", self->dockInitialized ? 1 : 0);
+        };
+        handler.UserData = this;
+        ImGui::AddSettingsHandler(&handler);
+
         ImGui_ImplGlfw_InitForOther(window, true);
 
         ImGuiStyle& style = ImGui::GetStyle();
