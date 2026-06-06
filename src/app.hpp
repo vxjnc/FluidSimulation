@@ -121,6 +121,10 @@ private:
                 settings.renderSettings.mode = RenderMode::Curl;
             }
 
+            if (ImGui::IsKeyPressed(ImGuiKey_LeftAlt) || ImGui::IsKeyPressed(ImGuiKey_RightAlt)) {
+                imguiManager.menuBarVisible = !imguiManager.menuBarVisible;
+            }
+
             if (settings.paused && ImGui::IsKeyPressed(ImGuiKey_RightArrow)) {
                 settings.paused = false;
                 update(enc, frameSources);

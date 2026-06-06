@@ -12,8 +12,8 @@
 
 class SplatPanel {
 public:
-    void render(SplatSettings& settings, const FluidViewport& viewport) {
-        ImGui::Begin("Random Splat");
+    void render(bool& open, SplatSettings& settings, const FluidViewport& viewport) {
+        ImGui::Begin("Random Splat", &open);
         pendingSplats_ = splatWidget_.render(settings, viewport);
         ImGui::End();
     }

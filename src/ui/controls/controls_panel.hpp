@@ -12,11 +12,11 @@
 
 class ControlsPanel {
 public:
-    void render(FluidViewport& viewport, FluidSim& sim, AppSettings& settings,
+    void render(bool& open, FluidViewport& viewport, FluidSim& sim, AppSettings& settings,
                 std::vector<FluidSource>& sources) {
         ImGuiIO& io = ImGui::GetIO();
 
-        ImGui::Begin("Controls");
+        ImGui::Begin("Controls", &open);
 
         ImGui::Text("FPS: %.1f", io.Framerate);
         ImGui::Text("Sim size: %ux%u = %u", sim.state.width, sim.state.height,

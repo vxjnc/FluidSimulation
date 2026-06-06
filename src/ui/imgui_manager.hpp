@@ -17,8 +17,12 @@ struct MouseState {
     float dx = 0, dy = 0;
     bool rightPressed = false;
     bool leftPressed = false;
-
     bool leftJustPressed = false;
+};
+
+struct PanelVisibility {
+    bool controls = true;
+    bool randomSplat = false;
 };
 
 class ImGuiManager {
@@ -65,11 +69,20 @@ public:
 
             ImGui::DockBuilderDockWindow("Controls", dockLeft);
             ImGui::DockBuilderDockWindow("Viewport", dockRight);
+            ImGui::DockBuilderGetNode(dockRight)->LocalFlags |= ImGuiDockNodeFlags_NoTabBar;
             ImGui::DockBuilderFinish(dockspaceId);
         }
 
-        controlsPanel.render(viewport, sim, settings, sources);
-        splatPanel.render(settings.splatSettings, viewport);
+        if (menuBarVisible) {
+            renderMenuBar();
+        }
+
+        if (visibility.controls) {
+            controlsPanel.render(visibility.controls, viewport, sim, settings, sources);
+        }
+        if (visibility.randomSplat) {
+            splatPanel.render(visibility.randomSplat, settings.splatSettings, viewport);
+        }
 
         // --- Viewport Panel ---
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
@@ -116,12 +129,34 @@ public:
         ImGui::Render();
     }
 
-    bool dockInitialized = false;
-
     void endFrame(WGPURenderPassEncoder passEncoder) {
         ImGui_ImplWGPU_RenderDrawData(ImGui::GetDrawData(), passEncoder);
     }
 
+    PanelVisibility visibility;
     ControlsPanel controlsPanel;
     SplatPanel splatPanel;
+
+    bool menuBarVisible = true;
+    bool dockInitialized = false;
+
+private:
+    void renderMenuBar() {
+        if (!ImGui::BeginMainMenuBar()) {
+            return;
+        }
+
+        if (ImGui::BeginMenu("View")) {
+            ImGui::MenuItem("Controls", nullptr, &visibility.controls);
+            ImGui::MenuItem("Random Splat", nullptr, &visibility.randomSplat);
+            ImGui::Separator();
+            if (ImGui::MenuItem("Reset Layout")) {
+                dockInitialized = false;
+                visibility = PanelVisibility();
+            }
+            ImGui::EndMenu();
+        }
+
+        ImGui::EndMainMenuBar();
+    }
 };
