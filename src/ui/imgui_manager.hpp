@@ -32,6 +32,10 @@ public:
         ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_DockingEnable;
         ImGui_ImplGlfw_InitForOther(window, true);
 
+        ImGuiStyle& style = ImGui::GetStyle();
+        style.FrameRounding = 5.f;
+        style.ColorMarkerSize = 8.f;
+
         ImGui_ImplWGPU_InitInfo wgpuInfo{};
         wgpuInfo.Device = device;
         wgpuInfo.RenderTargetFormat = static_cast<WGPUTextureFormat>(surfaceFormat);
@@ -68,6 +72,7 @@ public:
             ImGui::DockBuilderSplitNode(dockspaceId, ImGuiDir_Left, 0.25f, &dockLeft, &dockRight);
 
             ImGui::DockBuilderDockWindow("Controls", dockLeft);
+            ImGui::DockBuilderGetNode(dockLeft)->LocalFlags |= ImGuiDockNodeFlags_NoTabBar;
             ImGui::DockBuilderDockWindow("Viewport", dockRight);
             ImGui::DockBuilderGetNode(dockRight)->LocalFlags |= ImGuiDockNodeFlags_NoTabBar;
             ImGui::DockBuilderFinish(dockspaceId);
@@ -76,6 +81,8 @@ public:
         if (menuBarVisible) {
             renderMenuBar();
         }
+
+        renderSettingsModal(settings);
 
         if (visibility.controls) {
             controlsPanel.render(visibility.controls, viewport, sim, settings, sources);
@@ -139,6 +146,7 @@ public:
     SplatPanel splatPanel;
 
     bool menuBarVisible = true;
+    bool settingsOpen = false;
     bool dockInitialized = false;
 
     bool screenshotRequested = false;
@@ -160,6 +168,13 @@ private:
             ImGui::EndMenu();
         }
 
+        if (ImGui::BeginMenu("Edit")) {
+            if (ImGui::MenuItem("Settings")) {
+                settingsOpen = true;
+            }
+            ImGui::EndMenu();
+        }
+
         if (ImGui::BeginMenu("View")) {
             ImGui::MenuItem("Controls", nullptr, &visibility.controls);
             ImGui::MenuItem("Random Splat", nullptr, &visibility.randomSplat);
@@ -172,5 +187,28 @@ private:
         }
 
         ImGui::EndMainMenuBar();
+    }
+
+    void renderSettingsModal(AppSettings& settings) {
+        if (settingsOpen) {
+            ImGui::OpenPopup("Settings");
+        }
+
+        ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+        ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+        ImGui::SetNextWindowSize(ImVec2(300, 120), ImGuiCond_Appearing);
+
+        if (!ImGui::BeginPopupModal("Settings", &settingsOpen, ImGuiWindowFlags_NoResize)) {
+            return;
+        }
+
+        ImGui::Text("Velocity Input Mode");
+        int mode = static_cast<int>(settings.ui.velocityMode);
+        ImGui::RadioButton("XY", &mode, static_cast<int>(VelocityInputMode::XY));
+        ImGui::SameLine();
+        ImGui::RadioButton("Polar", &mode, static_cast<int>(VelocityInputMode::Polar));
+        settings.ui.velocityMode = static_cast<VelocityInputMode>(mode);
+
+        ImGui::EndPopup();
     }
 };

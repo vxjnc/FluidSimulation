@@ -20,7 +20,7 @@ struct AppSettings {
     float brushStrength = 10.0f;
     std::array<float, 3> brushColor;
 
-    float simScale = 1.0f;
+    float simScale = 0.8f;
     float dyeScale = 1.0f;
 
     RenderSettings renderSettings;
