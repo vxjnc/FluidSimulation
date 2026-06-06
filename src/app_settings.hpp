@@ -2,6 +2,7 @@
 #include <array>
 
 #include "src/render/render_settings.hpp"
+#include "src/ui/random_splat/splat_settings.hpp"
 
 enum class BrushMode { Inject, PaintWall };
 
@@ -22,4 +23,5 @@ struct AppSettings {
     float dyeScale = 1.0f;
 
     RenderSettings renderSettings;
+    SplatSettings splatSettings;
 };

@@ -1,19 +1,18 @@
 #pragma once
-#include <array>
 #include <cstdint>
-#include <numbers>
 #include <vector>
 
 #include <GLFW/glfw3.h>
 #include <webgpu/webgpu-raii.hpp>
 #include <webgpu/webgpu.hpp>
 
-#include "compute/fluid_sim.hpp"
-#include "render/render.hpp"
 #include "src/app_settings.hpp"
+#include "src/color_generator.hpp"
+#include "src/compute/fluid_sim.hpp"
 #include "src/compute/fluid_source.hpp"
-#include "ui/fluid_viewport.hpp"
-#include "ui/imgui_manager.hpp"
+#include "src/render/render.hpp"
+#include "src/ui/fluid_viewport.hpp"
+#include "src/ui/imgui_manager.hpp"
 
 class Application {
 public:
@@ -64,15 +63,20 @@ public:
         while (!glfwWindowShouldClose(window)) {
             glfwPollEvents();
             ctx.processEvents();
+            imguiManager.beginFrame();
 
             wgpu::raii::CommandEncoder enc = ctx.device().createCommandEncoder();
 
             frameSources = sources;
 
+            auto splats = imguiManager.splatPanel.takeSplats();
+            if (splats) {
+                frameSources.insert(frameSources.end(), splats->begin(), splats->end());
+            }
+
             processInput(enc, frameSources);
             update(enc, frameSources);
 
-            imguiManager.beginFrame();
             imguiManager.renderUI(viewport, mouse, simulation, settings, sources);
 
             render(enc);
@@ -125,15 +129,7 @@ private:
 
             if (mouse.leftJustPressed) {
                 static float hue = static_cast<float>(time(nullptr));
-                hue = fmod(hue + std::numbers::phi_v<float>, 1.0f);
-                float h6 = hue * 6.0f;
-                size_t i = static_cast<size_t>(h6);
-                float f = h6 - static_cast<float>(i);
-                float q = 1.0f - f;
-                float t = f;
-                settings.brushColor = std::array{std::array{1.0f, t, 0.0f}, std::array{q, 1.0f, 0.0f},
-                                                 std::array{0.0f, 1.0f, t}, std::array{0.0f, q, 1.0f},
-                                                 std::array{t, 0.0f, 1.0f}, std::array{1.0f, 0.0f, q}}[i % 6];
+                settings.brushColor = ColorUtils::Generator::nextGoldenRatioColor(hue);
             }
         }
         else if (settings.brushMode == BrushMode::PaintWall) {
@@ -144,7 +140,7 @@ private:
         }
     }
 
-    void update(wgpu::raii::CommandEncoder& enc, const std::vector<FluidSource>& frameSources) {
+    void update(wgpu::raii::CommandEncoder& enc, std::span<const FluidSource> frameSources) {
         static float lastDt = 0.0f;
         static float lastDyeDissipation = 0.0f;
         static float lastVelDissipation = 0.0f;

@@ -9,6 +9,7 @@
 #include "src/compute/fluid_sim.hpp"
 #include "src/ui/controls/controls_panel.hpp"
 #include "src/ui/fluid_viewport.hpp"
+#include "src/ui/random_splat/splat_panel.hpp"
 #include "src/wgpu_context.hpp"
 
 struct MouseState {
@@ -68,6 +69,7 @@ public:
         }
 
         controlsPanel.render(viewport, sim, settings, sources);
+        splatPanel.render(settings.splatSettings, viewport);
 
         // --- Viewport Panel ---
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
@@ -120,6 +122,6 @@ public:
         ImGui_ImplWGPU_RenderDrawData(ImGui::GetDrawData(), passEncoder);
     }
 
-private:
     ControlsPanel controlsPanel;
+    SplatPanel splatPanel;
 };
