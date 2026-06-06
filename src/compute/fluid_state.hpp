@@ -50,7 +50,7 @@ public:
         injectsCapacity_ = 1;
 
         fillCircleBuffer = WGPUHelper::makeBuffer(device, sizeof(FillCircleParams),
-                                                  wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst,
+                                                  wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst,
                                                   "FillCircleParams");
 
         resize(w, h);
