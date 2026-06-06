@@ -65,7 +65,7 @@ public:
             ImGui::DockBuilderSetNodeSize(dockspaceId, ImGui::GetMainViewport()->Size);
 
             ImGuiID dockLeft, dockRight;
-            ImGui::DockBuilderSplitNode(dockspaceId, ImGuiDir_Left, 0.22f, &dockLeft, &dockRight);
+            ImGui::DockBuilderSplitNode(dockspaceId, ImGuiDir_Left, 0.25f, &dockLeft, &dockRight);
 
             ImGui::DockBuilderDockWindow("Controls", dockLeft);
             ImGui::DockBuilderDockWindow("Viewport", dockRight);
@@ -81,7 +81,8 @@ public:
             controlsPanel.render(visibility.controls, viewport, sim, settings, sources);
         }
         if (visibility.randomSplat) {
-            splatPanel.render(visibility.randomSplat, settings.splatSettings, viewport);
+            splatPanel.render(visibility.randomSplat, settings.splatSettings, viewport,
+                              settings.ui.velocityMode);
         }
 
         // --- Viewport Panel ---

@@ -1,20 +1,21 @@
 #pragma once
 
-template <typename T> struct Range {
-    Range(T min, T max) : min(min), max(max) {}
-    T min;
-    T max;
-};
-
 struct SplatSettings {
-    Range<int> countRange{40u, 50u};
+    int countMin = 40;
+    int countMax = 50;
 
-    Range<float> radiusRange{50.f, 70.f};
+    float radiusMin = 50.f;
+    float radiusMax = 70.f;
 
     bool applyVelocity = true;
 
-    Range<float> vxRange{-100.f, 100.f};
-    Range<float> vyRange{-100.f, 100.f};
+    // XY mode
+    float vxMin = -100.f, vxMax = 100.f;
+    float vyMin = -100.f, vyMax = 100.f;
+
+    // Polar mode
+    float angleMin = 0.f, angleMax = 360.f;
+    float magMin = 0.f, magMax = 100.f;
 
     bool applyColor = true;
 };

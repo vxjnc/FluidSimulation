@@ -3,6 +3,7 @@
 
 #include "src/render/render_settings.hpp"
 #include "src/ui/random_splat/splat_settings.hpp"
+#include "src/ui/ui_settings.hpp"
 
 enum class BrushMode { Inject, PaintWall };
 
@@ -24,4 +25,6 @@ struct AppSettings {
 
     RenderSettings renderSettings;
     SplatSettings splatSettings;
+
+    UISettings ui;
 };

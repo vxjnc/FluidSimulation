@@ -4,6 +4,7 @@
 #include "src/app_settings.hpp"
 #include "src/compute/fluid_source.hpp"
 #include "src/ui/fluid_viewport.hpp"
+#include "src/ui/widgets/velocity_input.hpp"
 
 class SourceWidget {
 public:
@@ -55,12 +56,9 @@ public:
 
         if (has_velocity || s.form == FluidSource::Form::LINE) {
             float display_vx = s.vx / settings.simScale;
-            if (ImGui::SliderFloat("VX", &display_vx, -200.0f, 200.0f)) {
-                s.vx = display_vx * settings.simScale;
-            }
-
             float display_vy = s.vy / settings.simScale;
-            if (ImGui::SliderFloat("VY", &display_vy, -200.0f, 200.0f)) {
+            if (VelocityInput::render("vel", display_vx, display_vy, settings.ui.velocityMode)) {
+                s.vx = display_vx * settings.simScale;
                 s.vy = display_vy * settings.simScale;
             }
         }

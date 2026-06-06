@@ -111,6 +111,9 @@ target_include_directories(imgui SYSTEM PUBLIC
 target_compile_definitions(imgui PUBLIC ${IMGUI_WEBGPU_BACKEND})
 target_link_libraries(imgui PUBLIC glfw webgpu)
 
+find_package(ZLIB REQUIRED)
+target_link_libraries(clip ZLIB::ZLIB)
+
 add_library(stb_headers INTERFACE)
 target_include_directories(stb_headers SYSTEM INTERFACE ${stb_SOURCE_DIR})
 

@@ -9,12 +9,14 @@
 #include "src/ui/fluid_viewport.hpp"
 #include "src/ui/random_splat/splat_settings.hpp"
 #include "src/ui/random_splat/splat_widget.hpp"
+#include "src/ui/ui_settings.hpp"
 
 class SplatPanel {
 public:
-    void render(bool& open, SplatSettings& settings, const FluidViewport& viewport) {
+    void render(bool& open, SplatSettings& settings, const FluidViewport& viewport,
+                VelocityInputMode velMode) {
         ImGui::Begin("Random Splat", &open);
-        pendingSplats_ = splatWidget_.render(settings, viewport);
+        pendingSplats_ = splatWidget_.render(settings, viewport, velMode);
         ImGui::End();
     }
 
