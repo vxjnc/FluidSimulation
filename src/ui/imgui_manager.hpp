@@ -8,6 +8,7 @@
 #include "src/app_settings.hpp"
 #include "src/compute/fluid_sim.hpp"
 #include "src/render/render_settings.hpp"
+#include "src/ui/controls/brush_widget.hpp"
 #include "src/ui/controls/source_widget.hpp"
 #include "src/ui/fluid_viewport.hpp"
 #include "src/wgpu_context.hpp"
@@ -125,20 +126,11 @@ public:
             ImGui::Separator();
 
             ImGui::Text("Brush");
-            static const char* brushModes[] = {"Inject", "Paint Wall"};
-            int bm = static_cast<int>(settings.brushMode);
-            if (ImGui::Combo("##brush", &bm, brushModes, sizeof(brushModes) / sizeof(brushModes[0]))) {
-                settings.brushMode = static_cast<BrushMode>(bm);
-            }
-            ImGui::SliderFloat("Radius", &settings.brushRadius, 1.0f, 100.0f);
-            if (settings.brushMode == BrushMode::Inject) {
-                ImGui::SliderFloat("Strength", &settings.brushStrength, 1.0f, 100.0f);
-            }
+            brushWidget_.render(settings);
 
             ImGui::Separator();
 
             ImGui::Text("Sources");
-
             for (size_t i = 0; i < sim.sources.size();) {
                 if (sourceWidget_.render(sim.sources[i], i, viewport, settings)) {
                     ++i;
@@ -208,5 +200,6 @@ public:
     }
 
 private:
+    BrushWidget brushWidget_;
     SourceWidget sourceWidget_;
 };
