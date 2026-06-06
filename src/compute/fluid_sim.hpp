@@ -1,11 +1,9 @@
 #pragma once
-#include <ranges>
-#include <vector>
 
 #include <webgpu/webgpu-raii.hpp>
 
 #include "src/compute/fluid_pipelines.hpp"
-#include "src/compute/fluid_source.hpp"
+#include "src/compute/fluid_source_list.hpp"
 #include "src/compute/fluid_state.hpp"
 #include "src/compute/resample_pipelines.hpp"
 #include "src/compute/wgpu_helper.hpp"
@@ -19,6 +17,7 @@ public:
         queue_ = queue;
         state.init(device, queue, width, height, dye_width, dye_height);
         pipelines.init(device);
+        sources.setDevice(device);
         resamplePipelines.init(device);
         initBindGroups();
     }
@@ -192,27 +191,7 @@ public:
     }
 
     void inject(wgpu::raii::CommandEncoder& enc, const FluidSource& source) {
-        FluidState::InjectParams p{{source.color[0], source.color[1], source.color[2], 1.0f},
-                                   source.x,
-                                   source.y,
-                                   source.vx,
-                                   source.vy,
-                                   source.radius,
-                                   static_cast<uint32_t>(source.mode_mask),
-                                   static_cast<uint32_t>(source.form)};
-        queue_.writeBuffer(*state.injectBuffer, 0, &p, sizeof(p));
-
-        uint32_t W = (std::max(state.width, state.dye_width) + 15) / 16;
-        uint32_t H = (std::max(state.height, state.dye_height) + 15) / 16;
-
-        wgpu::raii::BindGroup bg = WGPUHelper::makeBindGroup(
-            device_, pipelines.inject,
-            {*state.paramsBuffer, *state.injectBuffer, *state.velocity, *state.dye}, "InjectBindGroup");
-
-        wgpu::raii::ComputePassEncoder pass = enc->beginComputePass({});
-
-        pipelines.dispatch(pass, pipelines.inject, bg, W, H);
-        pass->end();
+        inject(enc, source, state.injectBuffer);
     }
 
     void paintObstacle(wgpu::raii::CommandEncoder& enc, uint32_t cx, uint32_t cy, uint32_t radius,
@@ -232,7 +211,7 @@ public:
         pass->end();
     }
 
-    std::vector<FluidSource> sources;
+    FluidSourceList sources;
 
     FluidState state;
     FluidPipelines pipelines;
@@ -296,9 +275,35 @@ private:
     }
 
     void injectSource(wgpu::raii::CommandEncoder& enc) {
-        for (const FluidSource& s : sources | std::views::filter(&FluidSource::active)) {
-            inject(enc, s);
+        for (auto [s, buf] : sources.zip()) {
+            if (!s.active) {
+                continue;
+            }
+            inject(enc, s, buf);
         }
+    }
+
+    void inject(wgpu::raii::CommandEncoder& enc, const FluidSource& source, wgpu::raii::Buffer& buf) {
+        FluidState::InjectParams p{{source.color[0], source.color[1], source.color[2], 1.0f},
+                                   source.x,
+                                   source.y,
+                                   source.vx,
+                                   source.vy,
+                                   source.radius,
+                                   static_cast<uint32_t>(source.mode_mask),
+                                   static_cast<uint32_t>(source.form)};
+        queue_.writeBuffer(*buf, 0, &p, sizeof(p));
+
+        uint32_t W = (std::max(state.width, state.dye_width) + 15) / 16;
+        uint32_t H = (std::max(state.height, state.dye_height) + 15) / 16;
+
+        wgpu::raii::BindGroup bg = WGPUHelper::makeBindGroup(
+            device_, pipelines.inject, {*state.paramsBuffer, *buf, *state.velocity, *state.dye},
+            "InjectBindGroup");
+
+        wgpu::raii::ComputePassEncoder pass = enc->beginComputePass({});
+        pipelines.dispatch(pass, pipelines.inject, bg, W, H);
+        pass->end();
     }
 
     void advect(wgpu::raii::ComputePassEncoder& pass, uint32_t W, uint32_t H) {

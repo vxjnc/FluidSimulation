@@ -144,14 +144,14 @@ public:
                     ++i;
                 }
                 else {
-                    sim.sources.erase(sim.sources.begin() + i);
+                    sim.sources.erase(i);
                 }
             }
 
             if (ImGui::Button("Add Source")) {
-                sim.sources.emplace_back(static_cast<float>(viewport.w) / 2.f * settings.simScale,
-                                         static_cast<float>(viewport.h) / 2.f * settings.simScale, 0, 100,
-                                         4 * settings.simScale, std::array{1.f, 1.f, 1.f});
+                sim.sources.add(FluidSource(static_cast<float>(viewport.w) / 2.f * settings.simScale,
+                                            static_cast<float>(viewport.h) / 2.f * settings.simScale, 0, 100,
+                                            10 * settings.simScale, std::array{1.f, 1.f, 1.f}));
             }
         }
         ImGui::End();
