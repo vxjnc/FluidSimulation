@@ -81,7 +81,11 @@ public:
             imguiManager.renderUI(viewport, mouse, simulation, settings, sources);
             if (imguiManager.screenshotRequested) {
                 imguiManager.screenshotRequested = false;
-                screenshotCapture.request(viewport);
+                screenshotCapture.request(viewport, ScreenshotCapture::Mode::Clipboard);
+            }
+            if (imguiManager.saveScreenshotRequested) {
+                imguiManager.saveScreenshotRequested = false;
+                screenshotCapture.request(viewport, ScreenshotCapture::Mode::File);
             }
 
             render(enc);
@@ -138,7 +142,7 @@ private:
         }
 
         if (ImGui::IsKeyPressed(ImGuiKey_F12)) {
-            screenshotCapture.request(viewport);
+            screenshotCapture.request(viewport, ScreenshotCapture::Mode::Clipboard);
         }
 
         if (settings.paused && ImGui::IsKeyPressed(ImGuiKey_RightArrow)) {

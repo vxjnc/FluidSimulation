@@ -141,6 +141,7 @@ public:
     bool dockInitialized = false;
 
     bool screenshotRequested = false;
+    bool saveScreenshotRequested = false;
 
 private:
     void renderMenuBar() {
@@ -149,6 +150,9 @@ private:
         }
 
         if (ImGui::BeginMenu("File")) {
+            if (ImGui::MenuItem("Save Screenshot")) {
+                saveScreenshotRequested = true;
+            }
             if (ImGui::MenuItem("Copy to Clipboard", "F12")) {
                 screenshotRequested = true;
             }

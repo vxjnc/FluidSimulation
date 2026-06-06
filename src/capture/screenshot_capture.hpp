@@ -1,9 +1,12 @@
 #pragma once
+#include <chrono>
 #include <cstdint>
 #include <cstring>
+#include <filesystem>
 #include <vector>
 
 #include <clip.h>
+#include <stb_image_write.h>
 #include <webgpu/webgpu-raii.hpp>
 #include <webgpu/webgpu.hpp>
 
@@ -13,10 +16,16 @@
 
 class ScreenshotCapture {
 public:
-    void request(const FluidViewport& viewport) {
+    enum class Mode : uint8_t {
+        File,
+        Clipboard,
+    };
+
+    void request(const FluidViewport& viewport, Mode mode) {
         if (pending_) {
             return;
         }
+        mode_ = mode;
 
         WGPUContext& ctx = WGPUContext::instance();
         wgpu::Device device = ctx.device();
@@ -71,6 +80,7 @@ public:
 
 private:
     bool pending_ = false;
+    Mode mode_ = Mode::Clipboard;
     bool isBGRA_ = false;
     uint32_t w_ = 0, h_ = 0;
     uint32_t bytesPerRow_ = 0;
@@ -101,6 +111,18 @@ private:
 
         stagingBuffer_->unmap();
 
+        if (mode_ == Mode::Clipboard) {
+            saveToClipboard(pixels);
+        }
+        else {
+            saveToFile(pixels);
+        }
+
+        pending_ = false;
+    }
+
+    void saveToClipboard(std::span<const std::byte> pixels) {
+
         clip::image_spec spec;
         spec.width = w_;
         spec.height = h_;
@@ -117,7 +139,13 @@ private:
 
         clip::image img(pixels.data(), spec);
         clip::set_image(img);
+    }
 
-        pending_ = false;
+    void saveToFile(std::span<const std::byte> pixels) {
+        std::filesystem::create_directories("screenshots");
+        auto now = std::chrono::system_clock::now();
+        std::string path = std::format("screenshots/screenshot_{:%Y-%m-%d_%H-%M-%S}.png", now);
+        stbi_write_png(path.c_str(), static_cast<int>(w_), static_cast<int>(h_), 4, pixels.data(),
+                       static_cast<int>(w_ * 4));
     }
 };
