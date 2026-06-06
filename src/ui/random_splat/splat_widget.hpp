@@ -37,7 +37,6 @@ private:
     std::mt19937 mt{std::random_device{}()};
 
     std::vector<FluidSource> generate(const SplatSettings& s, const FluidViewport& viewport) {
-        // Безопасно получаем диапазоны (защита от min > max в ImGui)
         auto [countMin, countMax] = std::minmax(s.countRange.min, s.countRange.max);
         std::uniform_int_distribution<int> countDist(countMin, countMax);
 

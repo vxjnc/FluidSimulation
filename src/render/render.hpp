@@ -5,7 +5,7 @@
 #include <webgpu/webgpu.hpp>
 
 #include "generated/shaders/shader.wgsl.h"
-#include "src/compute/fluid_state.hpp"
+#include "src/compute/fluid_sim.hpp"
 #include "src/compute/wgpu_helper.hpp"
 #include "src/render/render_settings.hpp"
 #include "src/wgpu_context.hpp"
@@ -20,22 +20,25 @@ class Render {
 public:
     void init() { initPipeline(); }
 
-    void draw(const wgpu::raii::TextureView& targetView, FluidState& fluid, const RenderSettings& settings) {
+    void draw(const wgpu::raii::TextureView& targetView, FluidSim& fluid_sim,
+              const RenderSettings& settings) {
         WGPUContext& ctx = WGPUContext::instance();
 
         wgpu::CommandEncoderDescriptor cmdDesc{};
         cmdDesc.label = wgpu::StringView("DrawEncoder");
         wgpu::raii::CommandEncoder enc = ctx.device().createCommandEncoder(cmdDesc);
 
-        draw(enc, targetView, fluid, settings);
+        draw(enc, targetView, fluid_sim, settings);
 
         wgpu::raii::CommandBuffer cmd = enc->finish();
         ctx.queue().submit(1, &*cmd);
     }
 
-    void draw(wgpu::raii::CommandEncoder& enc, const wgpu::raii::TextureView& targetView, FluidState& fluid,
+    void draw(wgpu::raii::CommandEncoder& enc, const wgpu::raii::TextureView& targetView, FluidSim& fluid_sim,
               const RenderSettings& settings) {
         WGPUContext& ctx = WGPUContext::instance();
+
+        FluidState& fluid = fluid_sim.state;
 
         RenderParams p{
             fluid.width,
@@ -50,7 +53,7 @@ public:
         wgpu::raii::BindGroup bindGroup = WGPUHelper::makeBindGroup(ctx.device(), pipeline,
                                                                     {
                                                                         *paramsBuffer,
-                                                                        *fluid.dye,
+                                                                        *fluid_sim.getCurrentDye(),
                                                                         *fluid.velocity,
                                                                         *fluid.pressure,
                                                                         *fluid.divergence,

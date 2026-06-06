@@ -134,6 +134,8 @@ public:
         initBindGroups();
     }
 
+    const wgpu::raii::Buffer& getCurrentDye() const { return frameIndex % 2 ? state.dye_next : state.dye; }
+
     void setDt(float dt) {
         queue_.writeBuffer(*state.paramsBuffer, offsetof(FluidState::Params, dt), &dt, sizeof(dt));
     }
@@ -291,7 +293,7 @@ private:
         wgpu::raii::BindGroup bg =
             WGPUHelper::makeBindGroup(device_, pipelines.inject,
                                       {*state.paramsBuffer, *state.injectCountBuffer, *state.injectsBuffer,
-                                       *state.velocity, *state.dye},
+                                       *state.velocity, *getCurrentDye()},
                                       "InjectBindGroup");
 
         wgpu::raii::ComputePassEncoder pass = enc->beginComputePass({});

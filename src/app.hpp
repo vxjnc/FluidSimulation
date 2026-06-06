@@ -163,8 +163,10 @@ private:
             lastCurlStrength = settings.curlStrength;
         }
 
-        if (!settings.paused) {
+        if (!frameSources.empty()) {
             simulation.inject(enc, frameSources);
+        }
+        if (!settings.paused) {
             simulation.step(enc);
         }
     }
@@ -172,7 +174,7 @@ private:
     void render(wgpu::raii::CommandEncoder& enc) {
         WGPUContext& ctx = WGPUContext::instance();
 
-        renderer.draw(enc, viewport.view, simulation.state, settings.renderSettings);
+        renderer.draw(enc, viewport.view, simulation, settings.renderSettings);
 
         wgpu::SurfaceTexture surfaceTex{};
         ctx.surface().getCurrentTexture(&surfaceTex);
