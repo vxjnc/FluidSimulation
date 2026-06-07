@@ -35,7 +35,7 @@ public:
         WGPUContext& ctx = WGPUContext::instance();
         ctx.init(window, width, height);
 
-        imguiManager.init(window, ctx.device(), ctx.surfaceFormat());
+        imguiManager.init(window, ctx.device(), ctx.surfaceFormat(), &settings);
 
         glfwSetFramebufferSizeCallback(window, [](GLFWwindow*, int w, int h) {
             WGPUContext::instance().resize(static_cast<uint32_t>(w), static_cast<uint32_t>(h));
@@ -79,7 +79,7 @@ public:
             processInput(enc, frameSources);
             update(enc, frameSources);
 
-            imguiManager.renderUI(viewport, mouse, simulation, settings, sources);
+            imguiManager.renderUI(viewport, mouse, simulation, sources);
             if (imguiManager.saveSimRequested) {
                 std::string cwd = std::filesystem::current_path().string();
 
