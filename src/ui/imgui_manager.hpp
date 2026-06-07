@@ -291,6 +291,11 @@ public:
                     mouse.leftPressed = ImGui::IsMouseDown(ImGuiMouseButton_Left);
                     mouse.leftJustPressed = !wasLeft && mouse.leftPressed;
                     mouse.rightPressed = ImGui::IsMouseDown(ImGuiMouseButton_Right);
+
+                    if (io.MouseWheel != 0.f) {
+                        settings->brushRadius =
+                            std::clamp(settings->brushRadius * (1.f + io.MouseWheel * 0.1f), 1.f, 400.f);
+                    }
                 }
                 else {
                     mouse.leftPressed = false;
