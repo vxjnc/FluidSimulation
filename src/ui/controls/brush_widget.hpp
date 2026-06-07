@@ -8,7 +8,7 @@ public:
     void render(AppSettings& settings) {
         static const char* brushModes[] = {"Inject", "Paint Wall"};
         int bm = static_cast<int>(settings.brushMode);
-        if (ImGui::Combo("##brush", &bm, brushModes, 2)) {
+        if (ImGui::Combo("##brush", &bm, brushModes, sizeof(brushModes) / sizeof(brushModes[0]))) {
             settings.brushMode = static_cast<BrushMode>(bm);
         }
 

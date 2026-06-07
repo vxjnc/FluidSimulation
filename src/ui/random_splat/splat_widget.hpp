@@ -82,9 +82,10 @@ private:
                                              ? std::array{colorDist(rng_), colorDist(rng_), colorDist(rng_)}
                                              : std::array{1.f, 1.f, 1.f};
 
-            FluidSource src(xDist(rng_), yDist(rng_), vx, vy, radiusDist(rng_), color);
-            src.mode_mask = (s.applyVelocity ? FluidSource::Mode::VELOCITY : 0) | FluidSource::Mode::DYE;
-            sources.push_back(std::move(src));
+            sources.emplace_back(xDist(rng_), yDist(rng_), vx, vy, radiusDist(rng_), color).mode_mask =
+                (s.applyVelocity ? FluidSource::Mode::VELOCITY : 0) |
+                (s.applyColor ? FluidSource::Mode::DYE : 0);
+            ;
         }
 
         return sources;
