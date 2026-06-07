@@ -1,7 +1,6 @@
 #pragma once
 #include <cstdint>
 #include <filesystem>
-#include <optional>
 #include <vector>
 
 #include <imgui.h>
@@ -15,12 +14,21 @@
 
 class ImportPanel {
 public:
-    struct DyeImage {
+    struct LoadedImage {
         std::vector<float> pixels;
         uint32_t w, h;
     };
 
-    std::optional<DyeImage> render(bool& open) {
+    struct Action {
+        std::string label;
+        std::function<void(const LoadedImage&)> callback;
+    };
+
+    template <size_t N> void render(const Action (&actions)[N], bool& open) {
+        return render(std::span<const Action, N>(actions), open);
+    }
+
+    void render(std::span<const Action> actions, bool& open) {
         ImGui::Begin("Import", &open);
 
         if (ImGui::Button("Load Image...")) {
@@ -35,14 +43,18 @@ public:
             float aspect = static_cast<float>(imgH_) / static_cast<float>(imgW_);
             ImGui::Image(previewTexId_, ImVec2(panelW, panelW * aspect));
 
-            if (ImGui::Button("Apply to Dye", ImVec2(-1, 0))) {
-                ImGui::End();
-                return DyeImage{pixels_, imgW_, imgH_};
+            ImGui::Separator();
+
+            ImGui::TextUnformatted("Apply to:");
+            for (const auto& action : actions) {
+                if (ImGui::Button(action.label.data(), ImVec2(-1, 0))) {
+                    LoadedImage img{pixels_, imgW_, imgH_};
+                    action.callback(img);
+                }
             }
         }
 
         ImGui::End();
-        return std::nullopt;
     }
 
 private:

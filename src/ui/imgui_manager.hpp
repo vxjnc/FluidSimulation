@@ -1,4 +1,6 @@
 #pragma once
+#include <array>
+
 #include <GLFW/glfw3.h>
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
@@ -13,6 +15,7 @@
 #include "src/ui/fluid_viewport.hpp"
 #include "src/ui/import/import_panel.hpp"
 #include "src/ui/random_splat/splat_panel.hpp"
+#include "src/utils/image_processor.hpp"
 #include "src/wgpu_context.hpp"
 
 struct MouseState {
@@ -215,24 +218,17 @@ public:
                               settings->ui.velocityMode);
         }
         if (visibility.import) {
-            if (auto dye = importPanel.render(visibility.import)) {
-                uint32_t dw = sim.state.dye_width;
-                uint32_t dh = sim.state.dye_height;
+            importPanel.render({ImportPanel::Action{"Dye",
+                                                    [&](const ImportPanel::LoadedImage& img) {
+                                                        uint32_t dw = sim.state.dye_width;
+                                                        uint32_t dh = sim.state.dye_height;
 
-                std::vector<float> resized(dw * dh * 4);
-                stbir_resize_float_linear(dye->pixels.data(), static_cast<int>(dye->w),
-                                          static_cast<int>(dye->h), 0, resized.data(), static_cast<int>(dw),
-                                          static_cast<int>(dh), 0, STBIR_RGBA);
-                for (uint32_t y = 0; y < dh / 2; ++y) {
-                    float* row1 = resized.data() + y * dw * 4;
-                    float* row2 = resized.data() + (dh - 1 - y) * dw * 4;
-                    std::swap_ranges(row1, row1 + dw * 4, row2);
-                }
-
-                dyeToApply = std::move(resized);
-                dyeToApplyW = dw;
-                dyeToApplyH = dh;
-            }
+                                                        dyeToApply = ImageProcessor::resizeRGBA(
+                                                            img.pixels.data(), img.w, img.h, dw, dh, true);
+                                                        dyeToApplyW = dw;
+                                                        dyeToApplyH = dh;
+                                                    }}},
+                               visibility.import);
         }
 
         // --- Viewport Panel ---

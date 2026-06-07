@@ -11,6 +11,7 @@
 
 #include "src/capture/gpu_readback.hpp"
 #include "src/ui/fluid_viewport.hpp"
+#include "src/utils/image_processor.hpp"
 #include "src/wgpu_context.hpp"
 
 namespace ScreenshotCapture {
@@ -56,22 +57,8 @@ namespace ScreenshotCapture {
         GpuReadback::request(
             *viewport.texture, w, h, ctx.surfaceFormat(),
             [w, h, isBGRA, bytesPerRow, mode, path = std::move(path)](std::vector<std::byte> raw) {
-                std::vector<std::byte> pixels(w * h * 4);
-                for (uint32_t y = 0; y < h; ++y) {
-                    const std::byte* row = raw.data() + y * bytesPerRow;
-                    std::byte* dst = pixels.data() + y * w * 4;
-                    if (isBGRA) {
-                        for (uint32_t x = 0; x < w; ++x) {
-                            dst[x * 4 + 0] = row[x * 4 + 2];
-                            dst[x * 4 + 1] = row[x * 4 + 1];
-                            dst[x * 4 + 2] = row[x * 4 + 0];
-                            dst[x * 4 + 3] = row[x * 4 + 3];
-                        }
-                    }
-                    else {
-                        std::memcpy(dst, row, w * 4);
-                    }
-                }
+                std::vector<std::byte> pixels =
+                    ImageProcessor::processRawGPUData(raw.data(), w, h, bytesPerRow, isBGRA);
 
                 if (mode == Mode::Clipboard) {
                     saveToClipboard(pixels, w, h);
@@ -81,5 +68,4 @@ namespace ScreenshotCapture {
                 }
             });
     }
-
 };
