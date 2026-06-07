@@ -389,18 +389,28 @@ private:
 
         ImVec2 center = ImGui::GetMainViewport()->GetCenter();
         ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-        ImGui::SetNextWindowSize(ImVec2(300, 120), ImGuiCond_Appearing);
+        ImGui::SetNextWindowSize(ImVec2(400, 500), ImGuiCond_Appearing);
 
-        if (!ImGui::BeginPopupModal("Settings", &settingsOpen, ImGuiWindowFlags_NoResize)) {
+        if (!ImGui::BeginPopupModal("Settings", &settingsOpen)) {
             return;
         }
 
-        ImGui::Text("Velocity Input Mode");
-        int mode = static_cast<int>(settings->ui.velocityMode);
-        ImGui::RadioButton("XY", &mode, static_cast<int>(VelocityInputMode::XY));
-        ImGui::SameLine();
-        ImGui::RadioButton("Polar", &mode, static_cast<int>(VelocityInputMode::Polar));
-        settings->ui.velocityMode = static_cast<VelocityInputMode>(mode);
+        if (ImGui::BeginTabBar("SettingsTabs")) {
+            if (ImGui::BeginTabItem("General")) {
+                ImGui::Text("Velocity Input Mode");
+                int mode = static_cast<int>(settings->ui.velocityMode);
+                ImGui::RadioButton("XY", &mode, static_cast<int>(VelocityInputMode::XY));
+                ImGui::SameLine();
+                ImGui::RadioButton("Polar", &mode, static_cast<int>(VelocityInputMode::Polar));
+                settings->ui.velocityMode = static_cast<VelocityInputMode>(mode);
+                ImGui::EndTabItem();
+            }
+            if (ImGui::BeginTabItem("Style")) {
+                ImGui::ShowStyleEditor();
+                ImGui::EndTabItem();
+            }
+            ImGui::EndTabBar();
+        }
 
         ImGui::EndPopup();
     }
