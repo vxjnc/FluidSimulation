@@ -6,6 +6,8 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_wgpu.h>
 #include <imgui_internal.h>
+#include <nfd.hpp>
+#include <sigslot/signal.hpp>
 #include <stb_image_resize2.h>
 #include <webgpu/webgpu.hpp>
 
@@ -34,6 +36,13 @@ struct PanelVisibility {
 
 class ImGuiManager {
 public:
+    sigslot::signal<std::vector<FluidSource>> onSplats;
+    sigslot::signal<std::vector<float>, uint32_t, uint32_t> onDyeImport;
+    sigslot::signal<std::string> onSaveRequested;
+    sigslot::signal<std::string> onLoadRequested;
+    sigslot::signal<> onScreenshotClipboard;
+    sigslot::signal<std::string> onScreenshotFile;
+
     void init(GLFWwindow* window, wgpu::Device device, wgpu::TextureFormat surfaceFormat,
               AppSettings* settings) {
         this->settings = settings;
@@ -216,6 +225,9 @@ public:
         if (visibility.randomSplat) {
             splatPanel.render(visibility.randomSplat, settings->splatSettings, viewport,
                               settings->ui.velocityMode);
+            if (auto splats = splatPanel.takeSplats()) {
+                onSplats(std::move(*splats));
+            }
         }
         if (visibility.import) {
             importPanel.render({ImportPanel::Action{"Dye",
@@ -223,10 +235,9 @@ public:
                                                         uint32_t dw = sim.state.dye_width;
                                                         uint32_t dh = sim.state.dye_height;
 
-                                                        dyeToApply = ImageProcessor::resizeRGBA(
+                                                        auto pixels = ImageProcessor::resizeRGBA(
                                                             img.pixels.data(), img.w, img.h, dw, dh, true);
-                                                        dyeToApplyW = dw;
-                                                        dyeToApplyH = dh;
+                                                        onDyeImport(std::move(pixels), dw, dh);
                                                     }}},
                                visibility.import);
         }
@@ -290,15 +301,6 @@ public:
     bool settingsOpen = false;
     bool dockInitialized = false;
 
-    bool screenshotRequested = false;
-    bool saveScreenshotRequested = false;
-
-    bool saveSimRequested = false;
-    bool loadSimRequested = false;
-
-    std::optional<std::vector<float>> dyeToApply;
-    uint32_t dyeToApplyW = 0, dyeToApplyH = 0;
-
 private:
     AppSettings* settings;
 
@@ -309,17 +311,32 @@ private:
 
         if (ImGui::BeginMenu("File")) {
             if (ImGui::MenuItem("Save Simulation...", "Ctrl+S")) {
-                saveSimRequested = true;
+                std::string cwd = std::filesystem::current_path().string();
+                NFD::UniquePath outPath;
+                nfdu8filteritem_t filters[] = {{"Fluid Simulation", "fsim"}};
+                if (NFD::SaveDialog(outPath, filters, 1, cwd.c_str(), "simulation.fsim") == NFD_OKAY) {
+                    onSaveRequested(outPath.get());
+                }
             }
             if (ImGui::MenuItem("Open Simulation...", "Ctrl+O")) {
-                loadSimRequested = true;
+                std::string cwd = std::filesystem::current_path().string();
+                NFD::UniquePath outPath;
+                nfdu8filteritem_t filters[] = {{"Fluid Simulation", "fsim"}};
+                if (NFD::OpenDialog(outPath, filters, 1, cwd.c_str()) == NFD_OKAY) {
+                    onLoadRequested(outPath.get());
+                }
             }
 
             if (ImGui::MenuItem("Save Screenshot")) {
-                saveScreenshotRequested = true;
+                std::string cwd = std::filesystem::current_path().string();
+                NFD::UniquePath outPath;
+                nfdu8filteritem_t filters[] = {{"PNG Image", "png"}};
+                if (NFD::SaveDialog(outPath, filters, 1, cwd.c_str(), "screenshot.png") == NFD_OKAY) {
+                    onScreenshotFile(outPath.get());
+                }
             }
             if (ImGui::MenuItem("Copy to Clipboard", "F12")) {
-                screenshotRequested = true;
+                onScreenshotClipboard();
             }
 
             ImGui::EndMenu();
