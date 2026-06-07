@@ -68,10 +68,37 @@ public:
                 frameSources.insert(frameSources.end(), splats.begin(), splats.end());
             });
         });
-        imguiManager.onDyeImport.connect([&](auto pixels, auto, auto) {
-            postSubmitQueue_.push([&, pixels = std::move(pixels)]() {
-                ctx.queue().writeBuffer(*simulation.getCurrentDye(), 0, pixels.data(),
-                                        pixels.size() * sizeof(float));
+        imguiManager.onImport.connect([&](auto target, auto pixels, auto w, auto h) {
+            postSubmitQueue_.push([&, target, pixels = std::move(pixels), w, h]() {
+                switch (target) {
+                case ImportTarget::Dye:
+                    ctx.queue().writeBuffer(*simulation.getCurrentDye(), 0, pixels.data(),
+                                            pixels.size() * sizeof(float));
+                    break;
+                case ImportTarget::Velocity: {
+                    // RGBA -> RG
+                    std::vector<float> rg;
+                    rg.reserve(w * h * 2);
+                    for (size_t i = 0; i < pixels.size(); i += 4) {
+                        rg.emplace_back(pixels[i]);
+                        rg.emplace_back(pixels[i + 1]);
+                    }
+                    ctx.queue().writeBuffer(*simulation.state.velocity, 0, rg.data(),
+                                            rg.size() * sizeof(float));
+                    break;
+                }
+                case ImportTarget::Obstacles: {
+                    // RGBA -> uint32 (R > 0.5 => 1)
+                    std::vector<uint32_t> obs;
+                    obs.reserve(w * h);
+                    for (size_t i = 0; i < pixels.size(); i += 4) {
+                        obs.emplace_back(pixels[i] > 0.5f ? 1u : 0u);
+                    }
+                    ctx.queue().writeBuffer(*simulation.state.obstacles, 0, obs.data(),
+                                            obs.size() * sizeof(uint32_t));
+                    break;
+                }
+                }
             });
         });
 

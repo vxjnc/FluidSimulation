@@ -20,6 +20,8 @@
 #include "src/utils/image_processor.hpp"
 #include "src/wgpu_context.hpp"
 
+enum class ImportTarget { Dye, Velocity, Obstacles };
+
 struct MouseState {
     float x = 0, y = 0;
     float dx = 0, dy = 0;
@@ -37,7 +39,7 @@ struct PanelVisibility {
 class ImGuiManager {
 public:
     sigslot::signal<std::vector<FluidSource>> onSplats;
-    sigslot::signal<std::vector<float>, uint32_t, uint32_t> onDyeImport;
+    sigslot::signal<ImportTarget, std::vector<float>, uint32_t, uint32_t> onImport;
     sigslot::signal<std::string> onSaveRequested;
     sigslot::signal<std::string> onLoadRequested;
     sigslot::signal<> onScreenshotClipboard;
@@ -230,16 +232,32 @@ public:
             }
         }
         if (visibility.import) {
-            importPanel.render({ImportPanel::Action{"Dye",
-                                                    [&](const ImportPanel::LoadedImage& img) {
-                                                        uint32_t dw = sim.state.dye_width;
-                                                        uint32_t dh = sim.state.dye_height;
-
-                                                        auto pixels = ImageProcessor::resizeRGBA(
-                                                            img.pixels.data(), img.w, img.h, dw, dh, true);
-                                                        onDyeImport(std::move(pixels), dw, dh);
-                                                    }}},
-                               visibility.import);
+            importPanel.render(
+                {ImportPanel::Action{"Dye",
+                                     [&](const ImportPanel::LoadedImage& img) {
+                                         uint32_t dw = sim.state.dye_width;
+                                         uint32_t dh = sim.state.dye_height;
+                                         auto pixels = ImageProcessor::resizeRGBA(img.pixels.data(), img.w,
+                                                                                  img.h, dw, dh, true);
+                                         onImport(ImportTarget::Dye, std::move(pixels), dw, dh);
+                                     }},
+                 ImportPanel::Action{"Velocity",
+                                     [&](const ImportPanel::LoadedImage& img) {
+                                         uint32_t vw = sim.state.width;
+                                         uint32_t vh = sim.state.height;
+                                         auto pixels = ImageProcessor::resizeRGBA(img.pixels.data(), img.w,
+                                                                                  img.h, vw, vh, true);
+                                         onImport(ImportTarget::Velocity, std::move(pixels), vw, vh);
+                                     }},
+                 ImportPanel::Action{"Obstacles",
+                                     [&](const ImportPanel::LoadedImage& img) {
+                                         uint32_t vw = sim.state.width;
+                                         uint32_t vh = sim.state.height;
+                                         auto pixels = ImageProcessor::resizeRGBA(img.pixels.data(), img.w,
+                                                                                  img.h, vw, vh, true);
+                                         onImport(ImportTarget::Obstacles, std::move(pixels), vw, vh);
+                                     }}},
+                visibility.import);
         }
 
         // --- Viewport Panel ---
