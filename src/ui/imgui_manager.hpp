@@ -312,6 +312,9 @@ public:
     bool screenshotRequested = false;
     bool saveScreenshotRequested = false;
 
+    bool saveSimRequested = false;
+    bool loadSimRequested = false;
+
     std::optional<std::vector<float>> dyeToApply;
     uint32_t dyeToApplyW = 0, dyeToApplyH = 0;
 
@@ -322,12 +325,20 @@ private:
         }
 
         if (ImGui::BeginMenu("File")) {
+            if (ImGui::MenuItem("Save Simulation...", "Ctrl+S")) {
+                saveSimRequested = true;
+            }
+            if (ImGui::MenuItem("Open Simulation...", "Ctrl+O")) {
+                loadSimRequested = true;
+            }
+
             if (ImGui::MenuItem("Save Screenshot")) {
                 saveScreenshotRequested = true;
             }
             if (ImGui::MenuItem("Copy to Clipboard", "F12")) {
                 screenshotRequested = true;
             }
+
             ImGui::EndMenu();
         }
 

@@ -13,6 +13,7 @@
 #include "src/compute/fluid_sim.hpp"
 #include "src/compute/fluid_source.hpp"
 #include "src/render/render.hpp"
+#include "src/save/save_manager.hpp"
 #include "src/ui/fluid_viewport.hpp"
 #include "src/ui/imgui_manager.hpp"
 
@@ -67,18 +68,11 @@ public:
             ctx.processEvents();
             imguiManager.beginFrame();
 
-            if (imguiManager.dyeToApply) {
-                ctx.queue().writeBuffer(*simulation.getCurrentDye(), 0, imguiManager.dyeToApply->data(),
-                                        imguiManager.dyeToApply->size() * sizeof(float));
-                imguiManager.dyeToApply.reset();
-            }
-
             wgpu::raii::CommandEncoder enc = ctx.device().createCommandEncoder();
 
             frameSources = sources;
 
-            auto splats = imguiManager.splatPanel.takeSplats();
-            if (splats) {
+            if (auto splats = imguiManager.splatPanel.takeSplats()) {
                 frameSources.insert(frameSources.end(), splats->begin(), splats->end());
             }
 
@@ -86,15 +80,27 @@ public:
             update(enc, frameSources);
 
             imguiManager.renderUI(viewport, mouse, simulation, settings, sources);
+            if (imguiManager.saveSimRequested) {
+                std::string cwd = std::filesystem::current_path().string();
+
+                imguiManager.saveSimRequested = false;
+                NFD::UniquePath outPath;
+                nfdu8filteritem_t filters[] = {{"Fluid Simulation", "fsim"}};
+                if (NFD::SaveDialog(outPath, filters, 1, cwd.c_str(), "simulation.fsim") == NFD_OKAY) {
+                    SaveManager::save(outPath.get(), simulation, sources, settings);
+                }
+            }
             if (imguiManager.screenshotRequested) {
                 imguiManager.screenshotRequested = false;
                 ScreenshotCapture::request(viewport, ScreenshotCapture::Mode::Clipboard);
             }
             if (imguiManager.saveScreenshotRequested) {
+                std::string cwd = std::filesystem::current_path().string();
+
                 imguiManager.saveScreenshotRequested = false;
                 NFD::UniquePath outPath;
                 nfdu8filteritem_t filters[] = {{"PNG Image", "png"}};
-                if (NFD::SaveDialog(outPath, filters, sizeof(filters) / sizeof(filters[0]), nullptr,
+                if (NFD::SaveDialog(outPath, filters, sizeof(filters) / sizeof(filters[0]), cwd.c_str(),
                                     "screenshot.png") == NFD_OKAY) {
                     ScreenshotCapture::request(viewport, ScreenshotCapture::Mode::File, outPath.get());
                 }
@@ -104,6 +110,22 @@ public:
 
             wgpu::raii::CommandBuffer cmd = enc->finish({});
             ctx.queue().submit(1, &*cmd);
+
+            if (imguiManager.dyeToApply) {
+                ctx.queue().writeBuffer(*simulation.getCurrentDye(), 0, imguiManager.dyeToApply->data(),
+                                        imguiManager.dyeToApply->size() * sizeof(float));
+                imguiManager.dyeToApply.reset();
+            }
+            if (imguiManager.loadSimRequested) {
+                std::string cwd = std::filesystem::current_path().string();
+
+                imguiManager.loadSimRequested = false;
+                NFD::UniquePath outPath;
+                nfdu8filteritem_t filters[] = {{"Fluid Simulation", "fsim"}};
+                if (NFD::OpenDialog(outPath, filters, 1, cwd.c_str()) == NFD_OKAY) {
+                    SaveManager::load(outPath.get(), simulation, sources, settings);
+                }
+            }
 
             ctx.present();
         }

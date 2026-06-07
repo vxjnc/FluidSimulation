@@ -24,9 +24,20 @@ public:
         initBindGroups();
     }
 
-    void resize(uint32_t w, uint32_t h) {
+    void resize(uint32_t w, uint32_t h) { resize(w, h, state.dye_width, state.dye_height); }
+
+    void resize(uint32_t w, uint32_t h, uint32_t dye_w, uint32_t dye_h) {
+        bool changed = false;
         if (w != state.width || h != state.height) {
             state.resize(w, h);
+            changed = true;
+        }
+        if (dye_w != state.dye_width || dye_h != state.dye_height) {
+            state.resizeDye(dye_w, dye_h);
+            changed = true;
+        }
+
+        if (changed) {
             initBindGroups();
         }
     }
@@ -57,7 +68,7 @@ public:
         auto makeBuf = [&](size_t w_, size_t h_, size_t elementSize, std::string_view label) {
             wgpu::BufferDescriptor desc{};
             desc.size = w_ * h_ * elementSize;
-            desc.usage = wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst;
+            desc.usage = wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::CopySrc;
             desc.label = wgpu::StringView(label);
             return device_.createBuffer(desc);
         };

@@ -81,8 +81,9 @@ public:
         height = h;
 
         auto buf = [&](std::string_view label, size_t sizeElement) {
-            return WGPUHelper::makeBuffer(device_, width * height * sizeElement,
-                                          wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst, label);
+            return WGPUHelper::makeBuffer(
+                device_, width * height * sizeElement,
+                wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::CopySrc, label);
         };
 
         velocity = buf("velocity", 2 * sizeof(float));
@@ -102,8 +103,9 @@ public:
         dye_height = h;
 
         auto buf = [&](std::string_view label, size_t sizeElement) {
-            return WGPUHelper::makeBuffer(device_, dye_width * dye_height * sizeElement,
-                                          wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst, label);
+            return WGPUHelper::makeBuffer(
+                device_, dye_width * dye_height * sizeElement,
+                wgpu::BufferUsage::Storage | wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::CopySrc, label);
         };
 
         dye = buf("dye", 4 * sizeof(float));

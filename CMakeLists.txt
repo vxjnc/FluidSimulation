@@ -103,7 +103,15 @@ FetchContent_Declare(
 set(NFD_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(NFD_PORTAL ON CACHE BOOL "" FORCE)
 
-FetchContent_MakeAvailable(glfw webgpu_distribution webgpu_cpp imgui glfw3webgpu clip stb nfd)
+# --- zpp-bits ---
+FetchContent_Declare(
+    zpp_bits
+    GIT_REPOSITORY https://github.com/eyalz800/zpp_bits.git
+    GIT_TAG        v4.7.1
+    GIT_SHALLOW    ON
+)
+
+FetchContent_MakeAvailable(glfw webgpu_distribution webgpu_cpp imgui glfw3webgpu clip stb nfd zpp_bits)
 set_target_properties(glfw webgpu PROPERTIES SYSTEM TRUE)
 
 add_library(imgui STATIC
@@ -127,6 +135,9 @@ target_link_libraries(clip ZLIB::ZLIB)
 add_library(stb_headers INTERFACE)
 target_include_directories(stb_headers SYSTEM INTERFACE ${stb_SOURCE_DIR})
 
+add_library(zpp_bits_headers INTERFACE)
+target_include_directories(zpp_bits_headers SYSTEM INTERFACE ${zpp_bits_SOURCE_DIR})
+
 set(GENERATED_ROOT "${CMAKE_BINARY_DIR}/gen_includes")
 set(GENERATED_DIR  "${GENERATED_ROOT}/generated")
 
@@ -149,7 +160,7 @@ target_include_directories(fluid_gui INTERFACE
     ${webgpu_cpp_SOURCE_DIR}
     ${GENERATED_ROOT}
 )
-target_link_libraries(fluid_gui INTERFACE webgpu glfw imgui glfw3webgpu clip stb_headers nfd)
+target_link_libraries(fluid_gui INTERFACE webgpu glfw imgui glfw3webgpu clip stb_headers nfd zpp_bits_headers)
 add_dependencies(fluid_gui wgsl_shaders)
 
 # --- Executable ---

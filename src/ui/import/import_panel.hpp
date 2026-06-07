@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <filesystem>
 #include <optional>
 #include <vector>
 
@@ -53,9 +54,11 @@ private:
     ImTextureID previewTexId_ = ImTextureID_Invalid;
 
     void openDialog() {
+        std::string cwd = std::filesystem::current_path().string();
+
         NFD::UniquePath outPath;
         nfdu8filteritem_t filters[] = {{"Images", "png,jpg,jpeg,bmp,tga,hdr"}};
-        if (NFD::OpenDialog(outPath, filters, 1) != NFD_OKAY) {
+        if (NFD::OpenDialog(outPath, filters, 1, cwd.c_str()) != NFD_OKAY) {
             return;
         }
 
