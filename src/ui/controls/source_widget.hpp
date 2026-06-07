@@ -21,8 +21,8 @@ public:
             s.form = static_cast<FluidSource::Form>(current_form);
         }
 
-        bool has_velocity = (s.mode_mask & FluidSource::Mode::VELOCITY) != 0;
-        bool has_dye = (s.mode_mask & FluidSource::Mode::DYE) != 0;
+        bool has_velocity = s.mode_mask & FluidSource::Mode::VELOCITY;
+        bool has_dye = s.mode_mask & FluidSource::Mode::DYE;
 
         ImGui::Text("Inject:");
         ImGui::SameLine();

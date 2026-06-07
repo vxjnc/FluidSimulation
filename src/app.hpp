@@ -119,8 +119,10 @@ private:
 
         if (settings.brushMode == BrushMode::Inject) {
             if (mouse.leftPressed) {
-                frameSources.emplace_back(sx, sy, sdx * settings.brushStrength, -sdy * settings.brushStrength,
-                                          sr, settings.brushColor);
+                frameSources
+                    .emplace_back(sx, sy, sdx * settings.brushStrength, -sdy * settings.brushStrength, sr,
+                                  settings.brushColor)
+                    .mode_mask = settings.brushModeMask;
             }
         }
         else if (settings.brushMode == BrushMode::PaintWall) {

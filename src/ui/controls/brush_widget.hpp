@@ -16,6 +16,17 @@ public:
 
         if (settings.brushMode == BrushMode::Inject) {
             ImGui::SliderFloat("Strength", &settings.brushStrength, 1.0f, 100.0f);
+            bool vel = settings.brushModeMask & FluidSource::Mode::VELOCITY;
+            bool dye = settings.brushModeMask & FluidSource::Mode::DYE;
+            ImGui::Text("Inject:");
+            ImGui::SameLine();
+            if (ImGui::Checkbox("Velocity", &vel)) {
+                settings.brushModeMask ^= FluidSource::Mode::VELOCITY;
+            }
+            ImGui::SameLine();
+            if (ImGui::Checkbox("Dye", &dye)) {
+                settings.brushModeMask ^= FluidSource::Mode::DYE;
+            }
         }
     }
 };
