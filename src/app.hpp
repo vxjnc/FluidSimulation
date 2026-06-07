@@ -88,7 +88,7 @@ public:
             imguiManager.renderUI(viewport, mouse, simulation, settings, sources);
             if (imguiManager.screenshotRequested) {
                 imguiManager.screenshotRequested = false;
-                screenshotCapture.request(viewport, ScreenshotCapture::Mode::Clipboard);
+                ScreenshotCapture::request(viewport, ScreenshotCapture::Mode::Clipboard);
             }
             if (imguiManager.saveScreenshotRequested) {
                 imguiManager.saveScreenshotRequested = false;
@@ -96,7 +96,7 @@ public:
                 nfdu8filteritem_t filters[] = {{"PNG Image", "png"}};
                 if (NFD::SaveDialog(outPath, filters, sizeof(filters) / sizeof(filters[0]), nullptr,
                                     "screenshot.png") == NFD_OKAY) {
-                    screenshotCapture.request(viewport, ScreenshotCapture::Mode::File, outPath.get());
+                    ScreenshotCapture::request(viewport, ScreenshotCapture::Mode::File, outPath.get());
                 }
             }
 
@@ -156,7 +156,7 @@ private:
         }
 
         if (ImGui::IsKeyPressed(ImGuiKey_F12)) {
-            screenshotCapture.request(viewport, ScreenshotCapture::Mode::Clipboard);
+            ScreenshotCapture::request(viewport, ScreenshotCapture::Mode::Clipboard);
         }
 
         if (settings.paused && ImGui::IsKeyPressed(ImGuiKey_RightArrow)) {
@@ -240,6 +240,4 @@ private:
     FluidViewport viewport;
     ImGuiManager imguiManager;
     MouseState mouse;
-
-    ScreenshotCapture screenshotCapture;
 };
