@@ -119,7 +119,12 @@ public:
 
             wgpu::raii::CommandEncoder enc = ctx.device().createCommandEncoder();
 
-            frameSources = sources;
+            if (!settings.paused) {
+                frameSources = sources;
+            }
+            else {
+                frameSources.clear();
+            }
             preSimQueue_.flush();
 
             processInput(enc, frameSources);
