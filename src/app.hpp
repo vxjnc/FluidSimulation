@@ -130,7 +130,7 @@ public:
             processInput(enc, frameSources);
             update(enc, frameSources);
             imguiManager.renderUI(viewport, mouse, simulation, sources);
-            render(enc);
+            auto [target, targetView] = render(enc);
 
             wgpu::raii::CommandBuffer cmd = enc->finish({});
             ctx.queue().submit(1, &*cmd);
@@ -237,7 +237,7 @@ private:
         }
     }
 
-    void render(wgpu::raii::CommandEncoder& enc) {
+    std::pair<wgpu::raii::Texture, wgpu::raii::TextureView> render(wgpu::raii::CommandEncoder& enc) {
         WGPUContext& ctx = WGPUContext::instance();
 
         renderer.draw(enc, viewport.view, simulation, settings.renderSettings);
@@ -261,6 +261,8 @@ private:
         wgpu::raii::RenderPassEncoder pass = enc->beginRenderPass(passDesc);
         imguiManager.endFrame(*pass);
         pass->end();
+
+        return {std::move(target), std::move(targetView)};
     }
 
     GLFWwindow* window = nullptr;
