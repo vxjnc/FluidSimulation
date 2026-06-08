@@ -462,10 +462,10 @@ private:
 
         buf->appendf("[%s][AppSettings]\n", type_name);
         buf->appendf("paused=%d\n", self->settings->paused ? 1 : 0);
-        buf->appendf("dt=%.6f\n", self->settings->dt);
-        buf->appendf("velDissipation=%.6f\n", self->settings->velDissipation);
-        buf->appendf("dyeDissipation=%.6f\n", self->settings->dyeDissipation);
-        buf->appendf("curlStrength=%.6f\n", self->settings->curlStrength);
+        buf->appendf("dt=%.6f\n", static_cast<float>(self->settings->dt));
+        buf->appendf("velDissipation=%.6f\n", static_cast<float>(self->settings->velDissipation));
+        buf->appendf("dyeDissipation=%.6f\n", static_cast<float>(self->settings->dyeDissipation));
+        buf->appendf("curlStrength=%.6f\n", static_cast<float>(self->settings->curlStrength));
         buf->appendf("brushMode=%d\n", static_cast<int>(self->settings->brushMode));
         buf->appendf("brushModeMask=%d\n", self->settings->brushModeMask);
         buf->appendf("brushRadius=%.6f\n", self->settings->brushRadius);

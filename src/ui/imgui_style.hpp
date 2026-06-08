@@ -23,10 +23,10 @@ namespace AppStyle {
         {
             constexpr auto ToRGBA = [](uint32_t argb) constexpr {
                 ImVec4 color{};
-                color.x = ((argb >> 16) & 0xFF) / 255.0f;
-                color.y = ((argb >> 8) & 0xFF) / 255.0f;
-                color.z = (argb & 0xFF) / 255.0f;
-                color.w = ((argb >> 24) & 0xFF) / 255.0f;
+                color.x = static_cast<float>((argb >> 16) & 0xFF) / 255.0f;
+                color.y = static_cast<float>((argb >> 8) & 0xFF) / 255.0f;
+                color.z = static_cast<float>(argb & 0xFF) / 255.0f;
+                color.w = static_cast<float>((argb >> 24) & 0xFF) / 255.0f;
                 return color;
             };
 

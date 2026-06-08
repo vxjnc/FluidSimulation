@@ -6,8 +6,8 @@
 
 #include "src/ui/ui_settings.hpp"
 
-namespace VelocityInput {
-    inline bool render(const char* label, float& vx, float& vy, VelocityInputMode mode) {
+namespace Widgets {
+    inline bool VelocityInput(const char* label, float& vx, float& vy, VelocityInputMode mode) {
         ImGui::PushID(label);
         bool changed = false;
 

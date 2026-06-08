@@ -5,16 +5,17 @@
 #include "src/render/render_settings.hpp"
 #include "src/ui/random_splat/splat_settings.hpp"
 #include "src/ui/ui_settings.hpp"
+#include "src/utils/observable.hpp"
 
 enum class BrushMode { Inject, PaintWall };
 
 struct AppSettings {
     bool paused = false;
-    float dt = 0.01f;
+    Observable<float> dt = 0.01f;
 
-    float velDissipation = 0.2f;
-    float dyeDissipation = 0.25f;
-    float curlStrength = 30.f;
+    Observable<float> velDissipation = 0.2f;
+    Observable<float> dyeDissipation = 0.25f;
+    Observable<float> curlStrength = 30.f;
 
     BrushMode brushMode = BrushMode::Inject;
     int brushModeMask = FluidSource::Mode::VELOCITY | FluidSource::Mode::DYE;

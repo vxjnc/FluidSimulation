@@ -57,7 +57,7 @@ public:
         if (has_velocity || s.form == FluidSource::Form::LINE) {
             float display_vx = s.vx / settings.simScale;
             float display_vy = s.vy / settings.simScale;
-            if (VelocityInput::render("vel", display_vx, display_vy, settings.ui.velocityMode)) {
+            if (Widgets::VelocityInput("vel", display_vx, display_vy, settings.ui.velocityMode)) {
                 s.vx = display_vx * settings.simScale;
                 s.vy = display_vy * settings.simScale;
             }

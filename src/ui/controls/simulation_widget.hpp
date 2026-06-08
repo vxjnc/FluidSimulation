@@ -4,6 +4,7 @@
 #include "src/app_settings.hpp"
 #include "src/compute/fluid_sim.hpp"
 #include "src/ui/fluid_viewport.hpp"
+#include "src/ui/widgets/slider_float.hpp"
 
 class SimulationWidget {
 public:
@@ -31,10 +32,10 @@ public:
                                    static_cast<uint32_t>(static_cast<float>(viewport.h) * settings.dyeScale));
         }
 
-        ImGui::SliderFloat("Sim dt", &settings.dt, 0.001f, 0.1f);
-        ImGui::SliderFloat("Velocity Dissipation", &settings.velDissipation, 0.0f, 4.0f);
-        ImGui::SliderFloat("Dye Dissipation", &settings.dyeDissipation, 0.0f, 4.0f);
-        ImGui::SliderFloat("Curl Strength", &settings.curlStrength, 0.0f, 50.0f);
+        Widgets::SliderFloat("Sim dt", settings.dt, 0.001f, 0.1f);
+        Widgets::SliderFloat("Velocity Dissipation", settings.velDissipation, 0.0f, 4.0f);
+        Widgets::SliderFloat("Dye Dissipation", settings.dyeDissipation, 0.0f, 4.0f);
+        Widgets::SliderFloat("Curl Strength", settings.curlStrength, 0.0f, 50.0f);
 
         if (ImGui::Button("Clear")) {
             sim.state.clear();

@@ -198,9 +198,9 @@ public:
             return;
         }
 
-        auto params = std::ranges::to<std::vector<FluidState::InjectParams>>(
-            batch | std::views::filter(&FluidSource::active) |
-            std::views::transform([](const auto& s) { return toParams(s); }));
+        auto params =
+            std::ranges::to<std::vector>(batch | std::views::filter(&FluidSource::active) |
+                                         std::views::transform([](const auto& s) { return toParams(s); }));
 
         injectBatch(enc, params);
     }

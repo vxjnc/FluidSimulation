@@ -37,7 +37,7 @@ namespace GpuReadback {
     }
 
     template <ReadbackCallback Callback>
-    inline void request(wgpu::Texture texture, uint32_t w, uint32_t h, wgpu::TextureFormat format,
+    inline void request(wgpu::Texture texture, uint32_t w, uint32_t h, wgpu::TextureFormat,
                         Callback callback) {
         WGPUContext& ctx = WGPUContext::instance();
 

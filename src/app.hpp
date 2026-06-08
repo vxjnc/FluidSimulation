@@ -49,6 +49,19 @@ public:
                         static_cast<uint32_t>(static_cast<float>(height) * settings.simScale),
                         static_cast<uint32_t>(static_cast<float>(width) * settings.dyeScale),
                         static_cast<uint32_t>(static_cast<float>(height) * settings.dyeScale));
+
+        // --- signals ---
+        settings.dt.onChange.connect(&FluidSim::setDt, &simulation);
+        settings.dt.onChange(static_cast<float>(settings.dt));
+
+        settings.dyeDissipation.onChange.connect(&FluidSim::setDyeDissipation, &simulation);
+        settings.dyeDissipation.onChange(static_cast<float>(settings.dyeDissipation));
+
+        settings.velDissipation.onChange.connect(&FluidSim::setVelDissipation, &simulation);
+        settings.velDissipation.onChange(static_cast<float>(settings.velDissipation));
+
+        settings.curlStrength.onChange.connect(&FluidSim::setCurlStrength, &simulation);
+        settings.curlStrength.onChange(static_cast<float>(settings.curlStrength));
     };
 
     ~Application() {
@@ -89,11 +102,9 @@ public:
                 }
                 case ImportTarget::Obstacles: {
                     // RGBA -> uint32 (R > 0.5 => 1)
-                    std::vector<uint32_t> obs;
-                    obs.reserve(w * h);
-                    for (size_t i = 0; i < pixels.size(); i += 4) {
-                        obs.emplace_back(pixels[i] > 0.5f ? 1u : 0u);
-                    }
+                    auto obs = std::ranges::to<std::vector<uint32_t>>(
+                        pixels | std::views::stride(4) |
+                        std::views::transform([](float v) { return v > 0.5f ? 1u : 0u; }));
                     ctx.queue().writeBuffer(*simulation.state.obstacles, 0, obs.data(),
                                             obs.size() * sizeof(uint32_t));
                     break;
@@ -207,28 +218,6 @@ private:
     }
 
     void update(wgpu::raii::CommandEncoder& enc, std::span<const FluidSource> frameSources) {
-        static float lastDt = 0.0f;
-        static float lastDyeDissipation = 0.0f;
-        static float lastVelDissipation = 0.0f;
-        static float lastCurlStrength = 0.0f;
-
-        if (settings.dt != lastDt) {
-            simulation.setDt(settings.dt);
-            lastDt = settings.dt;
-        }
-        if (settings.dyeDissipation != lastDyeDissipation) {
-            simulation.setDyeDissipation(settings.dyeDissipation);
-            lastDyeDissipation = settings.dyeDissipation;
-        }
-        if (settings.velDissipation != lastVelDissipation) {
-            simulation.setVelDissipation(settings.velDissipation);
-            lastVelDissipation = settings.velDissipation;
-        }
-        if (settings.curlStrength != lastCurlStrength) {
-            simulation.setCurlStrength(settings.curlStrength);
-            lastCurlStrength = settings.curlStrength;
-        }
-
         if (!frameSources.empty()) {
             simulation.inject(enc, frameSources);
         }
