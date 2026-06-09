@@ -1,13 +1,8 @@
-struct Params {
-    src_width: u32,
-    src_height: u32,
-    dst_width: u32,
-    dst_height: u32,
-}
+import package::common::Params;
 
 @group(0) @binding(0) var<uniform> params: Params;
-@group(0) @binding(1) var<storage, read> src: array<vec4f>;
-@group(0) @binding(2) var<storage, read_write> dst: array<vec4f>;
+@group(0) @binding(1) var<storage, read> src: array<f32>;
+@group(0) @binding(2) var<storage, read_write> dst: array<f32>;
 
 @compute @workgroup_size(16, 16)
 fn main(@builtin(global_invocation_id) gid: vec3u) {

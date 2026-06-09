@@ -59,6 +59,13 @@ FetchContent_Declare(
     GIT_SHALLOW    ON
 )
 
+# --- wesl-distribution ---
+FetchContent_Declare(wesl_distribution
+    GIT_REPOSITORY https://github.com/vxjnc/wesl-distribution
+    GIT_TAG        v0.4.0
+    GIT_SHALLOW    ON
+)
+
 # --- Dear ImGui ---
 FetchContent_Declare(
     imgui
@@ -119,7 +126,7 @@ FetchContent_Declare(
     GIT_SHALLOW    ON
 )
 
-FetchContent_MakeAvailable(glfw webgpu_distribution webgpu_cpp imgui glfw3webgpu clip stb nfd zpp_bits sigslot)
+FetchContent_MakeAvailable(glfw webgpu_distribution webgpu_cpp imgui glfw3webgpu clip stb nfd zpp_bits sigslot wesl_distribution)
 set_target_properties(glfw webgpu PROPERTIES SYSTEM TRUE)
 
 add_library(imgui STATIC
@@ -159,7 +166,7 @@ target_include_directories(fluid_compute INTERFACE
     ${webgpu_cpp_SOURCE_DIR}
     ${GENERATED_ROOT}
 )
-target_link_libraries(fluid_compute INTERFACE webgpu)
+target_link_libraries(fluid_compute INTERFACE webgpu wesl)
 add_dependencies(fluid_compute wgsl_shaders)
 
 # --- fluid_gui ---
@@ -169,7 +176,7 @@ target_include_directories(fluid_gui INTERFACE
     ${webgpu_cpp_SOURCE_DIR}
     ${GENERATED_ROOT}
 )
-target_link_libraries(fluid_gui INTERFACE webgpu glfw imgui glfw3webgpu clip stb_headers nfd zpp_bits_headers Pal::Sigslot)
+target_link_libraries(fluid_gui INTERFACE webgpu wesl glfw imgui glfw3webgpu clip stb_headers nfd zpp_bits_headers Pal::Sigslot)
 add_dependencies(fluid_gui wgsl_shaders)
 
 # --- Executable ---

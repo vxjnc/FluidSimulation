@@ -1,9 +1,4 @@
-struct Params {
-    src_width: u32,
-    src_height: u32,
-    dst_width: u32,
-    dst_height: u32,
-}
+import package::common::Params;
 
 @group(0) @binding(0) var<uniform> params: Params;
 @group(0) @binding(1) var<storage, read> src: array<u32>;
