@@ -12,7 +12,7 @@ public:
             settings.brushMode = static_cast<BrushMode>(bm);
         }
 
-        ImGui::SliderFloat("Radius", &settings.brushRadius, 1.0f, 100.0f);
+        ImGui::SliderFloat("Radius", &settings.brushRadius, 0.f, 1.f);
 
         if (settings.brushMode == BrushMode::Inject) {
             ImGui::SliderFloat("Strength", &settings.brushStrength, 1.0f, 100.0f);

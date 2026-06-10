@@ -55,11 +55,8 @@ public:
             }
         }
 
-        float display_r = s.radius / settings.simScale;
         const char* radius_label = (s.form == FluidSource::Form::LINE) ? "Length" : "Radius";
-        if (ImGui::SliderFloat(radius_label, &display_r, 1.0f, 20.0f)) {
-            s.radius = display_r * settings.simScale;
-        }
+        ImGui::SliderFloat(radius_label, &s.radius, 0.f, 1.f);
 
         ImGui::ColorEdit3("Color", s.color.data());
 

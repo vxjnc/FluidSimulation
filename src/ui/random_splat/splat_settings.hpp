@@ -4,8 +4,8 @@ struct SplatSettings {
     int countMin = 40;
     int countMax = 50;
 
-    float radiusMin = 50.f;
-    float radiusMax = 70.f;
+    float radiusMin = 0.1f;
+    float radiusMax = 0.15f;
 
     bool applyVelocity = true;
 

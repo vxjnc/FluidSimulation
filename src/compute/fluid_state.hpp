@@ -19,7 +19,7 @@ public:
 
     struct FillCircleParams {
         float cx, cy;
-        uint32_t radius;
+        float radius;
         uint32_t val;
         uint32_t width, height;
     };

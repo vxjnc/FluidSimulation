@@ -164,7 +164,7 @@ private:
         float sy = 1.f - (mouse.y / vh);
         float sdx = mouse.dx * settings.simScale;
         float sdy = mouse.dy * settings.simScale;
-        float sr = settings.brushRadius * settings.simScale;
+        float sr = settings.brushRadius;
 
         if (settings.brushMode == BrushMode::Inject) {
             if (mouse.leftPressed) {
@@ -176,7 +176,7 @@ private:
         }
         else if (settings.brushMode == BrushMode::PaintWall) {
             if (mouse.leftPressed || mouse.rightPressed) {
-                simulation.paintObstacle(enc, sx, sy, static_cast<uint32_t>(sr), mouse.rightPressed);
+                simulation.paintObstacle(enc, sx, sy, sr, mouse.rightPressed);
             }
         }
 

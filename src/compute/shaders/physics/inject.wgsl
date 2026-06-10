@@ -72,8 +72,9 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
         if in_phys && (inj.mode_mask & 1u) != 0u {
             let phys_cell = vec2f(f32(x), f32(y));
             let src_phys = vec2f(inj.x * f32(params.width), inj.y * f32(params.height));
-            let eff_r = select(inj.radius, 2.0, inj.form == 1u);
-            let d = calc_distance(phys_cell, src_phys, inj.radius, inj);
+            let radius_phys = inj.radius * f32(params.height);
+            let eff_r = select(radius_phys, 2.0, inj.form == 1u);
+            let d = calc_distance(phys_cell, src_phys, radius_phys, inj);
             if d < eff_r {
                 let falloff = 1.0 - d / eff_r;
                 velocity[idx_phys(x, y)] += vec2f(inj.vx, inj.vy) * falloff;
@@ -84,9 +85,9 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
         if in_dye && (inj.mode_mask & 2u) != 0u {
             let dye_cell = vec2f(f32(x), f32(y));
             let src_dye = vec2f(inj.x * f32(params.dye_width), inj.y * f32(params.dye_height));
-            let scale_x = f32(params.dye_width) / f32(params.width);
-            let eff_r = select(inj.radius * scale_x, 2.0, inj.form == 1u);
-            let d = calc_distance(dye_cell, src_dye, inj.radius * scale_x, inj);
+            let radius_dye = inj.radius * f32(params.dye_height);
+            let eff_r = select(radius_dye, 2.0, inj.form == 1u);
+            let d = calc_distance(dye_cell, src_dye, radius_dye, inj);
             if d < eff_r {
                 let falloff = 1.0 - d / eff_r;
                 dye[idx_dye(x, y)] = min(dye[idx_dye(x, y)] + vec4f(inj.color.rgb * falloff, falloff), vec4f(1.0));

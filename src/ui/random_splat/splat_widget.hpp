@@ -19,7 +19,7 @@ public:
         ImGui::Text("Random Splat");
 
         ImGui::DragIntRange2("Count", &s.countMin, &s.countMax, 1.f, 1, 100);
-        ImGui::DragFloatRange2("Radius", &s.radiusMin, &s.radiusMax, 0.5f, 1.f, 200.f);
+        ImGui::DragFloatRange2("Radius", &s.radiusMin, &s.radiusMax, 0.05f, 0.f, 1.f);
 
         ImGui::Checkbox("Apply Velocity", &s.applyVelocity);
         if (s.applyVelocity) {

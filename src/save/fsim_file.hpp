@@ -14,7 +14,7 @@ struct FsimFluidSource {
     std::array<float, 3> color{1.f, 1.f, 1.f};
     float x = 0.f, y = 0.f;
     float vx = 0.f, vy = 0.f;
-    float radius = 4.f;
+    float radius = 0.1f;
     bool active = true;
     int mode_mask = 0;
     uint8_t form = 0;

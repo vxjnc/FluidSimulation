@@ -199,7 +199,7 @@ public:
 
                     if (io.MouseWheel != 0.f) {
                         settings->brushRadius =
-                            std::clamp(settings->brushRadius * (1.f + io.MouseWheel * 0.1f), 1.f, 400.f);
+                            std::clamp(settings->brushRadius * (1.f + io.MouseWheel * 0.1f), 0.f, 1.f);
                     }
                 }
                 else {

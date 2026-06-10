@@ -19,7 +19,7 @@ struct AppSettings {
 
     BrushMode brushMode = BrushMode::Inject;
     int brushModeMask = FluidSource::Mode::VELOCITY | FluidSource::Mode::DYE;
-    float brushRadius = 50.0f;
+    float brushRadius = 0.1f;
     float brushStrength = 10.0f;
     std::array<float, 3> brushColor;
 
