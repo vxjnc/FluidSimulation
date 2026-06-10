@@ -8,20 +8,10 @@
 
 class SimulationWidget {
 public:
-    void render(AppSettings& settings, FluidSim& sim, const FluidViewport& viewport,
-                std::vector<FluidSource>& sources) {
+    void render(AppSettings& settings, FluidSim& sim, const FluidViewport& viewport) {
         ImGui::Text("Simulation settings");
 
-        float prevScale = settings.simScale;
         if (ImGui::SliderFloat("Sim Scale", &settings.simScale, 0.1f, 1.0f)) {
-            float ratio = settings.simScale / prevScale;
-            for (auto& s : sources) {
-                s.x *= ratio;
-                s.y *= ratio;
-                s.vx *= ratio;
-                s.vy *= ratio;
-                s.radius *= ratio;
-            }
             sim.resizeWithResample(static_cast<uint32_t>(static_cast<float>(viewport.w) * settings.simScale),
                                    static_cast<uint32_t>(static_cast<float>(viewport.h) * settings.simScale));
         }

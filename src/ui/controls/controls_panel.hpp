@@ -25,7 +25,7 @@ public:
                     sim.state.dye_width * sim.state.dye_height);
         ImGui::Separator();
 
-        simulationWidget.render(settings, sim, viewport, sources);
+        simulationWidget.render(settings, sim, viewport);
         ImGui::Separator();
 
         renderWidget.render(settings.renderSettings);
@@ -37,7 +37,7 @@ public:
 
         ImGui::Text("Sources");
         for (size_t i = 0; i < sources.size();) {
-            if (sourceWidget.render(sources[i], i, viewport, settings)) {
+            if (sourceWidget.render(sources[i], i, settings)) {
                 ++i;
             }
             else {
@@ -45,9 +45,7 @@ public:
             }
         }
         if (ImGui::Button("Add Source")) {
-            sources.emplace_back(static_cast<float>(viewport.w) / 2.f * settings.simScale,
-                                 static_cast<float>(viewport.h) / 2.f * settings.simScale, 0, 100,
-                                 10 * settings.simScale, std::array{1.f, 1.f, 1.f});
+            sources.emplace_back(0.5f, 0.5f, 0, 100, 10 * settings.simScale, std::array{1.f, 1.f, 1.f});
         }
 
         ImGui::End();

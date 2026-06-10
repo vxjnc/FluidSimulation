@@ -8,13 +8,13 @@
 
 #include "src/app_settings.hpp"
 #include "src/capture/screenshot_capture.hpp"
-#include "src/color_generator.hpp"
 #include "src/compute/fluid_sim.hpp"
 #include "src/compute/fluid_source.hpp"
 #include "src/render/render.hpp"
 #include "src/save/save_manager.hpp"
 #include "src/ui/fluid_viewport.hpp"
 #include "src/ui/imgui_manager.hpp"
+#include "src/utils/color_generator.hpp"
 #include "src/utils/deffered_queue.hpp"
 
 class Application {
@@ -157,8 +157,11 @@ private:
     DeferredQueue postSubmitQueue_;
 
     void processInput(wgpu::raii::CommandEncoder& enc, std::vector<FluidSource>& frameSources) {
-        float sx = mouse.x * settings.simScale;
-        float sy = (static_cast<float>(viewport.h) - mouse.y) * settings.simScale;
+        float vw = static_cast<float>(viewport.w);
+        float vh = static_cast<float>(viewport.h);
+
+        float sx = mouse.x / vw;
+        float sy = 1.f - (mouse.y / vh);
         float sdx = mouse.dx * settings.simScale;
         float sdy = mouse.dy * settings.simScale;
         float sr = settings.brushRadius * settings.simScale;
@@ -173,8 +176,7 @@ private:
         }
         else if (settings.brushMode == BrushMode::PaintWall) {
             if (mouse.leftPressed || mouse.rightPressed) {
-                simulation.paintObstacle(enc, static_cast<uint32_t>(sx), static_cast<uint32_t>(sy),
-                                         static_cast<uint32_t>(sr), mouse.rightPressed);
+                simulation.paintObstacle(enc, sx, sy, static_cast<uint32_t>(sr), mouse.rightPressed);
             }
         }
 

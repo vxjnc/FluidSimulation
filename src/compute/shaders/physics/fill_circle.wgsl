@@ -1,6 +1,6 @@
 struct Params {
-    cx: u32,
-    cy: u32,
+    cx: f32,
+    cy: f32,
     radius: u32,
     val: u32,
     width: u32,
@@ -16,8 +16,11 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
     let y = gid.y;
     if x >= params.width || y >= params.height { return; }
 
-    let dx = i32(x) - i32(params.cx);
-    let dy = i32(y) - i32(params.cy);
+    let cx = u32(params.cx * f32(params.width));
+    let cy = u32(params.cy * f32(params.height));
+
+    let dx = i32(x) - i32(cx);
+    let dy = i32(y) - i32(cy);
     if dx * dx + dy * dy > i32(params.radius * params.radius) { return; }
 
     obstacles[y * params.width + x] = params.val;

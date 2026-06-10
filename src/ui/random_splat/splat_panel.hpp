@@ -6,17 +6,15 @@
 #include <imgui.h>
 
 #include "src/compute/fluid_source.hpp"
-#include "src/ui/fluid_viewport.hpp"
 #include "src/ui/random_splat/splat_settings.hpp"
 #include "src/ui/random_splat/splat_widget.hpp"
 #include "src/ui/ui_settings.hpp"
 
 class SplatPanel {
 public:
-    void render(bool& open, SplatSettings& settings, const FluidViewport& viewport,
-                VelocityInputMode velMode) {
+    void render(bool& open, SplatSettings& settings, VelocityInputMode velMode) {
         ImGui::Begin("Random Splat", &open);
-        pendingSplats_ = splatWidget_.render(settings, viewport, velMode);
+        pendingSplats_ = splatWidget_.render(settings, velMode);
         ImGui::End();
     }
 

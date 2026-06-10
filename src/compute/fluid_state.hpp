@@ -18,7 +18,7 @@ public:
     };
 
     struct FillCircleParams {
-        uint32_t cx, cy;
+        float cx, cy;
         uint32_t radius;
         uint32_t val;
         uint32_t width, height;

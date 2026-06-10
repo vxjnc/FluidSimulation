@@ -131,8 +131,7 @@ public:
             controlsPanel.render(visibility.controls, viewport, sim, *settings, sources);
         }
         if (visibility.randomSplat) {
-            splatPanel.render(visibility.randomSplat, settings->splatSettings, viewport,
-                              settings->ui.velocityMode);
+            splatPanel.render(visibility.randomSplat, settings->splatSettings, settings->ui.velocityMode);
             if (auto splats = splatPanel.takeSplats()) {
                 onSplats(std::move(*splats));
             }

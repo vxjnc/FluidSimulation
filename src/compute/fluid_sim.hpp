@@ -205,7 +205,7 @@ public:
         injectBatch(enc, params);
     }
 
-    void paintObstacle(wgpu::raii::CommandEncoder& enc, uint32_t cx, uint32_t cy, uint32_t radius,
+    void paintObstacle(wgpu::raii::CommandEncoder& enc, float cx, float cy, uint32_t radius,
                        bool erase = false) {
         FluidState::FillCircleParams p{cx, cy, radius, erase ? 0u : 1u, state.width, state.height};
         queue_.writeBuffer(*state.fillCircleBuffer, 0, &p, sizeof(p));

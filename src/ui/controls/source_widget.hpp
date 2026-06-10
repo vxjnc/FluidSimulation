@@ -3,12 +3,11 @@
 
 #include "src/app_settings.hpp"
 #include "src/compute/fluid_source.hpp"
-#include "src/ui/fluid_viewport.hpp"
 #include "src/ui/widgets/velocity_input.hpp"
 
 class SourceWidget {
 public:
-    bool render(FluidSource& s, size_t idx, const FluidViewport& viewport, const AppSettings& settings) {
+    bool render(FluidSource& s, size_t idx, AppSettings& settings) {
         ImGui::PushID(static_cast<int>(idx));
 
         ImGui::Checkbox("##active", &s.active);
@@ -44,15 +43,8 @@ public:
             }
         }
 
-        float display_x = s.x / settings.simScale;
-        if (ImGui::SliderFloat("X", &display_x, 0.0f, static_cast<float>(viewport.w))) {
-            s.x = display_x * settings.simScale;
-        }
-
-        float display_y = s.y / settings.simScale;
-        if (ImGui::SliderFloat("Y", &display_y, 0.0f, static_cast<float>(viewport.h))) {
-            s.y = display_y * settings.simScale;
-        }
+        ImGui::SliderFloat("X", &s.x, 0.0f, 1.0f);
+        ImGui::SliderFloat("Y", &s.y, 0.0f, 1.0f);
 
         if (has_velocity || s.form == FluidSource::Form::LINE) {
             float display_vx = s.vx / settings.simScale;

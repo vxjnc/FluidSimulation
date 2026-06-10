@@ -9,14 +9,13 @@
 #include <imgui.h>
 
 #include "src/compute/fluid_source.hpp"
-#include "src/ui/fluid_viewport.hpp"
 #include "src/ui/random_splat/splat_settings.hpp"
 #include "src/ui/ui_settings.hpp"
+#include "src/utils/color_generator.hpp"
 
 class SplatWidget {
 public:
-    std::optional<std::vector<FluidSource>> render(SplatSettings& s, const FluidViewport& viewport,
-                                                   VelocityInputMode velMode) {
+    std::optional<std::vector<FluidSource>> render(SplatSettings& s, VelocityInputMode velMode) {
         ImGui::Text("Random Splat");
 
         ImGui::DragIntRange2("Count", &s.countMin, &s.countMax, 1.f, 1, 100);
@@ -40,19 +39,16 @@ public:
             return std::nullopt;
         }
 
-        return generate(s, viewport, velMode);
+        return generate(s, velMode);
     }
 
 private:
     std::mt19937 rng_{std::random_device{}()};
 
-    std::vector<FluidSource> generate(const SplatSettings& s, const FluidViewport& viewport,
-                                      VelocityInputMode velMode) {
+    std::vector<FluidSource> generate(const SplatSettings& s, VelocityInputMode velMode) {
         std::uniform_int_distribution<int> countDist(s.countMin, s.countMax);
-        std::uniform_real_distribution<float> xDist(0.f, static_cast<float>(viewport.w));
-        std::uniform_real_distribution<float> yDist(0.f, static_cast<float>(viewport.h));
+        std::uniform_real_distribution<float> posDist(0.f, 1.f);
         std::uniform_real_distribution<float> radiusDist(s.radiusMin, s.radiusMax);
-        std::uniform_real_distribution<float> colorDist(0.f, 1.f);
 
         std::uniform_real_distribution<float> vxDist(s.vxMin, s.vxMax);
         std::uniform_real_distribution<float> vyDist(s.vyMin, s.vyMax);
@@ -78,11 +74,10 @@ private:
                 }
             }
 
-            std::array<float, 3> color = s.applyColor
-                                             ? std::array{colorDist(rng_), colorDist(rng_), colorDist(rng_)}
-                                             : std::array{1.f, 1.f, 1.f};
+            std::array<float, 3> color =
+                s.applyColor ? ColorUtils::Generator::randomPastel(rng_) : std::array{1.f, 1.f, 1.f};
 
-            sources.emplace_back(xDist(rng_), yDist(rng_), vx, vy, radiusDist(rng_), color).mode_mask =
+            sources.emplace_back(posDist(rng_), posDist(rng_), vx, vy, radiusDist(rng_), color).mode_mask =
                 (s.applyVelocity ? FluidSource::Mode::VELOCITY : 0) |
                 (s.applyColor ? FluidSource::Mode::DYE : 0);
             ;
