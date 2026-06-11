@@ -8,7 +8,7 @@
 #include "src/capture/gpu_readback.hpp"
 #include "src/compute/wgpu_helper.hpp"
 
-class GpuProfiler {
+template <size_t MAX_SAMPLES = 60> class GpuProfiler {
 public:
     struct Stats {
         double avgNs;
@@ -86,8 +86,6 @@ public:
     }
 
 private:
-    static constexpr size_t MAX_SAMPLES = 61; // must be odd
-
     size_t sum_ = 0;
 
     bool supported_ = false;

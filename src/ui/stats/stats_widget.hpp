@@ -8,7 +8,7 @@
 
 class StatsWidget {
 public:
-    void render(const FluidSim& sim, const Render& render, const GpuProfiler& uiProfiler) {
+    void render(const FluidSim& sim, const Render& render, const GpuProfiler<>& uiProfiler) {
         ImGuiIO& io = ImGui::GetIO();
 
         ImGui::Text("FPS: %.1f", io.Framerate);

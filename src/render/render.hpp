@@ -91,7 +91,7 @@ public:
         profiler.resolve(enc);
     }
 
-    GpuProfiler profiler;
+    GpuProfiler<> profiler;
 
 private:
     void initPipeline() {

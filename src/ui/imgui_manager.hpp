@@ -94,7 +94,7 @@ public:
     }
 
     void renderUI(FluidViewport& viewport, MouseState& mouse, FluidSim& sim, Render& render,
-                  std::vector<FluidSource>& sources, const GpuProfiler& uiProfiler) {
+                  std::vector<FluidSource>& sources, const GpuProfiler<>& uiProfiler) {
         ImGuiIO& io = ImGui::GetIO();
 
         ImGuiID dockspaceId = ImGui::DockSpaceOverViewport(ImGui::GetMainViewport()->ID);

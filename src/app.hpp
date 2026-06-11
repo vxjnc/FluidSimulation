@@ -269,7 +269,7 @@ private:
         return {std::move(target), std::move(targetView)};
     }
 
-    GpuProfiler uiProfiler;
+    GpuProfiler<> uiProfiler;
 
     GLFWwindow* window = nullptr;
     NFD::Guard nfdGuard;

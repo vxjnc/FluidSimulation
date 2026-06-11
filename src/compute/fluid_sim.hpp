@@ -231,7 +231,7 @@ public:
     FluidState state;
     FluidPipelines pipelines;
     ResamplePipelines resamplePipelines;
-    GpuProfiler profiler;
+    GpuProfiler<> profiler;
 
 private:
     size_t frameIndex = 0;

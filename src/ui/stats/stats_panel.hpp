@@ -6,7 +6,7 @@
 
 class StatsPanel {
 public:
-    void render(bool& open, const FluidSim& sim, const Render& render, const GpuProfiler& uiProfiler) {
+    void render(bool& open, const FluidSim& sim, const Render& render, const GpuProfiler<>& uiProfiler) {
         ImGui::Begin("Stats", &open);
 
         statsWidget.render(sim, render, uiProfiler);
