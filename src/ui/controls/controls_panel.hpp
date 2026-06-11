@@ -45,7 +45,7 @@ public:
             }
         }
         if (ImGui::Button("Add Source")) {
-            sources.emplace_back(0.5f, 0.5f, 0, 100, 10 * settings.simScale, std::array{1.f, 1.f, 1.f});
+            sources.emplace_back(0.5f, 0.5f, 0, 1.f, 0.05f, std::array{1.f, 1.f, 1.f});
         }
 
         ImGui::End();

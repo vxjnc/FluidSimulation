@@ -12,26 +12,33 @@ namespace Widgets {
         bool changed = false;
 
         if (mode == VelocityInputMode::XY) {
-            float v[2] = {vx, vy};
-            if (ImGui::DragFloat2(label, v, 1.f, -500.f, 500.f)) {
-                vx = v[0];
-                vy = v[1];
-                changed = true;
-            }
+            ImGui::SetNextItemWidth(ImGui::CalcItemWidth() * 0.5f - 2.f);
+            changed |= ImGui::DragFloat("##vx", &vx, 0.01f, -50.f, 50.f, "%.2f");
+            ImGui::SameLine();
+            ImGui::SetNextItemWidth(ImGui::CalcItemWidth() * 0.5f - 2.f);
+            changed |= ImGui::DragFloat("##vy", &vy, 0.01f, -50.f, 50.f, "%.2f");
+            ImGui::SameLine();
+            ImGui::TextUnformatted(label);
         }
         else {
             float angle = std::atan2(vy, vx) * 180.f / std::numbers::pi_v<float>;
             angle = std::fmod(angle + 360.f, 360.f);
             float magnitude = std::hypot(vx, vy);
-            float v[2] = {angle, magnitude};
-            if (ImGui::DragFloat2(label, v, 1.f, 0.f, 500.f, "%.1f")) {
-                float rad = v[0] * std::numbers::pi_v<float> / 180.f;
-                vx = v[1] * std::cos(rad);
-                vy = v[1] * std::sin(rad);
+
+            ImGui::SetNextItemWidth(ImGui::CalcItemWidth() * 0.5f - 2.f);
+            bool angleChanged = ImGui::DragFloat("##angle", &angle, 1.f, 0.f, 360.f, "%.1f°");
+            ImGui::SameLine();
+            ImGui::SetNextItemWidth(ImGui::CalcItemWidth() * 0.5f - 2.f);
+            bool magChanged = ImGui::DragFloat("##mag", &magnitude, 0.1f, 0.f, 50.f, "%.2f");
+            ImGui::SameLine();
+            ImGui::TextUnformatted(label);
+
+            if (angleChanged || magChanged) {
+                float rad = angle * std::numbers::pi_v<float> / 180.f;
+                vx = magnitude * std::cos(rad);
+                vy = magnitude * std::sin(rad);
                 changed = true;
             }
-            ImGui::SameLine();
-            ImGui::TextDisabled("angle/mag");
         }
 
         ImGui::PopID();

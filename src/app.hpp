@@ -162,8 +162,8 @@ private:
 
         float sx = mouse.x / vw;
         float sy = 1.f - (mouse.y / vh);
-        float sdx = mouse.dx * settings.simScale;
-        float sdy = mouse.dy * settings.simScale;
+        float sdx = (mouse.dx / vh) / settings.dt;
+        float sdy = (mouse.dy / vh) / settings.dt;
         float sr = settings.brushRadius;
 
         if (settings.brushMode == BrushMode::Inject) {

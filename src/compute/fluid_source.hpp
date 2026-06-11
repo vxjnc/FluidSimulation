@@ -26,8 +26,8 @@ struct FluidSource {
     std::array<float, 3> color{1.0f, 1.0f, 1.0f};
 
     float x = 0.0f, y = 0.0f;
-    float vx = 0.0f, vy = 100.0f;
-    float radius = 0.1f;
+    float vx = 0.0f, vy = 1.f;
+    float radius = 0.05f;
     bool active = true;
 
     int mode_mask = Mode::VELOCITY | Mode::DYE;

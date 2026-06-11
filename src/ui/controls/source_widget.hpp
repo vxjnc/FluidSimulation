@@ -47,12 +47,7 @@ public:
         ImGui::SliderFloat("Y", &s.y, 0.0f, 1.0f);
 
         if (has_velocity || s.form == FluidSource::Form::LINE) {
-            float display_vx = s.vx / settings.simScale;
-            float display_vy = s.vy / settings.simScale;
-            if (Widgets::VelocityInput("vel", display_vx, display_vy, settings.ui.velocityMode)) {
-                s.vx = display_vx * settings.simScale;
-                s.vy = display_vy * settings.simScale;
-            }
+            Widgets::VelocityInput("Velocity", s.vx, s.vy, settings.ui.velocityMode);
         }
 
         const char* radius_label = (s.form == FluidSource::Form::LINE) ? "Length" : "Radius";

@@ -24,12 +24,12 @@ public:
         ImGui::Checkbox("Apply Velocity", &s.applyVelocity);
         if (s.applyVelocity) {
             if (velMode == VelocityInputMode::XY) {
-                ImGui::DragFloatRange2("VX", &s.vxMin, &s.vxMax, 1.f, -500.f, 500.f);
-                ImGui::DragFloatRange2("VY", &s.vyMin, &s.vyMax, 1.f, -500.f, 500.f);
+                ImGui::DragFloatRange2("VX", &s.vxMin, &s.vxMax, 0.05f, -100.f, 100.f);
+                ImGui::DragFloatRange2("VY", &s.vyMin, &s.vyMax, 0.05f, -100.f, 100.f);
             }
             else {
                 ImGui::DragFloatRange2("Angle", &s.angleMin, &s.angleMax, 1.f, 0.f, 360.f, "%.1f°");
-                ImGui::DragFloatRange2("Mag", &s.magMin, &s.magMax, 1.f, 0.f, 500.f);
+                ImGui::DragFloatRange2("Mag", &s.magMin, &s.magMax, 0.05f, 0.f, 100.f);
             }
         }
 
@@ -75,7 +75,7 @@ private:
             }
 
             std::array<float, 3> color =
-                s.applyColor ? ColorUtils::Generator::randomPastel(rng_) : std::array{1.f, 1.f, 1.f};
+                s.applyColor ? ColorUtils::Generator::randomVibrant(rng_) : std::array{1.f, 1.f, 1.f};
 
             sources.emplace_back(posDist(rng_), posDist(rng_), vx, vy, radiusDist(rng_), color).mode_mask =
                 (s.applyVelocity ? FluidSource::Mode::VELOCITY : 0) |

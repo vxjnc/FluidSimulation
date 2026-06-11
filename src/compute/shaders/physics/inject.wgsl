@@ -77,7 +77,8 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
             let d = calc_distance(phys_cell, src_phys, radius_phys, inj);
             if d < eff_r {
                 let falloff = 1.0 - d / eff_r;
-                velocity[idx_phys(x, y)] += vec2f(inj.vx, inj.vy) * falloff;
+                let vel_phys = vec2f(inj.vx, inj.vy) * f32(params.height) * params.dt;
+                velocity[idx_phys(x, y)] += vel_phys * falloff;
             }
         }
 
