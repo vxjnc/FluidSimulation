@@ -18,6 +18,7 @@
 #include "src/ui/imgui_style.hpp"
 #include "src/ui/import/import_panel.hpp"
 #include "src/ui/random_splat/splat_panel.hpp"
+#include "src/ui/stats/stats_panel.hpp"
 #include "src/utils/image_processor.hpp"
 #include "src/wgpu_context.hpp"
 
@@ -35,6 +36,7 @@ struct PanelVisibility {
     bool controls = true;
     bool randomSplat = false;
     bool import = false;
+    bool stats = true;
 };
 
 class ImGuiManager {
@@ -91,7 +93,7 @@ public:
         ImGui::NewFrame();
     }
 
-    void renderUI(FluidViewport& viewport, MouseState& mouse, FluidSim& sim,
+    void renderUI(FluidViewport& viewport, MouseState& mouse, FluidSim& sim, Render& render,
                   std::vector<FluidSource>& sources) {
         ImGuiIO& io = ImGui::GetIO();
 
@@ -107,16 +109,22 @@ public:
             ImGuiID dockLeft, dockRight;
             ImGui::DockBuilderSplitNode(dockspaceId, ImGuiDir_Left, 0.25f, &dockLeft, &dockRight);
 
-            ImGui::DockBuilderDockWindow("Controls", dockLeft);
-            ImGui::DockBuilderGetNode(dockLeft)->LocalFlags |= ImGuiDockNodeFlags_AutoHideTabBar;
+            ImGuiID dockLeftTop, dockLeftBottom;
+            ImGui::DockBuilderSplitNode(dockLeft, ImGuiDir_Up, 0.2f, &dockLeftTop, &dockLeftBottom);
+
+            ImGui::DockBuilderDockWindow("Stats", dockLeftTop);
+            ImGui::DockBuilderGetNode(dockLeftTop)->LocalFlags |= ImGuiDockNodeFlags_AutoHideTabBar;
+
+            ImGui::DockBuilderDockWindow("Controls", dockLeftBottom);
+            ImGui::DockBuilderGetNode(dockLeftBottom)->LocalFlags |= ImGuiDockNodeFlags_AutoHideTabBar;
 
             ImGui::DockBuilderDockWindow("Viewport", dockRight);
             ImGui::DockBuilderGetNode(dockRight)->LocalFlags |=
                 ImGuiDockNodeFlags_AutoHideTabBar | ImGuiDockNodeFlags_NoUndocking;
 
-            ImGui::DockBuilderDockWindow("Random Splat", dockLeft);
+            ImGui::DockBuilderDockWindow("Random Splat", dockLeftBottom);
 
-            ImGui::DockBuilderDockWindow("Import", dockLeft);
+            ImGui::DockBuilderDockWindow("Import", dockLeftBottom);
 
             ImGui::DockBuilderFinish(dockspaceId);
         }
@@ -127,6 +135,9 @@ public:
 
         renderSettingsModal();
 
+        if (visibility.stats) {
+            statsPanel.render(visibility.stats, sim, render);
+        }
         if (visibility.controls) {
             controlsPanel.render(visibility.controls, viewport, sim, *settings, sources);
         }
@@ -224,6 +235,7 @@ public:
     ControlsPanel controlsPanel;
     SplatPanel splatPanel;
     ImportPanel importPanel;
+    StatsPanel statsPanel;
 
     bool menuBarVisible = true;
     bool settingsOpen = false;
@@ -281,6 +293,7 @@ private:
             ImGui::MenuItem("Controls", nullptr, &visibility.controls);
             ImGui::MenuItem("Random Splat", nullptr, &visibility.randomSplat);
             ImGui::MenuItem("Import", nullptr, &visibility.import);
+            ImGui::MenuItem("Stats", nullptr, &visibility.stats);
             ImGui::Separator();
             if (ImGui::MenuItem("Reset Layout")) {
                 dockInitialized = false;
@@ -345,6 +358,9 @@ private:
             }
             else if (std::sscanf(line, "import=%d", &v) == 1) {
                 self->visibility.import = (v != 0);
+            }
+            else if (std::sscanf(line, "stats=%d", &v) == 1) {
+                self->visibility.stats = (v != 0);
             }
         }
         else if (section_hash == ImHashStr("AppSettings")) {
@@ -457,6 +473,7 @@ private:
         buf->appendf("controls=%d\n", self->visibility.controls ? 1 : 0);
         buf->appendf("randomSplat=%d\n", self->visibility.randomSplat ? 1 : 0);
         buf->appendf("import=%d\n", self->visibility.import ? 1 : 0);
+        buf->appendf("stats=%d\n", self->visibility.stats ? 1 : 0);
         buf->append("\n");
 
         buf->appendf("[%s][AppSettings]\n", type_name);

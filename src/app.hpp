@@ -41,7 +41,7 @@ public:
             WGPUContext::instance().resize(static_cast<uint32_t>(w), static_cast<uint32_t>(h));
         });
 
-        renderer.init();
+        renderer.init(ctx.device());
         viewport.init(ctx.device(), width, height, ctx.surfaceFormat());
 
         simulation.init(ctx.device(), ctx.queue(),
@@ -140,7 +140,7 @@ public:
 
             processInput(enc, frameSources);
             update(enc, frameSources);
-            imguiManager.renderUI(viewport, mouse, simulation, sources);
+            imguiManager.renderUI(viewport, mouse, simulation, renderer, sources);
             auto [target, targetView] = render(enc);
 
             wgpu::raii::CommandBuffer cmd = enc->finish({});
@@ -149,6 +149,9 @@ public:
             postSubmitQueue_.flush();
 
             ctx.present();
+
+            simulation.profiler.requestReadback();
+            renderer.profiler.requestReadback();
         }
     }
 

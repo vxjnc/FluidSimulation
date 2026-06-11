@@ -6,6 +6,7 @@
 
 #include "generated/shaders/shader.wgsl.h"
 #include "src/compute/fluid_sim.hpp"
+#include "src/compute/gpu_profiler.hpp"
 #include "src/compute/wgpu_helper.hpp"
 #include "src/render/render_settings.hpp"
 #include "src/wgpu_context.hpp"
@@ -18,7 +19,11 @@ class Render {
     };
 
 public:
-    void init() { initPipeline(); }
+    void init(wgpu::Device device) {
+        initPipeline();
+
+        profiler.init(device);
+    }
 
     void draw(const wgpu::raii::TextureView& targetView, FluidSim& fluid_sim,
               const RenderSettings& settings) {
@@ -75,11 +80,18 @@ public:
         passDesc.colorAttachments = &color;
 
         wgpu::raii::RenderPassEncoder pass = enc->beginRenderPass(passDesc);
+        profiler.writeBegin(pass);
+
         pass->setPipeline(*pipeline);
         pass->setBindGroup(0, *bindGroup, 0, nullptr);
         pass->draw(4, 1, 0, 0);
+
+        profiler.writeEnd(pass);
         pass->end();
+        profiler.resolve(enc);
     }
+
+    GpuProfiler profiler;
 
 private:
     void initPipeline() {

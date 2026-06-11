@@ -29,29 +29,32 @@ public:
 
         wgpu::InstanceDescriptor instanceDesc{};
 
+#ifdef WEBGPU_BACKEND_DAWN
+        static const char* dawnTogglesList[] = {
 #ifndef NDEBUG
+            "use_user_defined_labels_in_backend", "dump_shaders", "validation_manual_triggering",
+            "allow_unsafe_apis"
+#else
+            "allow_unsafe_apis"
+#endif
+
+        };
+
+        static wgpu::DawnTogglesDescriptor dawnToggles{};
+        dawnToggles.chain.sType = wgpu::SType::DawnTogglesDescriptor;
+        dawnToggles.enabledToggleCount = sizeof(dawnTogglesList) / sizeof(dawnTogglesList[0]);
+        dawnToggles.enabledToggles = dawnTogglesList;
+
+        instanceDesc.nextInChain = &dawnToggles.chain;
+#endif
 
 #ifdef WEBGPU_BACKEND_WGPU
-        WGPUInstanceExtras extras{};
+#ifndef NDEBUG
+        static WGPUInstanceExtras extras{};
         extras.chain.sType = static_cast<WGPUSType>(WGPUNativeSType::WGPUSType_InstanceExtras);
         extras.flags = WGPUInstanceFlag_Debug | WGPUInstanceFlag_Validation;
         instanceDesc.nextInChain = &extras.chain;
 #endif
-
-#ifdef WEBGPU_BACKEND_DAWN
-
-        static const char* enabledToggles[] = {
-            "use_user_defined_labels_in_backend",
-            "dump_shaders",
-            "validation_manual_triggering",
-        };
-        static wgpu::DawnTogglesDescriptor dawnToggles{};
-        dawnToggles.chain.sType = wgpu::SType::DawnTogglesDescriptor;
-        dawnToggles.enabledToggleCount = sizeof(enabledToggles) / sizeof(enabledToggles[0]);
-        dawnToggles.enabledToggles = enabledToggles;
-        instanceDesc.nextInChain = &dawnToggles.chain;
-#endif
-
 #endif
 
         instance_ = wgpu::createInstance(instanceDesc);
@@ -81,15 +84,35 @@ public:
                 return;
             }
 
-            std::print(std::cerr, "wgpu device lost({}): {}\n", static_cast<int>(reason),
-                       std::string_view(msg.data, msg.length));
+            std::println(std::cerr, "wgpu device lost({}): {}", static_cast<int>(reason),
+                         std::string_view(msg.data, msg.length));
         };
 
         deviceDesc.uncapturedErrorCallbackInfo.callback = [](WGPUDevice const*, WGPUErrorType type,
                                                              WGPUStringView msg, void*, void*) {
-            std::print(std::cerr, "wgpu error ({}): {}\n", static_cast<int>(type),
-                       std::string_view(msg.data, msg.length));
+            std::println(std::cerr, "wgpu error ({}): {}", static_cast<int>(type),
+                         std::string_view(msg.data, msg.length));
         };
+
+        std::vector<WGPUFeatureName> requiredFeatures;
+        if (adapter_->hasFeature(wgpu::FeatureName::TimestampQuery)) {
+            requiredFeatures.emplace_back(wgpu::FeatureName::TimestampQuery);
+        }
+#ifdef WEBGPU_BACKEND_DAWN
+        if (adapter_->hasFeature(wgpu::FeatureName::ChromiumExperimentalTimestampQueryInsidePasses)) {
+            requiredFeatures.emplace_back(wgpu::FeatureName::ChromiumExperimentalTimestampQueryInsidePasses);
+        }
+#endif
+#ifdef WEBGPU_BACKEND_WGPU
+        if (adapter_->hasFeature(
+                static_cast<WGPUFeatureName>(wgpu::NativeFeature::TimestampQueryInsidePasses))) {
+            requiredFeatures.emplace_back(
+                static_cast<WGPUFeatureName>(wgpu::NativeFeature::TimestampQueryInsidePasses));
+        }
+#endif
+
+        deviceDesc.requiredFeatureCount = requiredFeatures.size();
+        deviceDesc.requiredFeatures = requiredFeatures.data();
 
         device_ = adapter_->requestDevice(deviceDesc);
         if (!device_) {

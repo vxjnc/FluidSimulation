@@ -8,9 +8,9 @@
 #include "src/compute/fluid_pipelines.hpp"
 #include "src/compute/fluid_source.hpp"
 #include "src/compute/fluid_state.hpp"
+#include "src/compute/gpu_profiler.hpp"
 #include "src/compute/resample_pipelines.hpp"
 #include "src/compute/wgpu_helper.hpp"
-#include "webgpu/webgpu.hpp"
 
 class FluidSim {
 public:
@@ -22,6 +22,8 @@ public:
         pipelines.init(device);
         resamplePipelines.init(device);
         initBindGroups();
+
+        profiler.init(device);
     }
 
     void resize(uint32_t w, uint32_t h) { resize(w, h, state.dye_width, state.dye_height); }
@@ -179,6 +181,7 @@ public:
         wgpu::ComputePassDescriptor passDesc{};
         passDesc.label = wgpu::StringView("FluidStepPass");
         wgpu::raii::ComputePassEncoder pass = enc->beginComputePass(passDesc);
+        profiler.writeBegin(pass);
 
         advect(pass, W, H);
         computeDivergence(pass, W, H);
@@ -189,7 +192,10 @@ public:
         applyVorticity(pass, W, H);
         advectDye(pass, DW, DH);
 
+        profiler.writeEnd(pass);
         pass->end();
+
+        profiler.resolve(enc);
         ++frameIndex;
     }
 
@@ -225,6 +231,7 @@ public:
     FluidState state;
     FluidPipelines pipelines;
     ResamplePipelines resamplePipelines;
+    GpuProfiler profiler;
 
 private:
     size_t frameIndex = 0;

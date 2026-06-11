@@ -14,18 +14,10 @@ class ControlsPanel {
 public:
     void render(bool& open, FluidViewport& viewport, FluidSim& sim, AppSettings& settings,
                 std::vector<FluidSource>& sources) {
-        ImGuiIO& io = ImGui::GetIO();
-
         ImGui::Begin("Controls", &open);
 
-        ImGui::Text("FPS: %.1f", io.Framerate);
-        ImGui::Text("Sim size: %ux%u = %u", sim.state.width, sim.state.height,
-                    sim.state.width * sim.state.height);
-        ImGui::Text("Dye size: %ux%u = %u", sim.state.dye_width, sim.state.dye_height,
-                    sim.state.dye_width * sim.state.dye_height);
-        ImGui::Separator();
-
         simulationWidget.render(settings, sim, viewport);
+
         ImGui::Separator();
 
         renderWidget.render(settings.renderSettings);
