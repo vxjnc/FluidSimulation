@@ -94,7 +94,7 @@ public:
     }
 
     void renderUI(FluidViewport& viewport, MouseState& mouse, FluidSim& sim, Render& render,
-                  std::vector<FluidSource>& sources) {
+                  std::vector<FluidSource>& sources, const GpuProfiler& uiProfiler) {
         ImGuiIO& io = ImGui::GetIO();
 
         ImGuiID dockspaceId = ImGui::DockSpaceOverViewport(ImGui::GetMainViewport()->ID);
@@ -136,7 +136,7 @@ public:
         renderSettingsModal();
 
         if (visibility.stats) {
-            statsPanel.render(visibility.stats, sim, render);
+            statsPanel.render(visibility.stats, sim, render, uiProfiler);
         }
         if (visibility.controls) {
             controlsPanel.render(visibility.controls, viewport, sim, *settings, sources);

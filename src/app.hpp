@@ -10,6 +10,7 @@
 #include "src/capture/screenshot_capture.hpp"
 #include "src/compute/fluid_sim.hpp"
 #include "src/compute/fluid_source.hpp"
+#include "src/compute/gpu_profiler.hpp"
 #include "src/render/render.hpp"
 #include "src/save/save_manager.hpp"
 #include "src/ui/fluid_viewport.hpp"
@@ -41,6 +42,7 @@ public:
             WGPUContext::instance().resize(static_cast<uint32_t>(w), static_cast<uint32_t>(h));
         });
 
+        uiProfiler.init(ctx.device());
         renderer.init(ctx.device());
         viewport.init(ctx.device(), width, height, ctx.surfaceFormat());
 
@@ -140,7 +142,7 @@ public:
 
             processInput(enc, frameSources);
             update(enc, frameSources);
-            imguiManager.renderUI(viewport, mouse, simulation, renderer, sources);
+            imguiManager.renderUI(viewport, mouse, simulation, renderer, sources, uiProfiler);
             auto [target, targetView] = render(enc);
 
             wgpu::raii::CommandBuffer cmd = enc->finish({});
@@ -152,6 +154,7 @@ public:
 
             simulation.profiler.requestReadback();
             renderer.profiler.requestReadback();
+            uiProfiler.requestReadback();
         }
     }
 
@@ -253,11 +256,16 @@ private:
         passDesc.colorAttachments = &att;
 
         wgpu::raii::RenderPassEncoder pass = enc->beginRenderPass(passDesc);
+        uiProfiler.writeBegin(pass);
         imguiManager.endFrame(*pass);
+        uiProfiler.writeEnd(pass);
         pass->end();
+        uiProfiler.resolve(enc);
 
         return {std::move(target), std::move(targetView)};
     }
+
+    GpuProfiler uiProfiler;
 
     GLFWwindow* window = nullptr;
     NFD::Guard nfdGuard;
