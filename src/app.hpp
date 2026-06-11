@@ -17,6 +17,7 @@
 #include "src/ui/imgui_manager.hpp"
 #include "src/utils/color_generator.hpp"
 #include "src/utils/deffered_queue.hpp"
+#include "src/utils/process_stats.hpp"
 
 class Application {
 public:
@@ -32,6 +33,8 @@ public:
             glfwTerminate();
             throw std::runtime_error("Failed to create window");
         }
+
+        ProcessStats::Monitor::start();
 
         WGPUContext& ctx = WGPUContext::instance();
         ctx.init(window, width, height);
@@ -67,6 +70,7 @@ public:
     };
 
     ~Application() {
+        ProcessStats::Monitor::stop();
         glfwDestroyWindow(window);
         glfwTerminate();
     }

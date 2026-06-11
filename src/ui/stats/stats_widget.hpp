@@ -4,6 +4,7 @@
 #include "src/compute/fluid_sim.hpp"
 #include "src/compute/gpu_profiler.hpp"
 #include "src/render/render.hpp"
+#include "src/utils/process_stats.hpp"
 
 class StatsWidget {
 public:
@@ -40,5 +41,10 @@ public:
                     sim.state.width * sim.state.height);
         ImGui::Text("Dye size: %ux%u = %u", sim.state.dye_width, sim.state.dye_height,
                     sim.state.dye_width * sim.state.dye_height);
+
+        ImGui::Separator();
+        ProcessStats::Stats processStats = ProcessStats::Monitor::sample();
+        ImGui::Text("CPU: %.1f%%", processStats.cpuPercent);
+        ImGui::Text("Memory: %.3f MB", static_cast<float>(processStats.rssBytes) / 1024.f / 1024.f);
     }
 };
