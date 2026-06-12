@@ -41,23 +41,25 @@ namespace SaveManager {
         uint64_t dyeSize = sim.state.dye_width * sim.state.dye_height * 4 * sizeof(float);
         uint64_t obsSize = sim.state.width * sim.state.height * sizeof(uint32_t);
 
-        GpuReadback::request(*sim.state.velocity, velSize, [state, tryFinish](std::vector<std::byte> data) {
-            auto* dst = reinterpret_cast<float*>(data.data());
-            state->velocity.assign(dst, dst + data.size() / sizeof(float));
+        GpuReadback::request(*sim.state.velocity, velSize,
+                             [state, tryFinish](std::span<const std::byte> data) {
+                                 auto* dst = reinterpret_cast<const float*>(data.data());
+                                 state->velocity.assign(dst, dst + data.size() / sizeof(dst[0]));
+                                 tryFinish();
+                             });
+
+        GpuReadback::request(*sim.state.dye, dyeSize, [state, tryFinish](std::span<const std::byte> data) {
+            auto* dst = reinterpret_cast<const float*>(data.data());
+            state->dye.assign(dst, dst + data.size() / sizeof(dst[0]));
             tryFinish();
         });
 
-        GpuReadback::request(*sim.state.dye, dyeSize, [state, tryFinish](std::vector<std::byte> data) {
-            auto* dst = reinterpret_cast<float*>(data.data());
-            state->dye.assign(dst, dst + data.size() / sizeof(float));
-            tryFinish();
-        });
-
-        GpuReadback::request(*sim.state.obstacles, obsSize, [state, tryFinish](std::vector<std::byte> data) {
-            auto* dst = reinterpret_cast<uint32_t*>(data.data());
-            state->obstacles.assign(dst, dst + data.size() / sizeof(uint32_t));
-            tryFinish();
-        });
+        GpuReadback::request(*sim.state.obstacles, obsSize,
+                             [state, tryFinish](std::span<const std::byte> data) {
+                                 auto* dst = reinterpret_cast<const uint32_t*>(data.data());
+                                 state->obstacles.assign(dst, dst + data.size() / sizeof(dst[0]));
+                                 tryFinish();
+                             });
     }
 
     inline void load(const std::filesystem::path& path, FluidSim& sim, std::vector<FluidSource>& sources,

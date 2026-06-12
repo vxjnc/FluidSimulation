@@ -62,8 +62,8 @@ public:
             return;
         }
 
-        GpuReadback::request(*resolveBuffer_, 2 * sizeof(size_t), [this](std::vector<std::byte> data) {
-            auto* timestamps = reinterpret_cast<size_t*>(data.data());
+        GpuReadback::request(*resolveBuffer_, 2 * sizeof(size_t), [this](std::span<const std::byte> data) {
+            const size_t* timestamps = reinterpret_cast<const size_t*>(data.data());
             size_t delta = timestamps[1] - timestamps[0];
 
             sum_ += delta;
@@ -93,8 +93,8 @@ public:
         size_t result = 0;
         bool done = false;
 
-        GpuReadback::request(*resolveBuffer_, 2 * sizeof(size_t), [&](std::vector<std::byte> data) {
-            auto* timestamps = reinterpret_cast<size_t*>(data.data());
+        GpuReadback::request(*resolveBuffer_, 2 * sizeof(size_t), [&](std::span<const std::byte> data) {
+            auto* timestamps = reinterpret_cast<const size_t*>(data.data());
             result = timestamps[1] - timestamps[0];
             done = true;
         });

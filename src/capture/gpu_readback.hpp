@@ -1,6 +1,6 @@
 #pragma once
 #include <concepts>
-#include <vector>
+#include <span>
 
 #include <webgpu/webgpu-raii.hpp>
 
@@ -8,7 +8,7 @@
 
 namespace GpuReadback {
     template <typename T>
-    concept ReadbackCallback = std::invocable<T, std::vector<std::byte>>;
+    concept ReadbackCallback = std::invocable<T, std::span<std::byte>>;
 
     inline uint32_t alignUp(uint32_t v, uint32_t align) { return (v + align - 1) & ~(align - 1); }
 
@@ -80,12 +80,11 @@ namespace GpuReadback {
         wgpu::BufferMapCallbackInfo info{};
         info.mode = wgpu::CallbackMode::AllowSpontaneous;
         info.callback = [](WGPUMapAsyncStatus status, WGPUStringView, void* userdata1, void*) {
-            auto* s = static_cast<State*>(userdata1);
+            State* s = static_cast<State*>(userdata1);
             if (status == wgpu::MapAsyncStatus::Success) {
                 const auto* ptr = static_cast<const std::byte*>(s->staging->getConstMappedRange(0, s->size));
-                std::vector<std::byte> data(ptr, ptr + s->size);
+                s->callback(std::span(ptr, s->size));
                 s->staging->unmap();
-                s->callback(std::move(data));
             }
             delete s;
         };
