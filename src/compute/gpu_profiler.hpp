@@ -82,7 +82,34 @@ public:
         }
 
         // TODO: use timestampPeriod scaling
-        return Stats{static_cast<double>(sum_) / static_cast<double>(MAX_SAMPLES)};
+        return Stats{static_cast<double>(sum_) / static_cast<double>(samples_.size())};
+    }
+
+    size_t readSync(wgpu::Device device) {
+        if (!supported_ || !pending_) {
+            return 0;
+        }
+
+        size_t result = 0;
+        bool done = false;
+
+        GpuReadback::request(*resolveBuffer_, 2 * sizeof(size_t), [&](std::vector<std::byte> data) {
+            auto* timestamps = reinterpret_cast<size_t*>(data.data());
+            result = timestamps[1] - timestamps[0];
+            done = true;
+        });
+
+        while (!done) {
+#ifdef WEBGPU_BACKEND_DAWN
+            device.tick();
+#endif
+#ifdef WEBGPU_BACKEND_WGPU
+            device.poll(false, nullptr);
+#endif
+        }
+
+        pending_ = false;
+        return result;
     }
 
 private:
