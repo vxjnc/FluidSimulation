@@ -1,6 +1,7 @@
 #pragma once
 #include <cstring>
 #include <deque>
+#include <memory>
 #include <optional>
 
 #include <webgpu/webgpu-raii.hpp>
@@ -34,14 +35,14 @@ public:
     bool isSupported() const { return supported_; }
 
     template <typename PassEncoder> void writeBegin(PassEncoder& pass) {
-        if (!supported_ || pending_) {
+        if (!supported_ || state_->pending) {
             return;
         }
         pass->writeTimestamp(*querySet_, 0);
     }
 
     template <typename PassEncoder> void writeEnd(PassEncoder& pass) {
-        if (!supported_ || pending_) {
+        if (!supported_ || state_->pending) {
             return;
         }
         pass->writeTimestamp(*querySet_, 1);
@@ -54,39 +55,40 @@ public:
         }
         enc->resolveQuerySet(*querySet_, 0, 2, *resolveBuffer_, 0);
         wantsResolve_ = false;
-        pending_ = true;
+        state_->pending = true;
     }
 
     void requestReadback() {
-        if (!supported_ || !pending_) {
+        if (!supported_ || !state_->pending) {
             return;
         }
 
-        GpuReadback::request(*resolveBuffer_, 2 * sizeof(size_t), [this](std::span<const std::byte> data) {
+        auto state = state_;
+        GpuReadback::request(*resolveBuffer_, 2 * sizeof(size_t), [state](std::span<const std::byte> data) {
             const size_t* timestamps = reinterpret_cast<const size_t*>(data.data());
             size_t delta = timestamps[1] - timestamps[0];
 
-            sum_ += delta;
-            samples_.emplace_back(delta);
-            if (samples_.size() > MAX_SAMPLES) {
-                sum_ -= samples_.front();
-                samples_.pop_front();
+            state->sum += delta;
+            state->samples.emplace_back(delta);
+            if (state->samples.size() > MAX_SAMPLES) {
+                state->sum -= state->samples.front();
+                state->samples.pop_front();
             }
-            pending_ = false;
+            state->pending = false;
         });
     }
 
     std::optional<Stats> getStats() const {
-        if (!supported_ || samples_.empty()) {
+        if (!supported_ || state_->samples.empty()) {
             return std::nullopt;
         }
 
         // TODO: use timestampPeriod scaling
-        return Stats{static_cast<double>(sum_) / static_cast<double>(samples_.size())};
+        return Stats{static_cast<double>(state_->sum) / static_cast<double>(state_->samples.size())};
     }
 
     size_t readSync(wgpu::Device device) {
-        if (!supported_ || !pending_) {
+        if (!supported_ || !state_->pending) {
             return 0;
         }
 
@@ -94,7 +96,7 @@ public:
         bool done = false;
 
         GpuReadback::request(*resolveBuffer_, 2 * sizeof(size_t), [&](std::span<const std::byte> data) {
-            auto* timestamps = reinterpret_cast<const size_t*>(data.data());
+            const size_t* timestamps = reinterpret_cast<const size_t*>(data.data());
             result = timestamps[1] - timestamps[0];
             done = true;
         });
@@ -108,18 +110,22 @@ public:
 #endif
         }
 
-        pending_ = false;
+        state_->pending = false;
         return result;
     }
 
 private:
-    size_t sum_ = 0;
+    struct SharedState {
+        size_t sum = 0;
+        bool pending = false;
+        std::deque<size_t> samples;
+    };
 
     bool supported_ = false;
     bool wantsResolve_ = false;
-    bool pending_ = false;
+
+    std::shared_ptr<SharedState> state_ = std::make_shared<SharedState>();
 
     wgpu::raii::QuerySet querySet_;
     wgpu::raii::Buffer resolveBuffer_;
-    std::deque<size_t> samples_;
 };
