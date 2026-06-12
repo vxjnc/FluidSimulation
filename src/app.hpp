@@ -190,6 +190,24 @@ private:
             }
         }
 
+        ImGuiIO& io = ImGui::GetIO();
+        bool ctrlPressed = io.KeyCtrl;
+        if (ctrlPressed && ImGui::IsKeyPressed(ImGuiKey_S, false)) {
+            std::string cwd = std::filesystem::current_path().string();
+            NFD::UniquePath outPath;
+            nfdu8filteritem_t filters[] = {{"Fluid Simulation", "fsim"}};
+            if (NFD::SaveDialog(outPath, filters, 1, cwd.c_str(), "simulation.fsim") == NFD_OKAY) {
+                imguiManager.onSaveRequested(outPath.get());
+            }
+        }
+        if (ctrlPressed && ImGui::IsKeyPressed(ImGuiKey_O, false)) {
+            std::string cwd = std::filesystem::current_path().string();
+            NFD::UniquePath outPath;
+            nfdu8filteritem_t filters[] = {{"Fluid Simulation", "fsim"}};
+            if (NFD::OpenDialog(outPath, filters, 1, cwd.c_str()) == NFD_OKAY) {
+                imguiManager.onLoadRequested(outPath.get());
+            }
+        }
         if (ImGui::IsKeyPressed(ImGuiKey_Space)) {
             settings.paused = !settings.paused;
         }
