@@ -167,11 +167,11 @@ public:
                                      }},
                  ImportPanel::Action{"Obstacles",
                                      [&](const ImportPanel::LoadedImage& img) {
-                                         uint32_t vw = sim.state.width;
-                                         uint32_t vh = sim.state.height;
+                                         uint32_t ow = sim.state.width;
+                                         uint32_t oh = sim.state.height;
                                          auto pixels = ImageProcessor::resizeRGBA(img.pixels.data(), img.w,
-                                                                                  img.h, vw, vh, true);
-                                         onImport(ImportTarget::Obstacles, std::move(pixels), vw, vh);
+                                                                                  img.h, ow, oh, true);
+                                         onImport(ImportTarget::Obstacles, std::move(pixels), ow, oh);
                                      }}},
                 visibility.import);
         }

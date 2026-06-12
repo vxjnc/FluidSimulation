@@ -7,8 +7,6 @@
 
 #include <stb_image_resize2.h>
 
-#include "src/ui/import/import_panel.hpp"
-
 namespace ImageProcessor {
     inline std::vector<float> resizeRGBA(const float* srcData, uint32_t srcW, uint32_t srcH, uint32_t targetW,
                                          uint32_t targetH, bool flipY = true) {

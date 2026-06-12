@@ -41,25 +41,22 @@ namespace SaveManager {
         uint64_t dyeSize = sim.state.dye_width * sim.state.dye_height * 4 * sizeof(float);
         uint64_t obsSize = sim.state.width * sim.state.height * sizeof(uint32_t);
 
-        GpuReadback::request(*sim.state.velocity, velSize,
-                             [state, tryFinish](std::span<const std::byte> data) {
-                                 auto* dst = reinterpret_cast<const float*>(data.data());
-                                 state->velocity.assign(dst, dst + data.size() / sizeof(dst[0]));
-                                 tryFinish();
-                             });
+        GpuReadback::request<float>(*sim.state.velocity, velSize,
+                                    [state, tryFinish](std::span<const float> data) {
+                                        state->velocity.assign(data.begin(), data.end());
+                                        tryFinish();
+                                    });
 
-        GpuReadback::request(*sim.state.dye, dyeSize, [state, tryFinish](std::span<const std::byte> data) {
-            auto* dst = reinterpret_cast<const float*>(data.data());
-            state->dye.assign(dst, dst + data.size() / sizeof(dst[0]));
+        GpuReadback::request<float>(*sim.state.dye, dyeSize, [state, tryFinish](std::span<const float> data) {
+            state->dye.assign(data.begin(), data.end());
             tryFinish();
         });
 
-        GpuReadback::request(*sim.state.obstacles, obsSize,
-                             [state, tryFinish](std::span<const std::byte> data) {
-                                 auto* dst = reinterpret_cast<const uint32_t*>(data.data());
-                                 state->obstacles.assign(dst, dst + data.size() / sizeof(dst[0]));
-                                 tryFinish();
-                             });
+        GpuReadback::request<uint32_t>(*sim.state.obstacles, obsSize,
+                                       [state, tryFinish](std::span<const uint32_t> data) {
+                                           state->obstacles.assign(data.begin(), data.end());
+                                           tryFinish();
+                                       });
     }
 
     inline void load(const std::filesystem::path& path, FluidSim& sim, std::vector<FluidSource>& sources,

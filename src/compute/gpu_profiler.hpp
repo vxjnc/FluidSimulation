@@ -64,18 +64,18 @@ public:
         }
 
         auto state = state_;
-        GpuReadback::request(*resolveBuffer_, 2 * sizeof(size_t), [state](std::span<const std::byte> data) {
-            const size_t* timestamps = reinterpret_cast<const size_t*>(data.data());
-            size_t delta = timestamps[1] - timestamps[0];
+        GpuReadback::request<size_t>(*resolveBuffer_, 2 * sizeof(size_t),
+                                     [state](std::span<const size_t> timestamps) {
+                                         size_t delta = timestamps[1] - timestamps[0];
 
-            state->sum += delta;
-            state->samples.emplace_back(delta);
-            if (state->samples.size() > MAX_SAMPLES) {
-                state->sum -= state->samples.front();
-                state->samples.pop_front();
-            }
-            state->pending = false;
-        });
+                                         state->sum += delta;
+                                         state->samples.emplace_back(delta);
+                                         if (state->samples.size() > MAX_SAMPLES) {
+                                             state->sum -= state->samples.front();
+                                             state->samples.pop_front();
+                                         }
+                                         state->pending = false;
+                                     });
     }
 
     std::optional<Stats> getStats() const {
@@ -95,11 +95,11 @@ public:
         size_t result = 0;
         bool done = false;
 
-        GpuReadback::request(*resolveBuffer_, 2 * sizeof(size_t), [&](std::span<const std::byte> data) {
-            const size_t* timestamps = reinterpret_cast<const size_t*>(data.data());
-            result = timestamps[1] - timestamps[0];
-            done = true;
-        });
+        GpuReadback::request<size_t>(*resolveBuffer_, 2 * sizeof(size_t),
+                                     [&](std::span<const size_t> timestamps) {
+                                         result = timestamps[1] - timestamps[0];
+                                         done = true;
+                                     });
 
         while (!done) {
 #ifdef WEBGPU_BACKEND_DAWN

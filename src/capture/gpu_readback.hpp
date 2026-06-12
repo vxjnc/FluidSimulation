@@ -7,12 +7,13 @@
 #include "src/wgpu_context.hpp"
 
 namespace GpuReadback {
-    template <typename T>
-    concept ReadbackCallback = std::invocable<T, std::span<std::byte>>;
+    template <typename T, typename Callback>
+    concept ReadbackCallback = std::invocable<Callback, std::span<const T>>;
 
     inline uint32_t alignUp(uint32_t v, uint32_t align) { return (v + align - 1) & ~(align - 1); }
 
-    template <ReadbackCallback Callback>
+    template <typename T = std::byte, typename Callback>
+        requires ReadbackCallback<T, Callback>
     inline void request(wgpu::Buffer buffer, uint64_t size, Callback callback) {
         WGPUContext& ctx = WGPUContext::instance();
 
@@ -33,10 +34,11 @@ namespace GpuReadback {
         wgpu::raii::CommandBuffer cmd = enc->finish({});
         ctx.queue().submit(1, &*cmd);
 
-        mapAsync(state);
+        mapAsync<T>(state);
     }
 
-    template <ReadbackCallback Callback>
+    template <typename T = std::byte, typename Callback>
+        requires ReadbackCallback<T, Callback>
     inline void request(wgpu::Texture texture, uint32_t w, uint32_t h, wgpu::TextureFormat,
                         Callback callback) {
         WGPUContext& ctx = WGPUContext::instance();
@@ -73,17 +75,17 @@ namespace GpuReadback {
         wgpu::raii::CommandBuffer cmd = enc->finish({});
         ctx.queue().submit(1, &*cmd);
 
-        mapAsync(state);
+        mapAsync<T>(state);
     }
 
-    template <typename State> inline void mapAsync(State* state) {
+    template <typename T, typename State> inline void mapAsync(State* state) {
         wgpu::BufferMapCallbackInfo info{};
         info.mode = wgpu::CallbackMode::AllowSpontaneous;
         info.callback = [](WGPUMapAsyncStatus status, WGPUStringView, void* userdata1, void*) {
             State* s = static_cast<State*>(userdata1);
             if (status == wgpu::MapAsyncStatus::Success) {
-                const auto* ptr = static_cast<const std::byte*>(s->staging->getConstMappedRange(0, s->size));
-                s->callback(std::span(ptr, s->size));
+                const auto* ptr = static_cast<const T*>(s->staging->getConstMappedRange(0, s->size));
+                s->callback(std::span<const T>(ptr, s->size / sizeof(T)));
                 s->staging->unmap();
             }
             delete s;
