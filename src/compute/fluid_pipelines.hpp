@@ -32,10 +32,11 @@ public:
     }
 
     static void dispatch(wgpu::raii::ComputePassEncoder& pass, wgpu::raii::ComputePipeline& pipeline,
-                         wgpu::raii::BindGroup& bg, uint32_t W, uint32_t H) {
+                         wgpu::raii::BindGroup& bg, uint32_t workgroupX, uint32_t workgroupY,
+                         uint32_t workgroupZ = 1) {
         pass->setPipeline(*pipeline);
         pass->setBindGroup(0, *bg, 0, nullptr);
-        pass->dispatchWorkgroups(W, H, 1);
+        pass->dispatchWorkgroups(workgroupX, workgroupY, workgroupZ);
     }
 
     wgpu::raii::ComputePipeline inject;

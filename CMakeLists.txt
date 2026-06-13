@@ -23,10 +23,8 @@ file(GLOB_RECURSE SOURCE_FILES "src/*.cpp")
 set(WEBGPU_BACKEND "DAWN" CACHE STRING "WebGPU backend")
 set_property(CACHE WEBGPU_BACKEND PROPERTY STRINGS "DAWN" "WGPU")
 if(WEBGPU_BACKEND STREQUAL "DAWN")
-    set(WEBGPU_CPP_TAG "dawn-7187")
     set(IMGUI_WEBGPU_BACKEND "IMGUI_IMPL_WEBGPU_BACKEND_DAWN")
 elseif(WEBGPU_BACKEND STREQUAL "WGPU")
-    set(WEBGPU_CPP_TAG "wgpu-v24.0.3.1")
     set(IMGUI_WEBGPU_BACKEND "IMGUI_IMPL_WEBGPU_BACKEND_WGPU")
 else()
     message(FATAL_ERROR "Unknown WEBGPU_BACKEND: ${WEBGPU_BACKEND}")
@@ -48,18 +46,11 @@ set(GLFW_INSTALL        OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_WAYLAND  OFF CACHE BOOL "" FORCE)
 set(GLFW_EXPOSE_NATIVE_WAYLAND OFF CACHE BOOL "" FORCE)
 
-# --- WebGPU ---
+# --- webgpu_distribution ---
 FetchContent_Declare(
     webgpu_distribution
     GIT_REPOSITORY https://github.com/eliemichel/WebGPU-distribution.git
     GIT_TAG        v0.3.0-gamma
-    GIT_SHALLOW    ON
-)
-
-FetchContent_Declare(
-    webgpu_cpp
-    GIT_REPOSITORY https://github.com/eliemichel/WebGPU-Cpp.git
-    GIT_TAG        ${WEBGPU_CPP_TAG}
     GIT_SHALLOW    ON
 )
 
@@ -130,7 +121,7 @@ FetchContent_Declare(
     GIT_SHALLOW    ON
 )
 
-FetchContent_MakeAvailable(glfw webgpu_distribution webgpu_cpp imgui glfw3webgpu clip stb nfd zpp_bits sigslot wesl_distribution)
+FetchContent_MakeAvailable(glfw webgpu_distribution imgui glfw3webgpu clip stb nfd zpp_bits sigslot wesl_distribution)
 set_target_properties(glfw webgpu PROPERTIES SYSTEM TRUE)
 
 add_library(imgui STATIC
@@ -167,7 +158,6 @@ include(shaders)
 add_library(fluid_compute INTERFACE)
 target_include_directories(fluid_compute INTERFACE
     ${CMAKE_SOURCE_DIR}
-    ${webgpu_cpp_SOURCE_DIR}
     ${GENERATED_ROOT}
 )
 target_link_libraries(fluid_compute INTERFACE webgpu wesl)
@@ -177,7 +167,6 @@ add_dependencies(fluid_compute wgsl_shaders)
 add_library(fluid_gui INTERFACE)
 target_include_directories(fluid_gui INTERFACE
     ${CMAKE_SOURCE_DIR}
-    ${webgpu_cpp_SOURCE_DIR}
     ${GENERATED_ROOT}
 )
 target_link_libraries(fluid_gui INTERFACE webgpu wesl glfw imgui glfw3webgpu clip stb_headers nfd zpp_bits_headers Pal::Sigslot)

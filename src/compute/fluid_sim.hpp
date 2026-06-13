@@ -204,9 +204,8 @@ public:
             return;
         }
 
-        auto params =
-            std::ranges::to<std::vector>(batch | std::views::filter(&FluidSource::active) |
-                                         std::views::transform([](const auto& s) { return toParams(s); }));
+        auto params = std::ranges::to<std::vector>(batch | std::views::filter(&FluidSource::active) |
+                                                   std::views::transform(toParams));
 
         injectBatch(enc, params);
     }
@@ -335,9 +334,7 @@ private:
         constexpr size_t ITERS = 30;
         static_assert(ITERS % 2 == 0, "pressure iterations must be even");
         for (size_t i = 0; i < ITERS; ++i) {
-            pass->setPipeline(*pipelines.pressure);
-            pass->setBindGroup(0, i % 2 ? *bg_pressure1 : *bg_pressure0, 0, nullptr);
-            pass->dispatchWorkgroups(W, H, 1);
+            pipelines.dispatch(pass, pipelines.pressure, i % 2 ? bg_pressure1 : bg_pressure0, W, H);
         }
     }
 
