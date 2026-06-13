@@ -1,0 +1,65 @@
+{
+    "version": 6,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 28,
+        "patch": 0
+    },
+    "configurePresets": [
+        {
+            "name": "base",
+            "hidden": true,
+            "binaryDir": "${sourceDir}/build/${presetName}"
+        },
+        {
+            "name": "debug",
+            "inherits": "base",
+            "displayName": "Debug",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "release",
+            "inherits": "base",
+            "displayName": "Release",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
+            "name": "release-wgpu",
+            "inherits": "release",
+            "displayName": "Release (WGPU backend)",
+            "cacheVariables": {
+                "WEBGPU_BACKEND": "WGPU"
+            }
+        },
+        {
+            "name": "release-benchmarks",
+            "inherits": "release",
+            "displayName": "Release + Benchmarks",
+            "cacheVariables": {
+                "BUILD_BENCHMARKS": "ON"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "debug",
+            "configurePreset": "debug"
+        },
+        {
+            "name": "release",
+            "configurePreset": "release"
+        },
+        {
+            "name": "release-wgpu",
+            "configurePreset": "release-wgpu"
+        },
+        {
+            "name": "release-benchmarks",
+            "configurePreset": "release-benchmarks"
+        }
+    ]
+}

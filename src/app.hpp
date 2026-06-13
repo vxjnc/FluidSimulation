@@ -4,7 +4,6 @@
 
 #include <GLFW/glfw3.h>
 #include <webgpu/webgpu-raii.hpp>
-#include <webgpu/webgpu.hpp>
 
 #include "src/app_settings.hpp"
 #include "src/capture/screenshot_capture.hpp"
