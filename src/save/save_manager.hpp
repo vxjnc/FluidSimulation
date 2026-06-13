@@ -10,7 +10,6 @@
 #include "src/save/fsim_serializer.hpp"
 
 namespace SaveManager {
-
     inline void save(const std::filesystem::path& path, FluidSim& sim, std::span<const FluidSource> sources,
                      const AppSettings& settings) {
         FsimFile file;

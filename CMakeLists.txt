@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 
 option(BUILD_BENCHMARKS "Build performance benchmarks" OFF)
 
@@ -238,3 +239,9 @@ if(BUILD_BENCHMARKS)
 
     add_subdirectory(benchmarks)
 endif()
+
+file(CREATE_LINK
+    "${CMAKE_BINARY_DIR}/compile_commands.json"
+    "${CMAKE_SOURCE_DIR}/build/compile_commands.json"
+    COPY_ON_ERROR SYMBOLIC
+)
