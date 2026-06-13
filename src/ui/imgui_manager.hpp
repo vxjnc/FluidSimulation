@@ -218,7 +218,11 @@ public:
                     mouse.dx = mouse.dy = 0;
                 }
 
+                ImVec2 origin = ImGui::GetCursorScreenPos();
                 ImGui::Image(viewport.texId, size);
+                if (settings->ui.showSourceOverlay) {
+                    drawSourceOverlay(origin, size, sources);
+                }
             }
         }
         ImGui::End();
@@ -336,6 +340,48 @@ private:
         }
 
         ImGui::EndPopup();
+    }
+
+    void drawSourceOverlay(ImVec2 origin, ImVec2 size, const std::vector<FluidSource>& sources) {
+        ImDrawList* drawList = ImGui::GetWindowDrawList();
+
+        for (const FluidSource& source : sources) {
+            ImVec2 pos{origin.x + source.x * size.x, origin.y + (1.f - source.y) * size.y};
+
+            float alpha = source.active ? 1.0f : 0.35f;
+            ImU32 col = ImGui::ColorConvertFloat4ToU32(
+                ImVec4(source.color[0], source.color[1], source.color[2], alpha));
+
+            ImVec2 dir{source.vx, -source.vy};
+            float speed = std::hypot(dir.x, dir.y);
+            ImVec2 normDir = speed > 1e-6f ? ImVec2{dir.x / speed, dir.y / speed} : ImVec2{1.f, 0.f};
+
+            if (source.form == FluidSource::Form::CIRCLE) {
+                drawList->AddCircle(pos, source.radius * size.y, col, 0, 1.5f);
+            }
+            else {
+                ImVec2 perp{-normDir.y, normDir.x};
+                float halfLen = source.radius * size.y;
+                ImVec2 a{pos.x - perp.x * halfLen, pos.y - perp.y * halfLen};
+                ImVec2 b{pos.x + perp.x * halfLen, pos.y + perp.y * halfLen};
+                drawList->AddLine(a, b, col, 2.5f);
+            }
+
+            drawList->AddCircleFilled(pos, 4.0f, col);
+
+            if (speed > 1e-6f) {
+                constexpr float kMinLen = 0.01f;
+                constexpr float kMaxLen = 0.1f;
+                constexpr float kRefSpeed = 50.0f;
+
+                float t = std::log1p(speed) / std::log1p(kRefSpeed);
+                t = std::clamp(t, 0.f, 1.f);
+                float arrowLen = std::lerp(kMinLen, kMaxLen, t) * size.y;
+
+                ImVec2 end{pos.x + normDir.x * arrowLen, pos.y + normDir.y * arrowLen};
+                drawList->AddLine(pos, end, col, 2.0f);
+            }
+        }
     }
 
     static void ImguiReadLine(ImGuiContext*, ImGuiSettingsHandler* h, void* entry_data, const char* line) {
@@ -462,6 +508,9 @@ private:
             if (std::sscanf(line, "velocityMode=%d", &v) == 1) {
                 self->settings->ui.velocityMode = static_cast<VelocityInputMode>(v);
             }
+            else if (std::sscanf(line, "showSourceOverlay=%d", &v) == 1) {
+                self->settings->ui.showSourceOverlay = (v != 0);
+            }
         }
     }
 
@@ -517,6 +566,7 @@ private:
 
         buf->appendf("[%s][UISettings]\n", type_name);
         buf->appendf("velocityMode=%d\n", static_cast<int>(self->settings->ui.velocityMode));
+        buf->appendf("showSourceOverlay=%d\n", self->settings->ui.showSourceOverlay ? 1 : 0);
         buf->append("\n");
     }
 };

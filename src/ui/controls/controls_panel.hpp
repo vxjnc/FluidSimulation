@@ -21,6 +21,9 @@ public:
         ImGui::Separator();
 
         renderWidget.render(settings.renderSettings);
+
+        ImGui::Checkbox("Show Source Overlay", &settings.ui.showSourceOverlay);
+
         ImGui::Separator();
 
         ImGui::Text("Brush");

@@ -8,4 +8,5 @@ enum class VelocityInputMode : uint8_t {
 
 struct UISettings {
     VelocityInputMode velocityMode = VelocityInputMode::Polar;
+    bool showSourceOverlay = true;
 };
