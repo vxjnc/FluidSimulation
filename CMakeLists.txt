@@ -121,7 +121,15 @@ FetchContent_Declare(
     GIT_SHALLOW    ON
 )
 
-FetchContent_MakeAvailable(glfw webgpu_distribution imgui glfw3webgpu clip stb nfd zpp_bits sigslot wesl_distribution)
+# --- pfr ---
+FetchContent_Declare(
+    pfr
+    GIT_REPOSITORY https://github.com/apolukhin/pfr_non_boost.git
+    GIT_TAG        2.3.2
+    GIT_SHALLOW    ON
+)
+
+FetchContent_MakeAvailable(glfw webgpu_distribution imgui glfw3webgpu clip stb nfd zpp_bits sigslot pfr wesl_distribution)
 set_target_properties(glfw webgpu PROPERTIES SYSTEM TRUE)
 
 add_library(imgui STATIC
@@ -169,7 +177,7 @@ target_include_directories(fluid_gui INTERFACE
     ${CMAKE_SOURCE_DIR}
     ${GENERATED_ROOT}
 )
-target_link_libraries(fluid_gui INTERFACE webgpu wesl glfw imgui glfw3webgpu clip stb_headers nfd zpp_bits_headers Pal::Sigslot)
+target_link_libraries(fluid_gui INTERFACE webgpu wesl glfw imgui glfw3webgpu clip stb_headers nfd zpp_bits_headers Pal::Sigslot pfr)
 add_dependencies(fluid_gui wgsl_shaders)
 
 # --- Executable ---

@@ -227,7 +227,7 @@ private:
         }
 
         if (ImGui::IsKeyPressed(ImGuiKey_LeftAlt) || ImGui::IsKeyPressed(ImGuiKey_RightAlt)) {
-            imguiManager.menuBarVisible = !imguiManager.menuBarVisible;
+            settings.ui.menuBarVisible = !settings.ui.menuBarVisible;
         }
 
         if (ImGui::IsKeyPressed(ImGuiKey_F12)) {

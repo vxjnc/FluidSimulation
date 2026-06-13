@@ -30,4 +30,6 @@ struct AppSettings {
     SplatSettings splatSettings;
 
     UISettings ui;
+
+    bool dockInitialized = false;
 };

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <type_traits>
+
 #include <sigslot/signal.hpp>
 
 template <typename T> struct Observable {
@@ -24,3 +26,9 @@ template <typename T> struct Observable {
 private:
     T value{};
 };
+
+template <typename T> struct is_observable : std::false_type {};
+template <typename T> struct is_observable<Observable<T>> : std::true_type {
+    using inner_type = T;
+};
+template <typename T> constexpr bool is_observable_v = is_observable<T>::value;
