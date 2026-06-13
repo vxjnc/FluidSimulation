@@ -43,6 +43,7 @@ public:
                     sim.state.dye_width * sim.state.dye_height);
 
         ImGui::Separator();
+
         ProcessStats::Stats processStats = ProcessStats::Monitor::sample();
         ImGui::Text("CPU: %.1f%%", processStats.cpuPercent);
         ImGui::Text("Memory: %.3f MB", static_cast<float>(processStats.rssBytes) / 1024.f / 1024.f);

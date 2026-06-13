@@ -12,6 +12,7 @@
 #include <stb_image_resize2.h>
 #include <webgpu/webgpu.hpp>
 
+#include "generated/version.h"
 #include "src/app_settings.hpp"
 #include "src/compute/fluid_sim.hpp"
 #include "src/ui/controls/controls_panel.hpp"
@@ -138,6 +139,7 @@ public:
         }
 
         renderSettingsModal();
+        renderAboutModal();
 
         if (visibility.stats) {
             statsPanel.render(visibility.stats, sim, render, uiProfiler);
@@ -290,6 +292,10 @@ private:
             if (ImGui::MenuItem("Settings")) {
                 settings->ui.settingsOpen = true;
             }
+
+            if (ImGui::MenuItem("About")) {
+                settings->ui.aboutOpen = true;
+            }
             ImGui::EndMenu();
         }
 
@@ -338,6 +344,45 @@ private:
             }
             ImGui::EndTabBar();
         }
+
+        ImGui::EndPopup();
+    }
+
+    void renderAboutModal() {
+        if (settings->ui.aboutOpen) {
+            ImGui::OpenPopup("About");
+        }
+
+        ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+        ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+
+        if (!ImGui::BeginPopupModal("About", &settings->ui.aboutOpen, ImGuiWindowFlags_AlwaysAutoResize)) {
+            return;
+        }
+
+        ImGui::Text("FluidSimulation");
+
+        ImGui::Separator();
+
+        ImGui::Text("Version: %s", APP_VERSION_STRING.data());
+
+#if defined(IMGUI_IMPL_WEBGPU_BACKEND_DAWN)
+        ImGui::Text("WebGPU backend: Dawn");
+#elif defined(IMGUI_IMPL_WEBGPU_BACKEND_WGPU)
+        ImGui::Text("WebGPU backend: wgpu-native");
+#endif
+
+#ifdef NDEBUG
+        ImGui::Text("Build type: Release");
+#else
+        ImGui::Text("Build type: Debug");
+#endif
+
+        ImGui::Separator();
+
+        ImGui::Text("Repository:");
+        ImGui::SameLine();
+        ImGui::TextLinkOpenURL("https://github.com/vxjnc/FluidSimulation");
 
         ImGui::EndPopup();
     }

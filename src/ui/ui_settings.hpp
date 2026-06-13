@@ -12,5 +12,6 @@ struct UISettings {
 
     bool menuBarVisible = true;
     bool settingsOpen = false;
+    bool aboutOpen = false;
     bool dockInitialized = false;
 };

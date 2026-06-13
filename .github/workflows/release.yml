@@ -23,7 +23,7 @@ jobs:
         run: sudo apt-get install -y gcc-14 g++-14 libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libgl1-mesa-dev libdbus-1-dev libpng-dev
 
       - name: Configure CMake
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14 -DAPP_VERSION=${{ github.ref_name }}
 
       - name: Build
         run: cmake --build build -j$(nproc)
@@ -57,7 +57,7 @@ jobs:
         run: vcpkg install zlib
 
       - name: Configure CMake
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="C:/vcpkg/scripts/buildsystems/vcpkg.cmake" -DAPP_VERSION=${{ github.ref_name }}
 
       - name: Build
         run: cmake --build build --config Release

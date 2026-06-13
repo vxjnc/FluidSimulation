@@ -161,6 +161,7 @@ set(GENERATED_ROOT "${CMAKE_BINARY_DIR}/gen_includes")
 set(GENERATED_DIR  "${GENERATED_ROOT}/generated")
 
 include(shaders)
+include(version)
 
 # --- fluid_compute ---
 add_library(fluid_compute INTERFACE)

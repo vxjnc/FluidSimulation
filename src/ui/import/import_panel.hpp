@@ -1,6 +1,8 @@
 #pragma once
+#include <algorithm>
 #include <cstdint>
 #include <filesystem>
+#include <ranges>
 #include <vector>
 
 #include <imgui.h>
@@ -84,9 +86,7 @@ private:
         imgH_ = static_cast<uint32_t>(h);
 
         pixels_.resize(imgW_ * imgH_ * 4);
-        for (size_t i = 0; i < pixels_.size(); ++i) {
-            pixels_[i] = static_cast<float>(data[i]) / 255.f;
-        }
+        std::transform(data, data + pixels_.size(), pixels_.begin(), [](stbi_uc p) { return p / 255.f; });
 
         stbi_image_free(data);
 
@@ -105,10 +105,8 @@ private:
         previewView_ = previewTex_->createView();
         previewTexId_ = reinterpret_cast<ImTextureID>(static_cast<WGPUTextureView>(*previewView_));
 
-        std::vector<std::byte> raw(imgW_ * imgH_ * 4);
-        for (size_t i = 0; i < raw.size(); ++i) {
-            raw[i] = static_cast<std::byte>(pixels_[i] * 255.f);
-        }
+        auto raw = std::ranges::to<std::vector>(
+            pixels_ | std::views::transform([](float p) { return static_cast<std::byte>(p * 255.f); }));
 
         wgpu::TexelCopyTextureInfo dst{};
         dst.texture = *previewTex_;
