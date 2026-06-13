@@ -235,6 +235,8 @@ private:
         }
 
         if (settings.paused && ImGui::IsKeyPressed(ImGuiKey_RightArrow)) {
+            frameSources = sources;
+
             settings.paused = false;
             update(enc, frameSources);
             settings.paused = true;
