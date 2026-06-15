@@ -22,6 +22,7 @@
 #include "src/ui/import/import_panel.hpp"
 #include "src/ui/random_splat/splat_panel.hpp"
 #include "src/ui/stats/stats_panel.hpp"
+#include "src/ui/widgets/common.hpp"
 #include "src/utils/image_processor.hpp"
 #include "src/wgpu_context.hpp"
 
@@ -39,7 +40,7 @@ struct PanelVisibility {
     bool controls = true;
     bool randomSplat = false;
     bool import = false;
-    bool stats = true;
+    Observable<bool> stats = true;
 };
 
 class ImGuiManager {
@@ -303,7 +304,7 @@ private:
             ImGui::MenuItem("Controls", nullptr, &visibility.controls);
             ImGui::MenuItem("Random Splat", nullptr, &visibility.randomSplat);
             ImGui::MenuItem("Import", nullptr, &visibility.import);
-            ImGui::MenuItem("Stats", nullptr, &visibility.stats);
+            Widgets::MenuItem("Stats", nullptr, visibility.stats);
             ImGui::Separator();
             if (ImGui::MenuItem("Reset Layout")) {
                 settings->ui.dockInitialized = false;

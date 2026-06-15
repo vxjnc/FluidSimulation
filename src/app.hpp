@@ -66,6 +66,13 @@ public:
 
         settings.curlStrength.onChange.connect(&FluidSim::setCurlStrength, &simulation);
         settings.curlStrength.onChange(static_cast<float>(settings.curlStrength));
+
+        imguiManager.visibility.stats.onChange.connect([&](bool visible) {
+            simulation.profiler.enabled = visible;
+            renderer.profiler.enabled = visible;
+            uiProfiler.enabled = visible;
+        });
+        imguiManager.visibility.stats.onChange(static_cast<bool>(imguiManager.visibility.stats));
     };
 
     ~Application() {

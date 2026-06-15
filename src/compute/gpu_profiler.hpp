@@ -35,14 +35,14 @@ public:
     bool isSupported() const { return supported_; }
 
     template <typename PassEncoder> void writeBegin(PassEncoder& pass) {
-        if (!supported_ || state_->pending) {
+        if (!supported_ || !enabled || state_->pending) {
             return;
         }
         pass->writeTimestamp(*querySet_, 0);
     }
 
     template <typename PassEncoder> void writeEnd(PassEncoder& pass) {
-        if (!supported_ || state_->pending) {
+        if (!supported_ || !enabled || state_->pending) {
             return;
         }
         pass->writeTimestamp(*querySet_, 1);
@@ -50,7 +50,7 @@ public:
     }
 
     void resolve(wgpu::raii::CommandEncoder& enc) {
-        if (!supported_ || !wantsResolve_) {
+        if (!supported_ || !enabled || !wantsResolve_) {
             return;
         }
         enc->resolveQuerySet(*querySet_, 0, 2, *resolveBuffer_, 0);
@@ -59,7 +59,7 @@ public:
     }
 
     void requestReadback() {
-        if (!supported_ || !state_->pending) {
+        if (!supported_ || !enabled || !state_->pending) {
             return;
         }
 
@@ -88,7 +88,7 @@ public:
     }
 
     size_t readSync(wgpu::Device device) {
-        if (!supported_ || !state_->pending) {
+        if (!supported_ || !enabled || !state_->pending) {
             return 0;
         }
 
@@ -113,6 +113,8 @@ public:
         state_->pending = false;
         return result;
     }
+
+    bool enabled = true;
 
 private:
     struct SharedState {

@@ -14,21 +14,30 @@ public:
         ImGui::Text("FPS: %.1f", io.Framerate);
         ImGui::Text("Frame time: %.3f ms", 1000.0 / static_cast<double>(io.Framerate));
 
-        if (auto stats = sim.profiler.getStats()) {
+        if (!sim.profiler.enabled) {
+            ImGui::TextDisabled("GPU timing not enabled");
+        }
+        else if (auto stats = sim.profiler.getStats()) {
             ImGui::Text("Physics (GPU): %.3f ms", stats->avgNs / 1e6);
         }
         else {
             ImGui::TextDisabled("GPU timing not supported");
         }
 
-        if (auto stats = render.profiler.getStats()) {
+        if (!render.profiler.enabled) {
+            ImGui::TextDisabled("GPU timing not enabled");
+        }
+        else if (auto stats = render.profiler.getStats()) {
             ImGui::Text("Render (GPU): %.3f ms", stats->avgNs / 1e6);
         }
         else {
             ImGui::TextDisabled("GPU timing not supported");
         }
 
-        if (auto stats = uiProfiler.getStats()) {
+        if (!uiProfiler.enabled) {
+            ImGui::TextDisabled("GPU timing not enabled");
+        }
+        else if (auto stats = uiProfiler.getStats()) {
             ImGui::Text("Render UI (GPU): %.3f ms", stats->avgNs / 1e6);
         }
         else {
