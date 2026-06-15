@@ -21,6 +21,7 @@ endif()
 file(GLOB_RECURSE SOURCE_FILES "src/*.cpp")
 
 set(WEBGPU_BACKEND "DAWN" CACHE STRING "WebGPU backend")
+set(WGPU_LINK_TYPE "STATIC" CACHE STRING "Link webgpu statically" FORCE)
 set_property(CACHE WEBGPU_BACKEND PROPERTY STRINGS "DAWN" "WGPU")
 if(WEBGPU_BACKEND STREQUAL "DAWN")
     set(IMGUI_WEBGPU_BACKEND "IMGUI_IMPL_WEBGPU_BACKEND_DAWN")
@@ -188,8 +189,6 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     fluid_compute
     fluid_gui
 )
-
-target_copy_webgpu_binaries(${PROJECT_NAME})
 
 if(NOT MSVC AND NOT DEFINED ENV{CI})
     target_compile_options(${PROJECT_NAME} PRIVATE
