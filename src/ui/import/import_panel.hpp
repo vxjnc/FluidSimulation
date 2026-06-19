@@ -1,18 +1,10 @@
 #pragma once
-#include <algorithm>
 #include <cstdint>
-#include <filesystem>
-#include <ranges>
+#include <span>
 #include <vector>
 
 #include <imgui.h>
-#include <nfd.hpp>
-#include <stb_image.h>
 #include <webgpu/webgpu-raii.hpp>
-#include <webgpu/webgpu.hpp>
-
-#include "src/compute/wgpu_helper.hpp"
-#include "src/wgpu_context.hpp"
 
 class ImportPanel {
 public:
@@ -30,34 +22,7 @@ public:
         return render(std::span<const Action, N>(actions), open);
     }
 
-    void render(std::span<const Action> actions, bool& open) {
-        ImGui::Begin("Import", &open);
-
-        if (ImGui::Button("Load Image...")) {
-            openDialog();
-        }
-
-        if (loaded_) {
-            ImGui::SameLine();
-            ImGui::Text("%ux%u", imgW_, imgH_);
-
-            float panelW = ImGui::GetContentRegionAvail().x;
-            float aspect = static_cast<float>(imgH_) / static_cast<float>(imgW_);
-            ImGui::Image(previewTexId_, ImVec2(panelW, panelW * aspect));
-
-            ImGui::Separator();
-
-            ImGui::TextUnformatted("Apply to:");
-            for (const auto& action : actions) {
-                if (ImGui::Button(action.label.data(), ImVec2(-1, 0))) {
-                    LoadedImage img{pixels_, imgW_, imgH_};
-                    action.callback(img);
-                }
-            }
-        }
-
-        ImGui::End();
-    }
+    void render(std::span<const Action> actions, bool& open);
 
 private:
     bool loaded_ = false;
@@ -67,54 +32,7 @@ private:
     wgpu::raii::TextureView previewView_;
     ImTextureID previewTexId_ = ImTextureID_Invalid;
 
-    void openDialog() {
-        std::string cwd = std::filesystem::current_path().string();
+    void openDialog();
 
-        NFD::UniquePath outPath;
-        nfdu8filteritem_t filters[] = {{"Images", "png,jpg,jpeg,bmp,tga,hdr"}};
-        if (NFD::OpenDialog(outPath, filters, 1, cwd.c_str()) != NFD_OKAY) {
-            return;
-        }
-
-        int w, h, channels;
-        stbi_uc* data = stbi_load(outPath.get(), &w, &h, &channels, 4);
-        if (!data) {
-            return;
-        }
-
-        imgW_ = static_cast<uint32_t>(w);
-        imgH_ = static_cast<uint32_t>(h);
-
-        pixels_.resize(imgW_ * imgH_ * 4);
-        std::transform(data, data + pixels_.size(), pixels_.begin(), [](stbi_uc p) { return p / 255.f; });
-
-        stbi_image_free(data);
-
-        uploadPreview();
-        loaded_ = true;
-    }
-
-    void uploadPreview() {
-        WGPUContext& ctx = WGPUContext::instance();
-        wgpu::Device device = ctx.device();
-
-        wgpu::Extent3D size = {imgW_, imgH_, 1};
-        previewTex_ = WGPUHelper::makeTexture(
-            device, size, wgpu::TextureFormat::RGBA8Unorm,
-            wgpu::TextureUsage::CopyDst | wgpu::TextureUsage::TextureBinding, "PreviewTex");
-        previewView_ = previewTex_->createView();
-        previewTexId_ = reinterpret_cast<ImTextureID>(static_cast<WGPUTextureView>(*previewView_));
-
-        auto raw = std::ranges::to<std::vector>(
-            pixels_ | std::views::transform([](float p) { return static_cast<std::byte>(p * 255.f); }));
-
-        wgpu::TexelCopyTextureInfo dst{};
-        dst.texture = *previewTex_;
-
-        wgpu::TexelCopyBufferLayout layout{};
-        layout.bytesPerRow = imgW_ * 4;
-        layout.rowsPerImage = imgH_;
-
-        ctx.queue().writeTexture(dst, raw.data(), raw.size(), layout, size);
-    }
+    void uploadPreview();
 };

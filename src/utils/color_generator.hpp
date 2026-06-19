@@ -5,7 +5,13 @@
 #include <random>
 
 namespace ColorUtils {
-    inline std::array<float, 3> hsvToRgb(float h, float s, float v) {
+    constexpr inline std::byte srgbToLinear(std::byte b) {
+        float x = static_cast<float>(b) / 255.f;
+        float l = x <= 0.04045f ? x / 12.92f : std::pow((x + 0.055f) / 1.055f, 2.4f);
+        return static_cast<std::byte>(l * 255.f + 0.5f);
+    };
+
+    constexpr inline std::array<float, 3> hsvToRgb(float h, float s, float v) {
         if (s == 0.f) {
             return {v, v, v};
         }

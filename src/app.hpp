@@ -3,6 +3,7 @@
 #include <vector>
 
 #include <GLFW/glfw3.h>
+#include <nfd.hpp>
 #include <webgpu/webgpu-raii.hpp>
 
 #include "src/app_settings.hpp"
