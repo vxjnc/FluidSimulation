@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <ranges>
 #include <vector>
 
 #include <GLFW/glfw3.h>
