@@ -217,6 +217,10 @@ void ImGuiManager::renderMenuBar() {
             onScreenshotClipboard();
         }
 
+        if (ImGui::MenuItem("Exit", "Alt+F4")) {
+            exit(0);
+        }
+
         ImGui::EndMenu();
     }
 
