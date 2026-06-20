@@ -1,13 +1,12 @@
 #include "import_panel.hpp"
 
 #include <algorithm>
-#include <filesystem>
 #include <ranges>
 
-#include <nfd.hpp>
 #include <stb_image.h>
 
 #include "src/compute/wgpu_helper.hpp"
+#include "src/utils/file_dialog.hpp"
 #include "src/wgpu_context.hpp"
 
 void ImportPanel::render(std::span<const Action> actions, bool& open) {
@@ -40,30 +39,25 @@ void ImportPanel::render(std::span<const Action> actions, bool& open) {
 }
 
 void ImportPanel::openDialog() {
-    std::string cwd = std::filesystem::current_path().string();
-
-    NFD::UniquePath outPath;
     nfdu8filteritem_t filters[] = {{"Images", "png,jpg,jpeg,bmp,tga,hdr"}};
-    if (NFD::OpenDialog(outPath, filters, 1, cwd.c_str()) != NFD_OKAY) {
-        return;
-    }
+    FileDialog::Open(filters, [this](const char* outPath) {
+        int w, h, channels;
+        stbi_uc* data = stbi_load(outPath, &w, &h, &channels, 4);
+        if (!data) {
+            return;
+        }
 
-    int w, h, channels;
-    stbi_uc* data = stbi_load(outPath.get(), &w, &h, &channels, 4);
-    if (!data) {
-        return;
-    }
+        imgW_ = static_cast<uint32_t>(w);
+        imgH_ = static_cast<uint32_t>(h);
 
-    imgW_ = static_cast<uint32_t>(w);
-    imgH_ = static_cast<uint32_t>(h);
+        pixels_.resize(imgW_ * imgH_ * 4);
+        std::transform(data, data + pixels_.size(), pixels_.begin(), [](stbi_uc p) { return p / 255.f; });
 
-    pixels_.resize(imgW_ * imgH_ * 4);
-    std::transform(data, data + pixels_.size(), pixels_.begin(), [](stbi_uc p) { return p / 255.f; });
+        stbi_image_free(data);
 
-    stbi_image_free(data);
-
-    uploadPreview();
-    loaded_ = true;
+        uploadPreview();
+        loaded_ = true;
+    });
 }
 
 void ImportPanel::uploadPreview() {

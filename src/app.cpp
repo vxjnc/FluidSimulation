@@ -4,6 +4,7 @@
 
 #include "src/capture/screenshot_capture.hpp"
 #include "src/utils/color_generator.hpp"
+#include "src/utils/file_dialog.hpp"
 #include "src/utils/process_stats.hpp"
 
 Application::Application(uint32_t width, uint32_t height, std::string_view title) {
@@ -177,20 +178,12 @@ void Application::processInput(wgpu::raii::CommandEncoder& enc, std::vector<Flui
     ImGuiIO& io = ImGui::GetIO();
     bool ctrlPressed = io.KeyCtrl;
     if (ctrlPressed && ImGui::IsKeyPressed(ImGuiKey_S, false)) {
-        std::string cwd = std::filesystem::current_path().string();
-        NFD::UniquePath outPath;
         nfdu8filteritem_t filters[] = {{"Fluid Simulation", "fsim"}};
-        if (NFD::SaveDialog(outPath, filters, 1, cwd.c_str(), "simulation.fsim") == NFD_OKAY) {
-            imguiManager.onSaveRequested(outPath.get());
-        }
+        FileDialog::Save("simulation.fsim", filters, imguiManager.onSaveRequested);
     }
     if (ctrlPressed && ImGui::IsKeyPressed(ImGuiKey_O, false)) {
-        std::string cwd = std::filesystem::current_path().string();
-        NFD::UniquePath outPath;
         nfdu8filteritem_t filters[] = {{"Fluid Simulation", "fsim"}};
-        if (NFD::OpenDialog(outPath, filters, 1, cwd.c_str()) == NFD_OKAY) {
-            imguiManager.onLoadRequested(outPath.get());
-        }
+        FileDialog::Open(filters, imguiManager.onLoadRequested);
     }
     if (ImGui::IsKeyPressed(ImGuiKey_Space)) {
         settings.paused = !settings.paused;

@@ -1,13 +1,11 @@
 #include "imgui_manager.hpp"
 
 #include <array>
-#include <filesystem>
-
-#include <nfd.hpp>
 
 #include "generated/version.h"
 #include "src/ui/imgui_style.hpp"
 #include "src/ui/widgets/common.hpp"
+#include "src/utils/file_dialog.hpp"
 #include "src/utils/image_processor.hpp"
 #include "src/wgpu_context.hpp"
 
@@ -189,29 +187,17 @@ void ImGuiManager::renderMenuBar() {
 
     if (ImGui::BeginMenu("File")) {
         if (ImGui::MenuItem("Save Simulation...", "Ctrl+S")) {
-            std::string cwd = std::filesystem::current_path().string();
-            NFD::UniquePath outPath;
             nfdu8filteritem_t filters[] = {{"Fluid Simulation", "fsim"}};
-            if (NFD::SaveDialog(outPath, filters, 1, cwd.c_str(), "simulation.fsim") == NFD_OKAY) {
-                onSaveRequested(outPath.get());
-            }
+            FileDialog::Save("simulation.fsim", filters, onSaveRequested);
         }
         if (ImGui::MenuItem("Open Simulation...", "Ctrl+O")) {
-            std::string cwd = std::filesystem::current_path().string();
-            NFD::UniquePath outPath;
             nfdu8filteritem_t filters[] = {{"Fluid Simulation", "fsim"}};
-            if (NFD::OpenDialog(outPath, filters, 1, cwd.c_str()) == NFD_OKAY) {
-                onLoadRequested(outPath.get());
-            }
+            FileDialog::Open(filters, onLoadRequested);
         }
 
         if (ImGui::MenuItem("Save Screenshot")) {
-            std::string cwd = std::filesystem::current_path().string();
-            NFD::UniquePath outPath;
             nfdu8filteritem_t filters[] = {{"PNG Image", "png"}};
-            if (NFD::SaveDialog(outPath, filters, 1, cwd.c_str(), "screenshot.png") == NFD_OKAY) {
-                onScreenshotFile(outPath.get());
-            }
+            FileDialog::Save("screenshot.png", filters, onScreenshotFile);
         }
         if (ImGui::MenuItem("Copy to Clipboard", "F12")) {
             onScreenshotClipboard();

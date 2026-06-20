@@ -39,7 +39,7 @@ private:
     GpuProfiler<> uiProfiler;
 
     GLFWwindow* window = nullptr;
-    NFD::Guard nfdGuard;
+    [[maybe_unused]] NFD::Guard nfdGuard;
 
     AppSettings settings;
 
