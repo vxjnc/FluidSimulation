@@ -54,7 +54,7 @@ FsimFile FsimSerializer::load(const std::filesystem::path& path) {
 
     uint32_t version;
     f.read(reinterpret_cast<char*>(&version), sizeof(version));
-    if (version != FsimFile::kVersion) {
+    if (version > FsimFile::kVersion) {
         throw std::runtime_error("Unsupported .fsim version");
     }
 

@@ -24,6 +24,8 @@ public:
 private:
     void initPipeline();
 
+    RenderParams lastParams{};
+
     wgpu::raii::BindGroupLayout bindGroupLayout;
     wgpu::raii::RenderPipeline pipeline;
     wgpu::raii::Buffer paramsBuffer;

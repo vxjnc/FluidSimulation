@@ -1,5 +1,7 @@
 #include "render.hpp"
 
+#include <cstring>
+
 #include <webgpu/webgpu-raii.hpp>
 
 #include "generated/shaders/shader.wgsl.h"
@@ -42,7 +44,11 @@ void Render::draw(wgpu::raii::CommandEncoder& enc, const wgpu::raii::TextureView
         static_cast<uint32_t>(settings.mode),
         settings.showObstacles,
     };
-    ctx.queue().writeBuffer(*paramsBuffer, 0, &p, sizeof(p));
+
+    if (std::memcmp(&p, &lastParams, sizeof(RenderParams)) != 0) {
+        ctx.queue().writeBuffer(*paramsBuffer, 0, &p, sizeof(p));
+        lastParams = p;
+    }
 
     wgpu::raii::BindGroup bindGroup = WGPUHelper::makeBindGroup(ctx.device(), pipeline,
                                                                 {
