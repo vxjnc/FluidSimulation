@@ -3,6 +3,7 @@
 #include <array>
 
 #include "generated/version.h"
+#include "src/scripting/engine.hpp"
 #include "src/ui/imgui_style.hpp"
 #include "src/ui/widgets/common.hpp"
 #include "src/utils/file_dialog.hpp"
@@ -90,6 +91,9 @@ void ImGuiManager::renderUI(FluidViewport& viewport, MouseState& mouse, FluidSim
     }
     if (visibility.controls) {
         controlsPanel.render(visibility.controls, viewport, sim, *settings, sources);
+    }
+    if (visibility.script) {
+        scriptPanel.render(visibility.script);
     }
     if (visibility.randomSplat) {
         splatPanel.render(visibility.randomSplat, settings->splatSettings, settings->ui.velocityMode);
@@ -226,6 +230,8 @@ void ImGuiManager::renderMenuBar() {
         ImGui::MenuItem("Random Splat", nullptr, &visibility.randomSplat);
         ImGui::MenuItem("Import", nullptr, &visibility.import);
         Widgets::MenuItem("Stats", nullptr, visibility.stats);
+        ImGui::MenuItem("Script", nullptr, &visibility.script);
+
         ImGui::Separator();
         if (ImGui::MenuItem("Reset Layout")) {
             settings->ui.dockInitialized = false;

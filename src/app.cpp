@@ -3,6 +3,7 @@
 #include <ranges>
 
 #include "src/capture/screenshot_capture.hpp"
+#include "src/scripting/engine.hpp"
 #include "src/utils/color_generator.hpp"
 #include "src/utils/file_dialog.hpp"
 #include "src/utils/process_stats.hpp"
@@ -21,6 +22,7 @@ Application::Application(uint32_t width, uint32_t height, std::string_view title
     }
 
     ProcessStats::Monitor::start();
+    scripting::init();
 
     WGPUContext& ctx = WGPUContext::instance();
     ctx.init(window, width, height);
@@ -63,6 +65,7 @@ Application::Application(uint32_t width, uint32_t height, std::string_view title
 };
 
 Application::~Application() {
+    scripting::shutdown();
     ProcessStats::Monitor::stop();
     glfwDestroyWindow(window);
     glfwTerminate();

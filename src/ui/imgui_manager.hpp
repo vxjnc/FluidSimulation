@@ -16,6 +16,7 @@
 #include "src/ui/imgui_serialization.hpp"
 #include "src/ui/import/import_panel.hpp"
 #include "src/ui/random_splat/splat_panel.hpp"
+#include "src/ui/script/script_panel.hpp"
 #include "src/ui/stats/stats_panel.hpp"
 
 enum class ImportTarget : uint8_t { Dye, Velocity, Obstacles };
@@ -32,6 +33,7 @@ struct PanelVisibility {
     bool controls = true;
     bool randomSplat = false;
     bool import = false;
+    bool script = false;
     Observable<bool> stats = true;
 };
 
@@ -73,6 +75,7 @@ public:
     SplatPanel splatPanel;
     ImportPanel importPanel;
     StatsPanel statsPanel;
+    ScriptPanel scriptPanel;
 
 private:
     AppSettings* settings;

@@ -9,7 +9,8 @@
 #include "src/utils/observable.hpp"
 #include "src/utils/string_escaping.hpp"
 
-struct ImguiSerialization {
+class ImguiSerialization {
+public:
     template <typename T> static constexpr bool readField(const char* line, const char* name, T& out) {
         char fmt[64];
         if constexpr (is_observable_v<T>) {

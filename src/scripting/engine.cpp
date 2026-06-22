@@ -4,17 +4,22 @@
 
 #include <string>
 
+#include <Python.h>
 #include <dlfcn.h>
 
 namespace scripting {
-
     static bool g_available = false;
     static void* g_lib = nullptr;
+    static std::function<void(const std::string&)> g_output_handler;
 
     static void (*s_Py_Initialize)() = nullptr;
     static void (*s_Py_Finalize)() = nullptr;
     static int (*s_PyRun_SimpleString)(const char*) = nullptr;
     static const char* (*s_Py_GetVersion)() = nullptr;
+    static int (*s_PyImport_AppendInittab)(const char*, PyObject* (*)()) = nullptr;
+    static int (*s_PyArg_ParseTuple)(PyObject*, const char*, ...) = nullptr;
+    static PyObject* (*s_PyModule_Create2)(PyModuleDef*, int) = nullptr;
+    static PyObject* s_Py_None = nullptr;
 
     static std::string popen_result(const std::string& cmd) {
         FILE* pipe = popen(cmd.c_str(), "r");
@@ -55,6 +60,27 @@ namespace scripting {
         return true;
     }
 
+    void set_output_handler(std::function<void(std::string_view)> handler) {
+        g_output_handler = std::move(handler);
+    }
+
+    static PyObject* init_fluidsim_io() {
+        static PyMethodDef methods[] = {{"output",
+                                         [](PyObject*, PyObject* args) -> PyObject* {
+                                             const char* text = nullptr;
+                                             if (s_PyArg_ParseTuple(args, "s", &text) && text &&
+                                                 g_output_handler) {
+                                                 g_output_handler(text);
+                                             }
+                                             s_Py_None->ob_refcnt++;
+                                             return s_Py_None;
+                                         },
+                                         METH_VARARGS, nullptr},
+                                        {nullptr, nullptr, 0, nullptr}};
+        static PyModuleDef def = {
+            PyModuleDef_HEAD_INIT, "_fluidsim_io", nullptr, -1, methods, nullptr, nullptr, nullptr, nullptr};
+        return s_PyModule_Create2(&def, PYTHON_API_VERSION);
+    }
     bool init() {
         std::string python_exe = find_python_exe();
         if (python_exe.empty()) {
@@ -76,7 +102,11 @@ namespace scripting {
         if (!resolve(g_lib, "Py_Initialize", s_Py_Initialize) ||
             !resolve(g_lib, "Py_Finalize", s_Py_Finalize) ||
             !resolve(g_lib, "PyRun_SimpleString", s_PyRun_SimpleString) ||
-            !resolve(g_lib, "Py_GetVersion", s_Py_GetVersion)) {
+            !resolve(g_lib, "Py_GetVersion", s_Py_GetVersion) ||
+            !resolve(g_lib, "PyImport_AppendInittab", s_PyImport_AppendInittab) ||
+            !resolve(g_lib, "PyArg_ParseTuple", s_PyArg_ParseTuple) ||
+            !resolve(g_lib, "PyModule_Create2", s_PyModule_Create2) ||
+            !resolve(g_lib, "_Py_NoneStruct", s_Py_None)) {
             dlclose(g_lib);
             g_lib = nullptr;
             return false;
@@ -86,7 +116,15 @@ namespace scripting {
             setenv("PYTHONHOME", prefix.c_str(), 1);
         }
 
+        s_PyImport_AppendInittab("_fluidsim_io", init_fluidsim_io);
+
         s_Py_Initialize();
+
+        s_PyRun_SimpleString("import sys, _fluidsim_io\n"
+                             "class _Capture:\n"
+                             "    def write(self, text): _fluidsim_io.output(text)\n"
+                             "    def flush(self): pass\n"
+                             "sys.stdout = sys.stderr = _Capture()\n");
         g_available = true;
         return true;
     }
@@ -115,7 +153,11 @@ namespace scripting {
 
 #else
 
+#include <functional>
+#include <string>
+
 namespace scripting {
+    void set_output_handler(std::function<void(std::string_view)>) {}
     bool init() { return false; }
     void shutdown() {}
     bool is_available() { return false; }
