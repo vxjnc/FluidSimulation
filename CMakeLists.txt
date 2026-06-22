@@ -130,8 +130,17 @@ FetchContent_Declare(
     GIT_SHALLOW    ON
 )
 
-FetchContent_MakeAvailable(glfw webgpu_distribution imgui glfw3webgpu clip stb nfd zpp_bits sigslot pfr wesl_distribution)
+# --- nanobind ---
+FetchContent_Declare(
+    nanobind
+    GIT_REPOSITORY https://github.com/wjakob/nanobind.git
+    GIT_TAG        v2.12.0
+    GIT_SHALLOW    ON
+)
+
+FetchContent_MakeAvailable(glfw webgpu_distribution imgui glfw3webgpu clip stb nfd zpp_bits sigslot pfr wesl_distribution nanobind)
 set_target_properties(glfw webgpu PROPERTIES SYSTEM TRUE)
+find_package(Python 3.10 COMPONENTS Interpreter Development.Embed QUIET)
 
 add_library(imgui STATIC
     ${imgui_SOURCE_DIR}/imgui.cpp
@@ -220,6 +229,30 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
     BUILD_RPATH "$ORIGIN"
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}"
 )
+
+
+if(Python_FOUND)
+    message(STATUS "Python ${Python_VERSION} found at ${Python_EXECUTABLE} - scripting enabled")
+    target_sources(${PROJECT_NAME} PRIVATE
+        src/scripting/engine.cpp
+        src/scripting/bindings.cpp
+    )
+
+    target_include_directories(${PROJECT_NAME} PRIVATE ${Python_INCLUDE_DIRS})
+    target_include_directories(${PROJECT_NAME} PRIVATE
+        ${nanobind_SOURCE_DIR}/include
+        ${nanobind_SOURCE_DIR}/ext/robin_map/include
+    )
+    target_compile_definitions(${PROJECT_NAME} PRIVATE SCRIPTING_AVAILABLE)
+
+    if(APPLE)
+        target_link_options(${PROJECT_NAME} PRIVATE -undefined dynamic_lookup)
+    elseif(UNIX)
+    endif()
+else()
+    message(STATUS "Python not found - scripting disabled (engine.cpp stub only)")
+    target_sources(${PROJECT_NAME} PRIVATE src/scripting/engine.cpp)
+endif()
 
 # --- Google Benchmark ---
 if(BUILD_BENCHMARKS)
