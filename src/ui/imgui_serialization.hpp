@@ -7,9 +7,9 @@
 #include <pfr.hpp>
 
 #include "src/utils/observable.hpp"
+#include "src/utils/string_escaping.hpp"
 
-class ImguiSerialization {
-public:
+struct ImguiSerialization {
     template <typename T> static constexpr bool readField(const char* line, const char* name, T& out) {
         char fmt[64];
         if constexpr (is_observable_v<T>) {
@@ -50,6 +50,14 @@ public:
             }
             return false;
         }
+        else if constexpr (std::is_same_v<T, std::string>) {
+            size_t len = std::strlen(name);
+            if (std::strncmp(line, name, len) == 0 && line[len] == '=') {
+                out = StringEscaping::decodeString(line + len + 1);
+                return true;
+            }
+            return false;
+        }
         else {
             return false;
         }
@@ -84,6 +92,9 @@ public:
         }
         else if constexpr (std::is_enum_v<T>) {
             buf->appendf("%s=%d\n", name, static_cast<int>(value));
+        }
+        else if constexpr (std::is_same_v<T, std::string>) {
+            buf->appendf("%s=%s\n", name, StringEscaping::encodeString(value).c_str());
         }
     };
     template <typename Obj>
