@@ -179,7 +179,7 @@ void Application::processInput(wgpu::raii::CommandEncoder& enc, std::vector<Flui
 
     ImGuiIO& io = ImGui::GetIO();
 
-    if (!io.WantCaptureKeyboard) {
+    if (!io.WantTextInput) {
         bool ctrlPressed = io.KeyCtrl;
         if (ctrlPressed && ImGui::IsKeyPressed(ImGuiKey_S, false)) {
             nfdu8filteritem_t filters[] = {{"Fluid Simulation", "fsim"}};

@@ -1,14 +1,14 @@
 #pragma once
-#include <string>
+#include "TextEditor.h"
 
-class ScriptConsole;
+#include <string>
 
 class ScriptEditor {
 public:
+    ScriptEditor();
     bool render(float height);
-
-    const std::string& code() const { return code_; }
+    std::string code() const { return editor_.GetText(); };
 
 private:
-    std::string code_ = "print('hello')";
+    TextEditor editor_;
 };

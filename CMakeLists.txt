@@ -131,7 +131,15 @@ FetchContent_Declare(
     GIT_SHALLOW    ON
 )
 
-FetchContent_MakeAvailable(glfw webgpu_distribution imgui glfw3webgpu clip stb nfd zpp_bits sigslot pfr wesl_distribution)
+# --- ImGuiColorTextEdit ---
+FetchContent_Declare(
+    ImGuiColorTextEdit
+    GIT_REPOSITORY https://github.com/goossens/ImGuiColorTextEdit.git
+    GIT_TAG        a74fb090d2ea9276ae6c35c2f6ab39491c7d404f
+    GIT_SHALLOW    ON
+)
+
+FetchContent_MakeAvailable(glfw webgpu_distribution imgui glfw3webgpu clip stb nfd zpp_bits sigslot pfr wesl_distribution ImGuiColorTextEdit)
 set_target_properties(glfw webgpu PROPERTIES SYSTEM TRUE)
 find_package(Python 3.10 COMPONENTS Interpreter Development.Embed QUIET)
 
@@ -176,12 +184,18 @@ target_link_libraries(fluid_compute INTERFACE webgpu wesl)
 add_dependencies(fluid_compute wgsl_shaders)
 
 # --- fluid_gui ---
-add_library(fluid_gui INTERFACE)
-target_include_directories(fluid_gui INTERFACE
-    ${CMAKE_SOURCE_DIR}
-    ${GENERATED_ROOT}
+add_library(fluid_gui STATIC)
+target_sources(fluid_gui PRIVATE
+    ${imguicolortextedit_SOURCE_DIR}/TextEditor.cpp
 )
-target_link_libraries(fluid_gui INTERFACE webgpu wesl glfw imgui glfw3webgpu clip stb_headers nfd zpp_bits_headers Pal::Sigslot pfr)
+target_include_directories(fluid_gui
+    PUBLIC
+        ${CMAKE_SOURCE_DIR}
+        ${GENERATED_ROOT}
+    SYSTEM PUBLIC
+        ${imguicolortextedit_SOURCE_DIR}
+)
+target_link_libraries(fluid_gui PUBLIC webgpu wesl glfw imgui glfw3webgpu clip stb_headers nfd zpp_bits_headers Pal::Sigslot pfr)
 add_dependencies(fluid_gui wgsl_shaders)
 
 # --- Executable ---
