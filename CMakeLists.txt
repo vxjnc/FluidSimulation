@@ -19,6 +19,7 @@ if(CCACHE_PROGRAM)
 endif()
 
 file(GLOB_RECURSE SOURCE_FILES "src/*.cpp")
+list(FILTER SOURCE_FILES EXCLUDE REGEX "src/scripting/.*")
 
 set(WEBGPU_BACKEND "DAWN" CACHE STRING "WebGPU backend")
 set(WGPU_LINK_TYPE "STATIC" CACHE STRING "Link webgpu statically" FORCE)
@@ -225,9 +226,18 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 
 if(Python_FOUND)
     message(STATUS "Python ${Python_VERSION} found at ${Python_EXECUTABLE} - scripting enabled")
+    set(PYTHON_API_CPP "${CMAKE_CURRENT_BINARY_DIR}/python_api.cpp")
+    add_custom_command(
+        OUTPUT "${PYTHON_API_CPP}"
+        COMMAND ${Python_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/src/scripting/generate_loader.py" "${CMAKE_CURRENT_SOURCE_DIR}/src/scripting/python_api.hpp" "${PYTHON_API_CPP}"
+        DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/scripting/python_api.hpp" "${CMAKE_CURRENT_SOURCE_DIR}/src/scripting/generate_loader.py"
+        VERBATIM
+    )
+
     target_sources(${PROJECT_NAME} PRIVATE
         src/scripting/engine.cpp
         src/scripting/bindings.cpp
+        "${PYTHON_API_CPP}"
     )
 
     target_include_directories(${PROJECT_NAME} PRIVATE ${Python_INCLUDE_DIRS})
