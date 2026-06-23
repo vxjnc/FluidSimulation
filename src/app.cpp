@@ -151,6 +151,8 @@ void Application::run() {
         simulation.profiler.requestReadback();
         renderer.profiler.requestReadback();
         uiProfiler.requestReadback();
+
+        scripting::run_tick();
     }
 }
 

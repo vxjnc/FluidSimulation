@@ -7,6 +7,8 @@
 #include <Python.h>
 #include <dlfcn.h>
 
+extern "C" PyObject* PyInit_fluidsim();
+
 namespace scripting {
     static bool g_available = false;
     static void* g_lib = nullptr;
@@ -20,6 +22,8 @@ namespace scripting {
     static int (*s_PyArg_ParseTuple)(PyObject*, const char*, ...) = nullptr;
     static PyObject* (*s_PyModule_Create2)(PyModuleDef*, int) = nullptr;
     static PyObject* s_Py_None = nullptr;
+    static PyObject* g_tick_callback = nullptr;
+    static PyObject* (*s_PyObject_CallNoArgs)(PyObject*) = nullptr;
 
     static std::string popen_result(const std::string& cmd) {
         FILE* pipe = popen(cmd.c_str(), "r");
@@ -64,6 +68,12 @@ namespace scripting {
         g_output_handler = std::move(handler);
     }
 
+    void set_tick_callback(void* cb) {
+        Py_XDECREF(g_tick_callback);
+        g_tick_callback = static_cast<PyObject*>(cb);
+        Py_XINCREF(g_tick_callback);
+    }
+
     static PyObject* init_fluidsim_io() {
         static PyMethodDef methods[] = {{"output",
                                          [](PyObject*, PyObject* args) -> PyObject* {
@@ -106,7 +116,8 @@ namespace scripting {
             !resolve(g_lib, "PyImport_AppendInittab", s_PyImport_AppendInittab) ||
             !resolve(g_lib, "PyArg_ParseTuple", s_PyArg_ParseTuple) ||
             !resolve(g_lib, "PyModule_Create2", s_PyModule_Create2) ||
-            !resolve(g_lib, "_Py_NoneStruct", s_Py_None)) {
+            !resolve(g_lib, "_Py_NoneStruct", s_Py_None) ||
+            !resolve(g_lib, "PyObject_CallNoArgs", s_PyObject_CallNoArgs)) {
             dlclose(g_lib);
             g_lib = nullptr;
             return false;
@@ -116,6 +127,7 @@ namespace scripting {
             setenv("PYTHONHOME", prefix.c_str(), 1);
         }
 
+        s_PyImport_AppendInittab("fluidsim", PyInit_fluidsim);
         s_PyImport_AppendInittab("_fluidsim_io", init_fluidsim_io);
 
         s_Py_Initialize();
@@ -149,6 +161,13 @@ namespace scripting {
         return s_PyRun_SimpleString(code.c_str()) == 0;
     }
 
+    void run_tick() {
+        if (!g_available || !g_tick_callback) {
+            return;
+        }
+        PyObject* res = s_PyObject_CallNoArgs(g_tick_callback);
+        Py_XDECREF(res);
+    }
 }
 
 #else
@@ -157,8 +176,10 @@ namespace scripting {
 #include <string>
 
 namespace scripting {
+    void set_tick_callback(void* cb) {}
     void set_output_handler(std::function<void(std::string_view)>) {}
     bool init() { return false; }
+    void run_tick();
     void shutdown() {}
     bool is_available() { return false; }
     bool run_string(const std::string&) { return false; }
