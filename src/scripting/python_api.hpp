@@ -16,6 +16,7 @@ namespace py {
     extern int (*append_inittab)(const char*, PyObject* (*)());     // PyImport_AppendInittab
     extern PyObject* (*call_no_args)(PyObject*);                    // PyObject_CallNoArgs
     extern PyObject* (*long_from_size_t)(size_t);                   // PyLong_FromSize_t
+    extern PyObject* (*float_from_double)(double);                  // PyFloat_FromDouble
 
     extern PyObject* none;       // _Py_NoneStruct
     extern PyObject* type_error; // PyExc_TypeError
