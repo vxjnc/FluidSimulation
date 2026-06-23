@@ -2,10 +2,14 @@
 
 #ifdef SCRIPTING_AVAILABLE
 
+#include <array>
 #include <concepts>
 #include <span>
+#include <string>
 #include <tuple>
 #include <type_traits>
+
+#include <pfr.hpp>
 
 #include "src/scripting/python_api.hpp"
 
@@ -16,6 +20,8 @@ namespace py_util {
                      std::is_same_v<T, const char*> || std::is_same_v<T, PyObject*> ||
                      std::is_same_v<T, bool>;
     };
+
+    template <typename T> inline PyObject* PyNamedTupleClass = nullptr;
 
     template <BindableType T> struct PyFormat;
     template <> struct PyFormat<bool> {
@@ -47,6 +53,38 @@ namespace py_util {
 
     inline PyObject* to_py(std::floating_point auto val) {
         return py::float_from_double(static_cast<double>(val));
+    }
+    inline PyObject* to_py(bool value) { return py::bool_from_long(value ? 1 : 0); }
+
+    template <typename T>
+        requires requires(T c) {
+            c.begin();
+            c.end();
+        }
+    inline PyObject* to_py(const T& container) {
+        PyObject* py_list = py::list_new(container.size());
+        size_t idx = 0;
+        for (const auto& item : container) {
+            py::list_set_item(py_list, idx++, to_py(item));
+        }
+        return py_list;
+    }
+    template <typename T>
+        requires std::is_aggregate_v<T> && (!requires(T c) { c.begin(); })
+    inline PyObject* to_py(const T& obj) {
+        if (PyNamedTupleClass<T> != nullptr) {
+            PyObject* args = py::tuple_new(pfr::tuple_size_v<T>);
+
+            pfr::for_each_field(
+                obj, [&](const auto& field, auto idx) { py::tuple_set_item(args, idx, to_py(field)); });
+
+            PyObject* instance = py::object_call(PyNamedTupleClass<T>, args, nullptr);
+            py::decref(args);
+            return instance;
+        }
+
+        py::incref(py::none);
+        return py::none;
     }
 
     namespace impl {
@@ -141,6 +179,32 @@ namespace py_util {
 
     template <size_t N> constexpr auto make_table(const Method (&input_methods)[N]) {
         return make_table(std::span<const Method, N>(input_methods));
+    }
+
+    template <typename T>
+        requires std::is_aggregate_v<T>
+    void register_namedtuple(PyObject* module, const char* python_class_name) {
+        std::string fields;
+        pfr::for_each_field(T{}, [&](const auto&, auto idx) {
+            if (!fields.empty()) {
+                fields += " ";
+            }
+            fields += pfr::get_name<idx, T>();
+        });
+
+        PyObject* collections = py::import_import_module("collections");
+        PyObject* namedtuple_fn = py::object_get_attr_string(collections, "namedtuple");
+
+        PyObject* args = py::tuple_pack(2, py::unicode_from_string(python_class_name),
+                                        py::unicode_from_string(fields.c_str()));
+
+        PyNamedTupleClass<T> = py::object_call(namedtuple_fn, args, nullptr);
+
+        py::decref(args);
+        py::decref(namedtuple_fn);
+        py::decref(collections);
+
+        py::module_add_object(module, python_class_name, PyNamedTupleClass<T>);
     }
 }
 
