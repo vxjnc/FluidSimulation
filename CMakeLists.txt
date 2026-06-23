@@ -130,15 +130,7 @@ FetchContent_Declare(
     GIT_SHALLOW    ON
 )
 
-# --- nanobind ---
-FetchContent_Declare(
-    nanobind
-    GIT_REPOSITORY https://github.com/wjakob/nanobind.git
-    GIT_TAG        v2.12.0
-    GIT_SHALLOW    ON
-)
-
-FetchContent_MakeAvailable(glfw webgpu_distribution imgui glfw3webgpu clip stb nfd zpp_bits sigslot pfr wesl_distribution nanobind)
+FetchContent_MakeAvailable(glfw webgpu_distribution imgui glfw3webgpu clip stb nfd zpp_bits sigslot pfr wesl_distribution)
 set_target_properties(glfw webgpu PROPERTIES SYSTEM TRUE)
 find_package(Python 3.10 COMPONENTS Interpreter Development.Embed QUIET)
 
@@ -239,10 +231,6 @@ if(Python_FOUND)
     )
 
     target_include_directories(${PROJECT_NAME} PRIVATE ${Python_INCLUDE_DIRS})
-    target_include_directories(${PROJECT_NAME} PRIVATE
-        ${nanobind_SOURCE_DIR}/include
-        ${nanobind_SOURCE_DIR}/ext/robin_map/include
-    )
     target_compile_definitions(${PROJECT_NAME} PRIVATE SCRIPTING_AVAILABLE)
 
     if(APPLE)
