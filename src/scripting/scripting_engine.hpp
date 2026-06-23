@@ -5,16 +5,22 @@
 
 class Application;
 
-namespace scripting {
-    bool init(Application* app);
-    void shutdown();
+class ScriptingEngine {
+public:
+    ScriptingEngine(Application* app);
+    ~ScriptingEngine();
+
     bool is_available();
     bool run_string(const std::string& code);
 
     void set_tick_callback(void* cb);
-    void run_tick();
+    void tick();
 
     void set_output_handler(std::function<void(std::string_view)> handler);
 
-    inline Application* app;
-}
+    static ScriptingEngine* instance;
+    Application* app;
+
+private:
+    bool available = false;
+};

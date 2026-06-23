@@ -11,6 +11,7 @@
 #include "src/compute/gpu_profiler.hpp"
 #include "src/render/render.hpp"
 #include "src/save/save_manager.hpp"
+#include "src/scripting/scripting_engine.hpp"
 #include "src/ui/fluid_viewport.hpp"
 #include "src/ui/imgui_manager.hpp"
 #include "src/utils/deffered_queue.hpp"
@@ -38,6 +39,8 @@ private:
     std::pair<wgpu::raii::Texture, wgpu::raii::TextureView> render(wgpu::raii::CommandEncoder& enc);
 
     GpuProfiler<> uiProfiler;
+
+    ScriptingEngine scripting;
 
     GLFWwindow* window = nullptr;
     [[maybe_unused]] NFD::Guard nfdGuard;

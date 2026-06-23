@@ -1,11 +1,13 @@
 #include "script_panel.hpp"
 
+#include <string_view>
+
 #include <imgui.h>
 
-#include "src/scripting/engine.hpp"
+#include "src/scripting/scripting_engine.hpp"
 
 ScriptPanel::ScriptPanel() {
-    scripting::set_output_handler([this](std::string_view text) { console_.append(text); });
+    ScriptingEngine::instance->set_output_handler([this](std::string_view text) { console_.append(text); });
 }
 
 void ScriptPanel::render(bool& open) {
@@ -21,8 +23,8 @@ void ScriptPanel::render(bool& open) {
 
     if (editor_.render(editorH)) {
 #ifdef SCRIPTING_AVAILABLE
-        if (scripting::is_available()) {
-            scripting::run_string(editor_.code());
+        if (ScriptingEngine::instance->is_available()) {
+            ScriptingEngine::instance->run_string(editor_.code());
         }
         else {
             console_.append("[error] Python not available");

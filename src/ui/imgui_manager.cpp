@@ -3,7 +3,6 @@
 #include <array>
 
 #include "generated/version.h"
-#include "src/scripting/engine.hpp"
 #include "src/ui/imgui_style.hpp"
 #include "src/ui/widgets/common.hpp"
 #include "src/utils/file_dialog.hpp"

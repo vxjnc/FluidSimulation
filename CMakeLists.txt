@@ -235,7 +235,7 @@ if(Python_FOUND)
     )
 
     target_sources(${PROJECT_NAME} PRIVATE
-        src/scripting/engine.cpp
+        src/scripting/scripting_engine.cpp
         src/scripting/bindings.cpp
         "${PYTHON_API_CPP}"
     )

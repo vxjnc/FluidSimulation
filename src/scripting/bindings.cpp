@@ -1,11 +1,10 @@
 #ifdef SCRIPTING_AVAILABLE
 
-#include "engine.hpp"
-#include "python_api.hpp"
-
 #include <Python.h>
 
 #include "src/app.hpp"
+#include "src/scripting/python_api.hpp"
+#include "src/scripting/scripting_engine.hpp"
 
 extern "C" void _Py_Dealloc(PyObject*) {}
 
@@ -18,7 +17,7 @@ static PyObject* fluidsim_on_tick(PyObject*, PyObject* args) {
         py::Err_SetString(py::type_error, "argument must be callable");
         return nullptr;
     }
-    scripting::set_tick_callback(cb);
+    ScriptingEngine::instance->set_tick_callback(cb);
     py::incref(py::none);
     return py::none;
 }
@@ -28,7 +27,7 @@ static PyObject* fluidsim_add_source(PyObject*, PyObject* args) {
     if (!py::ArgParseTuple(args, "ffffffff", &x, &y, &vx, &vy, &radius, &r, &g, &b)) {
         return nullptr;
     }
-    auto& sources = scripting::app->getSources();
+    auto& sources = ScriptingEngine::instance->app->getSources();
     sources.push_back(FluidSource(x, y, vx, vy, radius, std::array<float, 3>{r, g, b}));
     return py::long_from_size_t(sources.size() - 1);
 }
@@ -38,7 +37,7 @@ static PyObject* fluidsim_remove_source(PyObject*, PyObject* args) {
     if (!py::ArgParseTuple(args, "i", &idx)) {
         return nullptr;
     }
-    auto& sources = scripting::app->getSources();
+    auto& sources = ScriptingEngine::instance->app->getSources();
     if (idx < 0 || idx >= (int)sources.size()) {
         py::Err_SetString(py::type_error, "index out of range");
         return nullptr;
@@ -54,12 +53,18 @@ static PyObject* fluidsim_set_source(PyObject*, PyObject* args) {
     if (!py::ArgParseTuple(args, "iffffffff", &idx, &x, &y, &vx, &vy, &radius, &r, &g, &b)) {
         return nullptr;
     }
-    auto& sources = scripting::app->getSources();
+    auto& sources = ScriptingEngine::instance->app->getSources();
     if (idx < 0 || idx >= (int)sources.size()) {
         py::Err_SetString(py::type_error, "index out of range");
         return nullptr;
     }
-    sources[idx] = FluidSource(x, y, vx, vy, radius, std::array<float, 3>{r, g, b});
+    sources[idx].x = x;
+    sources[idx].y = y;
+    sources[idx].vx = vx;
+    sources[idx].vy = vy;
+    sources[idx].radius = radius;
+    sources[idx].color = std::array<float, 3>{r, g, b};
+
     py::incref(py::none);
     return py::none;
 }
