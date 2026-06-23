@@ -181,48 +181,51 @@ void Application::processInput(wgpu::raii::CommandEncoder& enc, std::vector<Flui
     }
 
     ImGuiIO& io = ImGui::GetIO();
-    bool ctrlPressed = io.KeyCtrl;
-    if (ctrlPressed && ImGui::IsKeyPressed(ImGuiKey_S, false)) {
-        nfdu8filteritem_t filters[] = {{"Fluid Simulation", "fsim"}};
-        FileDialog::Save("simulation.fsim", filters, imguiManager.onSaveRequested);
-    }
-    if (ctrlPressed && ImGui::IsKeyPressed(ImGuiKey_O, false)) {
-        nfdu8filteritem_t filters[] = {{"Fluid Simulation", "fsim"}};
-        FileDialog::Open(filters, imguiManager.onLoadRequested);
-    }
-    if (ImGui::IsKeyPressed(ImGuiKey_Space)) {
-        settings.paused = !settings.paused;
-    }
-    if (ImGui::IsKeyPressed(ImGuiKey_D)) {
-        settings.renderSettings.mode = RenderMode::Dye;
-    }
-    if (ImGui::IsKeyPressed(ImGuiKey_V)) {
-        settings.renderSettings.mode = RenderMode::Velocity;
-    }
-    if (ImGui::IsKeyPressed(ImGuiKey_P)) {
-        settings.renderSettings.mode = RenderMode::Pressure;
-    }
-    if (ImGui::IsKeyPressed(ImGuiKey_G)) {
-        settings.renderSettings.mode = RenderMode::Divergence;
-    }
-    if (ImGui::IsKeyPressed(ImGuiKey_C)) {
-        settings.renderSettings.mode = RenderMode::Curl;
-    }
 
-    if (ImGui::IsKeyPressed(ImGuiKey_LeftAlt) || ImGui::IsKeyPressed(ImGuiKey_RightAlt)) {
-        settings.ui.menuBarVisible = !settings.ui.menuBarVisible;
-    }
+    if (!io.WantCaptureKeyboard) {
+        bool ctrlPressed = io.KeyCtrl;
+        if (ctrlPressed && ImGui::IsKeyPressed(ImGuiKey_S, false)) {
+            nfdu8filteritem_t filters[] = {{"Fluid Simulation", "fsim"}};
+            FileDialog::Save("simulation.fsim", filters, imguiManager.onSaveRequested);
+        }
+        if (ctrlPressed && ImGui::IsKeyPressed(ImGuiKey_O, false)) {
+            nfdu8filteritem_t filters[] = {{"Fluid Simulation", "fsim"}};
+            FileDialog::Open(filters, imguiManager.onLoadRequested);
+        }
+        if (ImGui::IsKeyPressed(ImGuiKey_Space)) {
+            settings.paused = !settings.paused;
+        }
+        if (ImGui::IsKeyPressed(ImGuiKey_D)) {
+            settings.renderSettings.mode = RenderMode::Dye;
+        }
+        if (ImGui::IsKeyPressed(ImGuiKey_V)) {
+            settings.renderSettings.mode = RenderMode::Velocity;
+        }
+        if (ImGui::IsKeyPressed(ImGuiKey_P)) {
+            settings.renderSettings.mode = RenderMode::Pressure;
+        }
+        if (ImGui::IsKeyPressed(ImGuiKey_G)) {
+            settings.renderSettings.mode = RenderMode::Divergence;
+        }
+        if (ImGui::IsKeyPressed(ImGuiKey_C)) {
+            settings.renderSettings.mode = RenderMode::Curl;
+        }
 
-    if (ImGui::IsKeyPressed(ImGuiKey_F12)) {
-        ScreenshotCapture::request(viewport, ScreenshotCapture::Mode::Clipboard);
-    }
+        if (ImGui::IsKeyPressed(ImGuiKey_LeftAlt) || ImGui::IsKeyPressed(ImGuiKey_RightAlt)) {
+            settings.ui.menuBarVisible = !settings.ui.menuBarVisible;
+        }
 
-    if (settings.paused && ImGui::IsKeyPressed(ImGuiKey_RightArrow)) {
-        frameSources = sources;
+        if (ImGui::IsKeyPressed(ImGuiKey_F12)) {
+            ScreenshotCapture::request(viewport, ScreenshotCapture::Mode::Clipboard);
+        }
 
-        settings.paused = false;
-        update(enc, frameSources);
-        settings.paused = true;
+        if (settings.paused && ImGui::IsKeyPressed(ImGuiKey_RightArrow)) {
+            frameSources = sources;
+
+            settings.paused = false;
+            update(enc, frameSources);
+            settings.paused = true;
+        }
     }
 
     if (mouse.leftJustPressed) {
