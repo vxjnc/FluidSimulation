@@ -18,6 +18,7 @@ namespace py {
     int (*run_simple_string)(const char*, void*) = nullptr;
     int (*append_inittab)(const char*, PyObject* (*)()) = nullptr;
     PyObject* (*call_no_args)(PyObject*) = nullptr;
+    PyObject* (*long_from_size_t)(size_t) = nullptr;
 
     bool resolve_all(void* lib) {
         auto r = [lib](const char* name, auto& fn) -> bool {
@@ -33,7 +34,8 @@ namespace py {
                r("PyModule_Create2", Module_Create2) && r("Py_IncRef", incref) && r("Py_DecRef", decref) &&
                r("Py_Initialize", initialize) && r("Py_Finalize", finalize) &&
                r("PyRun_SimpleStringFlags", run_simple_string) &&
-               r("PyImport_AppendInittab", append_inittab) && r("PyObject_CallNoArgs", call_no_args);
+               r("PyImport_AppendInittab", append_inittab) && r("PyObject_CallNoArgs", call_no_args) &&
+               r("PyLong_FromSize_t", long_from_size_t);
     }
 }
 

@@ -25,6 +25,7 @@ public:
     Application& operator=(const Application&) = delete;
 
     void run();
+    template <typename Self> auto&& getSources(this Self&& self) { return std::forward<Self>(self).sources; }
 
 private:
     DeferredQueue preSimQueue_;

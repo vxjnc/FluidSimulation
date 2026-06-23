@@ -80,7 +80,8 @@ namespace scripting {
         return py::Module_Create2(&def, PYTHON_API_VERSION);
     }
 
-    bool init() {
+    bool init(Application* app) {
+        scripting::app = app;
         std::string python_exe = find_python_exe();
         if (python_exe.empty()) {
             return false;

@@ -17,6 +17,7 @@ namespace py {
     extern int (*run_simple_string)(const char*, void*);
     extern int (*append_inittab)(const char*, PyObject* (*)());
     extern PyObject* (*call_no_args)(PyObject*);
+    extern PyObject* (*long_from_size_t)(size_t);
 
     bool resolve_all(void* lib);
 }

@@ -22,7 +22,7 @@ Application::Application(uint32_t width, uint32_t height, std::string_view title
     }
 
     ProcessStats::Monitor::start();
-    scripting::init();
+    scripting::init(this);
 
     WGPUContext& ctx = WGPUContext::instance();
     ctx.init(window, width, height);
