@@ -102,13 +102,14 @@ ScriptingEngine::ScriptingEngine(Application* app_) {
 
     py::initialize();
 
-    py::run_simple_string("import sys, _fluidsim_io\n"
-                          "class _Capture:\n"
-                          "    def write(self, text): _fluidsim_io.output(text)\n"
-                          "    def flush(self): pass\n"
-                          "sys.stdout = sys.stderr = _Capture()\n",
+    py::run_simple_string(R"(
+import sys, _fluidsim_io
+class _Capture:
+    def write(self, text): _fluidsim_io.output(text)
+    def flush(self): pass
+sys.stdout = sys.stderr = _Capture()
+)",
                           nullptr);
-
     available = true;
 }
 
@@ -122,8 +123,6 @@ ScriptingEngine::~ScriptingEngine() {
         g_lib = nullptr;
     }
 }
-
-bool ScriptingEngine::is_available() { return available; }
 
 bool ScriptingEngine::run_string(const std::string& code) {
     if (!available) {

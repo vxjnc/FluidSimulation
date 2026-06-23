@@ -10,7 +10,7 @@ public:
     ScriptingEngine(Application* app);
     ~ScriptingEngine();
 
-    bool is_available();
+    bool is_available() { return available; }
     bool run_string(const std::string& code);
 
     void set_tick_callback(void* cb);

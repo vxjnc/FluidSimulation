@@ -1,6 +1,5 @@
 #pragma once
 #include <string>
-#include <vector>
 
 class ScriptConsole {
 public:
@@ -9,6 +8,6 @@ public:
     void render(float height);
 
 private:
-    std::vector<std::string> lines_;
+    std::string text_;
     bool scrollToBottom_ = false;
 };
