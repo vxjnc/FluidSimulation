@@ -6,10 +6,6 @@
 
 #include "src/scripting/scripting_engine.hpp"
 
-ScriptPanel::ScriptPanel() {
-    ScriptingEngine::instance->set_output_handler([this](std::string_view text) { console_.append(text); });
-}
-
 void ScriptPanel::render(bool& open) {
     ImGui::SetNextWindowSize(ImVec2(600, 500), ImGuiCond_FirstUseEver);
     if (!ImGui::Begin("Script Editor", &open)) {
@@ -28,10 +24,10 @@ void ScriptPanel::render(bool& open) {
             ScriptingEngine::instance->run_string(editor_.code());
         }
         else {
-            console_.append("[error] Python not available");
+            ScriptingEngine::instance->script().append_output("[error] Python not available");
         }
 #else
-        console_.append("[error] Scripting not compiled");
+        ScriptingEngine::instance->script().append_output("[error] Scripting not compiled");
 #endif
     }
 

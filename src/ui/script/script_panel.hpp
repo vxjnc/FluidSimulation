@@ -5,7 +5,6 @@
 
 class ScriptPanel {
 public:
-    ScriptPanel();
     void render(bool& open);
 
 private:

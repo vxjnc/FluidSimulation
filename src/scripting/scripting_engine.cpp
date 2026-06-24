@@ -16,8 +16,6 @@ extern "C" PyObject* PyInit_fluidsim();
 ScriptingEngine* ScriptingEngine::instance = nullptr;
 
 static void* g_lib = nullptr;
-static std::function<void(std::string_view)> g_output_handler;
-static PyObject* g_tick_callback = nullptr;
 
 static std::string popen_result(const std::string& cmd) {
     FILE* pipe = popen(cmd.c_str(), "r");
@@ -52,12 +50,7 @@ static std::string find_libpython(const std::string& python_exe) {
 
 static PyObject* init_fluidsim_io() {
     static auto methods = py_util::make_table({
-        {"output",
-         [](const char* text) {
-             if (text && g_output_handler) {
-                 g_output_handler(text);
-             }
-         }},
+        {"output", [](const char* text) { ScriptingEngine::instance->script().append_output(text); }},
     });
     static PyModuleDef def = {
         PyModuleDef_HEAD_INIT,
@@ -138,32 +131,30 @@ bool ScriptingEngine::run_string(const std::string& code) {
     if (!available) {
         return false;
     }
+    script_.code = code;
+    script_.clear_output();
     return py::run_simple_string(code.c_str(), nullptr) == 0;
 }
 void ScriptingEngine::stop_current_script() { set_tick_callback(nullptr); }
 
 void ScriptingEngine::set_tick_callback(void* cb) {
-    if (g_tick_callback) {
-        py::decref(g_tick_callback);
+    if (script_.tick_callback) {
+        py::decref(static_cast<PyObject*>(script_.tick_callback));
     }
-    g_tick_callback = static_cast<PyObject*>(cb);
-    if (g_tick_callback) {
-        py::incref(g_tick_callback);
+    script_.tick_callback = static_cast<PyObject*>(cb);
+    if (script_.tick_callback) {
+        py::incref(static_cast<PyObject*>(script_.tick_callback));
     }
 }
 
 void ScriptingEngine::tick() {
-    if (!available || !g_tick_callback) {
+    if (!available || !script_.tick_callback) {
         return;
     }
-    PyObject* res = py::call_no_args(g_tick_callback);
+    PyObject* res = py::call_no_args(static_cast<PyObject*>(script_.tick_callback));
     if (res) {
         py::decref(res);
     }
-}
-
-void ScriptingEngine::set_output_handler(std::function<void(std::string_view)> handler) {
-    g_output_handler = std::move(handler);
 }
 
 #else

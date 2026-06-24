@@ -1,8 +1,9 @@
 #pragma once
 
-#include <functional>
 #include <string>
 #include <string_view>
+
+#include "src/scripting/script.hpp"
 
 class Application;
 
@@ -18,9 +19,8 @@ public:
     void set_tick_callback(void* cb);
     void tick();
 
-    void set_output_handler(std::function<void(std::string_view)> handler);
-
     std::string_view python_path() { return pythonPath_; }
+    Script& script() { return script_; }
 
     static ScriptingEngine* instance;
     Application* app;
@@ -28,4 +28,5 @@ public:
 private:
     std::string pythonPath_;
     bool available = false;
+    Script script_;
 };
