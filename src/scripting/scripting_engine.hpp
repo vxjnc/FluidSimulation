@@ -13,6 +13,7 @@ public:
 
     bool is_available() { return available; }
     bool run_string(const std::string& code);
+    void stop_current_script();
 
     void set_tick_callback(void* cb);
     void tick();

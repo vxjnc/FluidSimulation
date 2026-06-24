@@ -39,6 +39,13 @@ void ScriptPanel::render(bool& open) {
         console_.clear();
     }
     ImGui::SameLine();
+
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.6f, 0.1f, 0.1f, 1.0f));
+    if (ImGui::SmallButton("Stop")) {
+        ScriptingEngine::instance->stop_current_script();
+    }
+    ImGui::PopStyleColor();
+
     ImGui::TextDisabled("console");
     console_.render(consoleH);
 

@@ -4,6 +4,7 @@
 #include <Python.h>
 
 namespace py {
+    extern int (*add_pending_call)(int (*)(void*), void*);                 // Py_AddPendingCall
     extern int (*ArgParseTuple)(PyObject*, const char*, ...);              // PyArg_ParseTuple
     extern int (*Callable_Check)(PyObject*);                               // PyCallable_Check
     extern void (*Err_SetString)(PyObject*, const char*);                  // PyErr_SetString
@@ -31,9 +32,11 @@ namespace py {
     extern PyObject* (*object_call)(PyObject*, PyObject*, PyObject*);      // PyObject_Call
     extern int (*module_add_object)(PyObject*, const char*, PyObject*);    // PyModule_AddObject
     extern int (*module_add_int_constant)(PyObject*, const char*, long);   // PyModule_AddIntConstant
+    extern void (*err_clear)();                                            // PyErr_Clear
 
-    extern PyObject* none;       // _Py_NoneStruct
-    extern PyObject* type_error; // PyExc_TypeError
+    extern PyObject* none;               // _Py_NoneStruct
+    extern PyObject* type_error;         // PyExc_TypeError
+    extern PyObject* keyboard_interrupt; // PyExc_KeyboardInterrupt
 
     bool resolve_all(void* lib);
 }

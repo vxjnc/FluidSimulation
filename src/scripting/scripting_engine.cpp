@@ -1,5 +1,7 @@
 #include "scripting_engine.hpp"
 
+#include "src/scripting/python_binding.hpp"
+
 #ifdef SCRIPTING_AVAILABLE
 
 #include "python_api.hpp"
@@ -49,20 +51,25 @@ static std::string find_libpython(const std::string& python_exe) {
 }
 
 static PyObject* init_fluidsim_io() {
-    static PyMethodDef methods[] = {{"output",
-                                     [](PyObject*, PyObject* args) -> PyObject* {
-                                         const char* text = nullptr;
-                                         if (py::ArgParseTuple(args, "s", &text) && text &&
-                                             g_output_handler) {
-                                             g_output_handler(text);
-                                         }
-                                         py::incref(py::none);
-                                         return py::none;
-                                     },
-                                     METH_VARARGS, nullptr},
-                                    {nullptr, nullptr, 0, nullptr}};
+    static auto methods = py_util::make_table({
+        {"output",
+         [](const char* text) {
+             if (text && g_output_handler) {
+                 g_output_handler(text);
+             }
+         }},
+    });
     static PyModuleDef def = {
-        PyModuleDef_HEAD_INIT, "_fluidsim_io", nullptr, -1, methods, nullptr, nullptr, nullptr, nullptr};
+        PyModuleDef_HEAD_INIT,
+        "_fluidsim_io",
+        nullptr,
+        -1,
+        methods.data(),
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+    };
     return py::Module_Create2(&def, PYTHON_API_VERSION);
 }
 
@@ -133,6 +140,7 @@ bool ScriptingEngine::run_string(const std::string& code) {
     }
     return py::run_simple_string(code.c_str(), nullptr) == 0;
 }
+void ScriptingEngine::stop_current_script() { set_tick_callback(nullptr); }
 
 void ScriptingEngine::set_tick_callback(void* cb) {
     if (g_tick_callback) {
