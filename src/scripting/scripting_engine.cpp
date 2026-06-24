@@ -66,21 +66,28 @@ static PyObject* init_fluidsim_io() {
     return py::Module_Create2(&def, PYTHON_API_VERSION);
 }
 
-ScriptingEngine::ScriptingEngine(Application* app_) {
+void ScriptingEngine::init(Application* app_, std::string_view pythonPath) {
     instance = this;
     app = app_;
 
-    std::string python_exe = find_python_exe();
-    if (python_exe.empty()) {
+    pythonPath_ = pythonPath.empty() ? find_python_exe() : std::string(pythonPath);
+    if (pythonPath_.empty()) {
         return;
     }
 
-    std::string libpath = find_libpython(python_exe);
+    std::string libpath = find_libpython(pythonPath_);
     if (libpath.empty()) {
         return;
     }
 
-    std::string prefix = popen_result(python_exe + " -c \"import sys; print(sys.prefix)\"");
+    std::string prefix = popen_result(pythonPath_ + " -c \"import sys; print(sys.base_prefix)\"");
+    if (!prefix.empty()) {
+        prefix.erase(prefix.find_last_not_of("\n\r") + 1);
+    }
+
+    if (!prefix.empty()) {
+        setenv("PYTHONHOME", prefix.c_str(), 1);
+    }
 
     g_lib = dlopen(libpath.c_str(), RTLD_NOW | RTLD_GLOBAL);
     if (!g_lib) {
@@ -91,10 +98,6 @@ ScriptingEngine::ScriptingEngine(Application* app_) {
         dlclose(g_lib);
         g_lib = nullptr;
         return;
-    }
-
-    if (!prefix.empty()) {
-        setenv("PYTHONHOME", prefix.c_str(), 1);
     }
 
     py::append_inittab("fluidsim", PyInit_fluidsim);

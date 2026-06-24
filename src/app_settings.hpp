@@ -3,6 +3,7 @@
 
 #include "src/compute/fluid_source.hpp"
 #include "src/render/render_settings.hpp"
+#include "src/scripting/scripting_settings.hpp"
 #include "src/ui/random_splat/splat_settings.hpp"
 #include "src/ui/ui_settings.hpp"
 #include "src/utils/observable.hpp"
@@ -30,6 +31,7 @@ struct AppSettings {
     SplatSettings splatSettings;
 
     UISettings ui;
+    ScriptingSettings scripting;
 
     bool dockInitialized = false;
 };

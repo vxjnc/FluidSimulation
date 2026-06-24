@@ -7,7 +7,7 @@
 #include "src/utils/file_dialog.hpp"
 #include "src/utils/process_stats.hpp"
 
-Application::Application(uint32_t width, uint32_t height, std::string_view title) : scripting(this) {
+Application::Application(uint32_t width, uint32_t height, std::string_view title) {
     if (!glfwInit()) {
         throw std::runtime_error("Failed to init GLFW");
     }
@@ -26,11 +26,16 @@ Application::Application(uint32_t width, uint32_t height, std::string_view title
     ctx.init(window, width, height);
 
     imguiManager.init(window, ctx.device(), ctx.surfaceFormat(), &settings);
+    ImGui::LoadIniSettingsFromDisk(ImGui::GetIO().IniFilename);
 
     glfwSetFramebufferSizeCallback(window, [](GLFWwindow*, int w, int h) {
         WGPUContext::instance().resize(static_cast<uint32_t>(w), static_cast<uint32_t>(h));
     });
 
+    scripting.init(this, settings.scripting.pythonPath);
+    if (scripting.is_available()) {
+        settings.scripting.pythonPath = scripting.python_path();
+    }
     uiProfiler.init(ctx.device());
     renderer.init(ctx.device());
     viewport.init(ctx.device(), width, height, ctx.surfaceFormat());

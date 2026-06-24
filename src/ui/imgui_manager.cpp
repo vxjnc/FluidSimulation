@@ -265,6 +265,21 @@ void ImGuiManager::renderSettingsModal() {
             settings->ui.velocityMode = static_cast<VelocityInputMode>(mode);
             ImGui::EndTabItem();
         }
+        if (ImGui::BeginTabItem("Scripting")) {
+#ifdef SCRIPTING_AVAILABLE
+            ImGui::Text("Python Executable");
+            ImGui::SetNextItemWidth(-40);
+            ImGui::TextUnformatted(settings->scripting.pythonPath.c_str());
+            ImGui::SameLine();
+            if (ImGui::Button("...")) {
+                FileDialog::Open(std::span<const nfdu8filteritem_t>(),
+                                 [this](const char* path) { settings->scripting.pythonPath = path; });
+            }
+#else
+            ImGui::TextDisabled("Scripting not compiled");
+#endif
+            ImGui::EndTabItem();
+        }
         if (ImGui::BeginTabItem("Style")) {
             ImGui::ShowStyleEditor();
             ImGui::EndTabItem();

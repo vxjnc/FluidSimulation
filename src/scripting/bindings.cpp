@@ -41,8 +41,6 @@ static auto FluidSimMethods = py_util::make_table(
               return nullptr;
           }
           ScriptingEngine::instance->set_tick_callback(cb);
-          py::incref(py::none);
-          return py::none;
       }},
 
      {"add_source",
