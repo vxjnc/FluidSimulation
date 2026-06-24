@@ -20,25 +20,28 @@ namespace {
         float vy;
         float radius;
         bool active;
+        int mask;
     };
 
     inline PyFluidSource to_agregat(const FluidSource& src) {
-        return PyFluidSource{.color = src.color,
-                             .x = src.x,
-                             .y = src.y,
-                             .vx = src.vx,
-                             .vy = src.vy,
-                             .radius = src.radius,
-                             .active = src.active};
+        return PyFluidSource{
+            .color = src.color,
+            .x = src.x,
+            .y = src.y,
+            .vx = src.vx,
+            .vy = src.vy,
+            .radius = src.radius,
+            .active = src.active,
+            .mask = src.mode_mask,
+        };
     }
 }
 
 static auto FluidSimMethods = py_util::make_table(
     {{"on_tick",
-      [](PyObject* cb) -> PyObject* {
+      [](PyObject* cb) {
           if (!py::Callable_Check(cb)) {
               py::Err_SetString(py::type_error, "argument must be callable");
-              return nullptr;
           }
           ScriptingEngine::instance->set_tick_callback(cb);
       }},
@@ -63,8 +66,8 @@ static auto FluidSimMethods = py_util::make_table(
      },
 
      {"set_source",
-      [](int idx, float x, float y, float vx, float vy, float radius, float r, float g, float b,
-         bool active) {
+      [](int idx, float x, float y, float vx, float vy, float radius, float r, float g, float b, bool active,
+         int mask) {
           auto& sources = ScriptingEngine::instance->app->getSources();
           if (idx < 0 || idx >= static_cast<int>(sources.size())) {
               py::Err_SetString(py::type_error, "index out of range");
@@ -78,6 +81,7 @@ static auto FluidSimMethods = py_util::make_table(
           src.radius = radius;
           src.active = active;
           src.color = {r, g, b};
+          src.mode_mask = mask;
       }},
 
      {"get_source",
@@ -118,6 +122,10 @@ PyMODINIT_FUNC PyInit_fluidsim() {
     if (!module) {
         return nullptr;
     }
+
+    py::module_add_int_constant(module, "VELOCITY", FluidSource::Mode::VELOCITY);
+    py::module_add_int_constant(module, "DYE_ADDITIVE", FluidSource::Mode::DYE_ADDITIVE);
+    py::module_add_int_constant(module, "DYE_REPLACE", FluidSource::Mode::DYE_REPLACE);
 
     py_util::register_namedtuple<PyFluidSource>(module, "FluidSource");
     return module;

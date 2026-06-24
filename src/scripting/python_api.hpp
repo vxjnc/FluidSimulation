@@ -30,6 +30,7 @@ namespace py {
     extern PyObject* (*object_get_attr_string)(PyObject*, const char*);    // PyObject_GetAttrString
     extern PyObject* (*object_call)(PyObject*, PyObject*, PyObject*);      // PyObject_Call
     extern int (*module_add_object)(PyObject*, const char*, PyObject*);    // PyModule_AddObject
+    extern int (*module_add_int_constant)(PyObject*, const char*, long);   // PyModule_AddIntConstant
 
     extern PyObject* none;       // _Py_NoneStruct
     extern PyObject* type_error; // PyExc_TypeError
