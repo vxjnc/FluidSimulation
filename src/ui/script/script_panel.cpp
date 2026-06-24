@@ -19,7 +19,8 @@ void ScriptPanel::render(bool& open) {
 
     float totalH = ImGui::GetContentRegionAvail().y;
     float editorH = totalH * 0.6f;
-    float consoleH = totalH * 0.4f - ImGui::GetFrameHeightWithSpacing();
+    float buttonsH = ImGui::GetFrameHeightWithSpacing() * 2;
+    float consoleH = totalH * 0.4f - buttonsH;
 
     if (editor_.render(editorH)) {
 #ifdef SCRIPTING_AVAILABLE

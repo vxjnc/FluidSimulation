@@ -1,6 +1,7 @@
 #include "script_console.hpp"
 
 #include <imgui.h>
+#include <imgui_internal.h>
 
 void ScriptConsole::append(std::string_view text) {
     text_ += text;
@@ -15,9 +16,9 @@ void ScriptConsole::clear() { text_.clear(); }
 void ScriptConsole::render(float height) {
     ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
     ImGui::BeginChild("##console", ImVec2(-1, height), false, ImGuiWindowFlags_HorizontalScrollbar);
+    ImGui::PopStyleColor();
 
-    ImGui::InputTextMultiline("##console", text_.data(), text_.size(), ImVec2(-1, height),
-                              ImGuiInputTextFlags_ReadOnly);
+    ImGui::TextUnformatted(text_.c_str());
 
     if (scrollToBottom_) {
         ImGui::SetScrollHereY(1.0f);
@@ -25,5 +26,4 @@ void ScriptConsole::render(float height) {
     }
 
     ImGui::EndChild();
-    ImGui::PopStyleColor();
 }
