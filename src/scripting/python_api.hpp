@@ -18,6 +18,7 @@ namespace py {
     extern PyObject* (*call_no_args)(PyObject*);                           // PyObject_CallNoArgs
     extern PyObject* (*long_from_size_t)(size_t);                          // PyLong_FromSize_t
     extern PyObject* (*float_from_double)(double);                         // PyFloat_FromDouble
+    extern double (*float_as_double)(PyObject*);                           // PyFloat_AsDouble
     extern PyObject* (*list_new)(Py_ssize_t);                              // PyList_New
     extern int (*list_set_item)(PyObject*, Py_ssize_t, PyObject*);         // PyList_SetItem
     extern PyObject* (*dict_new)();                                        // PyDict_New
@@ -26,6 +27,9 @@ namespace py {
     extern int (*tuple_set_item)(PyObject*, Py_ssize_t, PyObject*);        // PyTuple_SetItem
     extern PyObject* (*tuple_pack)(Py_ssize_t, ...);                       // PyTuple_Pack
     extern PyObject* (*bool_from_long)(long);                              // PyBool_FromLong
+    extern long (*long_as_long)(PyObject*);                                // PyLong_AsLong
+    extern const char* (*unicode_as_utf8)(PyObject*);                      // PyUnicode_AsUTF8
+    extern int (*object_istrue)(PyObject*);                                // PyObject_IsTrue
     extern PyObject* (*unicode_from_string)(const char*);                  // PyUnicode_FromString
     extern PyObject* (*import_import_module)(const char*);                 // PyImport_ImportModule
     extern PyObject* (*object_get_attr_string)(PyObject*, const char*);    // PyObject_GetAttrString

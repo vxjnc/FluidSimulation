@@ -23,34 +23,8 @@ namespace py_util {
 
     template <typename T> inline PyObject* PyNamedTupleClass = nullptr;
 
-    template <BindableType T> struct PyFormat;
-    template <> struct PyFormat<bool> {
-        static constexpr char value = 'p';
-    };
-    template <> struct PyFormat<int> {
-        static constexpr char value = 'i';
-    };
-    template <> struct PyFormat<float> {
-        static constexpr char value = 'f';
-    };
-    template <> struct PyFormat<double> {
-        static constexpr char value = 'd';
-    };
-    template <> struct PyFormat<const char*> {
-        static constexpr char value = 's';
-    };
-    template <> struct PyFormat<PyObject*> {
-        static constexpr char value = 'O';
-    };
-
-    template <BindableType... Args> constexpr auto make_format_string() {
-        return std::array<char, sizeof...(Args) + 1>{PyFormat<Args>::value..., '\0'};
-    }
-
     inline PyObject* to_py(PyObject* obj) { return obj; }
-
     inline PyObject* to_py(std::integral auto val) { return py::long_from_size_t(static_cast<size_t>(val)); }
-
     inline PyObject* to_py(std::floating_point auto val) {
         return py::float_from_double(static_cast<double>(val));
     }
@@ -69,23 +43,32 @@ namespace py_util {
         }
         return py_list;
     }
+
     template <typename T>
         requires std::is_aggregate_v<T> && (!requires(T c) { c.begin(); })
     inline PyObject* to_py(const T& obj) {
         if (PyNamedTupleClass<T> != nullptr) {
             PyObject* args = py::tuple_new(pfr::tuple_size_v<T>);
-
             pfr::for_each_field(
                 obj, [&](const auto& field, auto idx) { py::tuple_set_item(args, idx, to_py(field)); });
-
             PyObject* instance = py::object_call(PyNamedTupleClass<T>, args, nullptr);
             py::decref(args);
             return instance;
         }
-
         py::incref(py::none);
         return py::none;
     }
+
+    template <typename T> inline T from_py(PyObject* obj);
+
+    template <> inline int from_py<int>(PyObject* obj) { return static_cast<int>(py::long_as_long(obj)); }
+    template <> inline float from_py<float>(PyObject* obj) {
+        return static_cast<float>(py::float_as_double(obj));
+    }
+    template <> inline double from_py<double>(PyObject* obj) { return py::float_as_double(obj); }
+    template <> inline const char* from_py<const char*>(PyObject* obj) { return py::unicode_as_utf8(obj); }
+    template <> inline PyObject* from_py<PyObject*>(PyObject* obj) { return obj; }
+    template <> inline bool from_py<bool>(PyObject* obj) { return py::object_istrue(obj) > 0; }
 
     namespace impl {
         template <typename T> struct function_traits : function_traits<decltype(&T::operator())> {};
@@ -97,6 +80,11 @@ namespace py_util {
             using ReturnType = R;
             using ArgsTuple = std::tuple<std::decay_t<Args>...>;
         };
+
+        template <typename Tuple, size_t... Is>
+        void unpack_fastcall_args(PyObject* const* args, Tuple& tuple, std::index_sequence<Is...>) {
+            ((std::get<Is>(tuple) = from_py<std::tuple_element_t<Is, Tuple>>(args[Is])), ...);
+        }
     }
 
     struct BoundMethod {
@@ -116,10 +104,12 @@ namespace py_util {
             using Traits = impl::function_traits<std::decay_t<F>>;
             using ArgsTuple = typename Traits::ArgsTuple;
 
-            constexpr int method_flags = (std::tuple_size_v<ArgsTuple> == 0) ? METH_NOARGS : METH_VARARGS;
+            constexpr size_t nargs_expected = std::tuple_size_v<ArgsTuple>;
 
-            auto c_func = [](PyObject*, PyObject* args) -> PyObject* {
-                if constexpr (std::tuple_size_v<ArgsTuple> == 0) {
+            constexpr int method_flags = (nargs_expected == 0) ? METH_NOARGS : METH_FASTCALL;
+
+            auto c_func = [](PyObject*, PyObject* const* args, Py_ssize_t nargs) -> PyObject* {
+                if constexpr (nargs_expected == 0) {
                     if constexpr (std::is_void_v<typename Traits::ReturnType>) {
                         storage_func();
                         py::incref(py::none);
@@ -130,20 +120,14 @@ namespace py_util {
                     }
                 }
                 else {
-                    ArgsTuple unpacked_args;
-                    constexpr auto fmt = std::apply(
-                        [](auto... dummy) { return make_format_string<std::decay_t<decltype(dummy)>...>(); },
-                        ArgsTuple{});
-
-                    bool parse_success = std::apply(
-                        [&](auto&... tuple_args) {
-                            return py::ArgParseTuple(args, fmt.data(), &tuple_args...);
-                        },
-                        unpacked_args);
-
-                    if (!parse_success) {
+                    if (nargs != static_cast<Py_ssize_t>(nargs_expected)) {
+                        py::Err_SetString(py::type_error, "Invalid number of arguments");
                         return nullptr;
                     }
+
+                    ArgsTuple unpacked_args;
+                    impl::unpack_fastcall_args(args, unpacked_args,
+                                               std::make_index_sequence<nargs_expected>{});
 
                     if constexpr (std::is_void_v<typename Traits::ReturnType>) {
                         std::apply(storage_func, unpacked_args);
@@ -156,7 +140,7 @@ namespace py_util {
                 }
             };
 
-            bound = BoundMethod{(PyCFunction) + c_func, method_flags};
+            bound = BoundMethod{(PyCFunction)(void*)+c_func, method_flags};
         }
     };
 
@@ -194,7 +178,6 @@ namespace py_util {
 
         PyObject* collections = py::import_import_module("collections");
         PyObject* namedtuple_fn = py::object_get_attr_string(collections, "namedtuple");
-
         PyObject* args = py::tuple_pack(2, py::unicode_from_string(python_class_name),
                                         py::unicode_from_string(fields.c_str()));
 
