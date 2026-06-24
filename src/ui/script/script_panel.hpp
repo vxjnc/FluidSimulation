@@ -6,8 +6,10 @@
 class ScriptPanel {
 public:
     void render(bool& open);
+    void renderTab(size_t index);
 
 private:
+    size_t active_idx_ = 0;
     ScriptEditor editor_;
     ScriptConsole console_;
 };

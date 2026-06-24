@@ -1,7 +1,8 @@
 #pragma once
 
+class Script;
+
 class ScriptConsole {
 public:
-    void clear();
-    void render(float height);
+    void render(float height, Script& script);
 };

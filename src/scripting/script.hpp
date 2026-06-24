@@ -4,9 +4,6 @@
 
 class Script {
 public:
-    std::string code;
-    void* tick_callback = nullptr;
-
     void append_output(std::string_view text) {
         output += text;
         if (output.size() > 10 * 1024) {
@@ -15,6 +12,11 @@ public:
     }
     const std::string& get_output() { return output; }
     void clear_output() { output.clear(); }
+
+    std::string code;
+
+    void* tick_callback = nullptr; // PyObject*
+    void* globals;                 // PyObject*
 
 private:
     std::string output;

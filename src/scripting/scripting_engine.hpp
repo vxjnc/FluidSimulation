@@ -2,6 +2,7 @@
 
 #include <string>
 #include <string_view>
+#include <vector>
 
 #include "src/scripting/script.hpp"
 
@@ -13,20 +14,23 @@ public:
     ~ScriptingEngine();
 
     bool is_available() { return available; }
-    bool run_string(const std::string& code);
-    void stop_current_script();
+    size_t add_script();
+    void remove_script(size_t idx);
+    void run_script(size_t idx);
+    void stop_script(size_t idx);
 
     void set_tick_callback(void* cb);
     void tick();
 
     std::string_view python_path() { return pythonPath_; }
-    Script& script() { return script_; }
+    std::vector<Script>& scripts() { return scripts_; }
 
     static ScriptingEngine* instance;
     Application* app;
+    Script* current_script = nullptr;
 
 private:
     std::string pythonPath_;
     bool available = false;
-    Script script_;
+    std::vector<Script> scripts_;
 };

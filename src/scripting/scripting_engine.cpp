@@ -17,28 +17,53 @@ ScriptingEngine* ScriptingEngine::instance = nullptr;
 
 static void* g_lib = nullptr;
 
+static FILE* cross_popen(const char* command, const char* mode) {
+#ifdef _WIN32
+    return _popen(command, mode);
+#else
+    return popen(command, mode);
+#endif
+}
+
+static int cross_pclose(FILE* stream) {
+#ifdef _WIN32
+    return _pclose(stream);
+#endif
+    return pclose(stream);
+}
+
 static std::string popen_result(const std::string& cmd) {
-    FILE* pipe = popen(cmd.c_str(), "r");
+    FILE* pipe = cross_popen(cmd.c_str(), "r");
     if (!pipe) {
         return {};
     }
-    char buf[512] = {};
+    char buf[1024] = {};
     fgets(buf, sizeof(buf), pipe);
-    pclose(pipe);
+    cross_pclose(pipe);
     std::string s(buf);
-    if (!s.empty() && s.back() == '\n') {
+
+    while (!s.empty() && (s.back() == '\n' || s.back() == '\r')) {
         s.pop_back();
     }
     return s;
 }
 
 static std::string find_python_exe() {
-    for (const char* c : {"python3", "python3.12", "python3.11", "python3.10"}) {
-        std::string r = popen_result(std::string("which ") + c + " 2>/dev/null");
+#ifdef _WIN32
+    for (const char* c : {"python.exe", "python3.exe"}) {
+        std::string r = popen_result(std::format("where {} 2>nul", c));
         if (!r.empty()) {
             return r;
         }
     }
+#else
+    for (const char* c : {"python3", "python3.12", "python3.11", "python3.10"}) {
+        std::string r = popen_result(std::format("which {} 2>/dev/null", c));
+        if (!r.empty()) {
+            return r;
+        }
+    }
+#endif
     return {};
 }
 
@@ -50,7 +75,12 @@ static std::string find_libpython(const std::string& python_exe) {
 
 static PyObject* init_fluidsim_io() {
     static auto methods = py_util::make_table({
-        {"output", [](const char* text) { ScriptingEngine::instance->script().append_output(text); }},
+        {"output",
+         [](const char* text) {
+             if (text && ScriptingEngine::instance->current_script) {
+                 ScriptingEngine::instance->current_script->append_output(text);
+             }
+         }},
     });
     static PyModuleDef def = {
         PyModuleDef_HEAD_INIT,
@@ -70,7 +100,7 @@ void ScriptingEngine::init(Application* app_, std::string_view pythonPath) {
     instance = this;
     app = app_;
 
-    pythonPath_ = pythonPath.empty() ? find_python_exe() : std::string(pythonPath);
+    pythonPath_ = pythonPath.empty() ? find_python_exe() : pythonPath;
     if (pythonPath_.empty()) {
         return;
     }
@@ -127,33 +157,71 @@ ScriptingEngine::~ScriptingEngine() {
     }
 }
 
-bool ScriptingEngine::run_string(const std::string& code) {
-    if (!available) {
-        return false;
-    }
-    script_.code = code;
-    script_.clear_output();
-    return py::run_simple_string(code.c_str(), nullptr) == 0;
+size_t ScriptingEngine::add_script() {
+    scripts_.emplace_back();
+    return scripts_.size() - 1;
 }
-void ScriptingEngine::stop_current_script() { set_tick_callback(nullptr); }
+
+void ScriptingEngine::remove_script(size_t idx) {
+    stop_script(idx);
+    scripts_.erase(scripts_.begin() + idx);
+}
+
+void ScriptingEngine::run_script(size_t idx) {
+    if (!available) {
+        return;
+    }
+    stop_script(idx);
+    Script& s = scripts_[idx];
+    s.clear_output();
+
+    if (!s.globals) {
+        s.globals = py::dict_new();
+        PyObject* builtins = py::import_import_module("builtins");
+        py::dict_set_item_string(static_cast<PyObject*>(s.globals), "__builtins__", builtins);
+        py::decref(builtins);
+    }
+    current_script = &s;
+    py::run_string(s.code.c_str(), Py_file_input, static_cast<PyObject*>(s.globals),
+                   static_cast<PyObject*>(s.globals));
+    current_script = nullptr;
+}
+
+void ScriptingEngine::stop_script(size_t idx) {
+    auto& s = scripts_[idx];
+    if (s.tick_callback) {
+        py::decref(static_cast<PyObject*>(s.tick_callback));
+        s.tick_callback = nullptr;
+    }
+}
 
 void ScriptingEngine::set_tick_callback(void* cb) {
-    if (script_.tick_callback) {
-        py::decref(static_cast<PyObject*>(script_.tick_callback));
+    if (!current_script) {
+        return;
     }
-    script_.tick_callback = static_cast<PyObject*>(cb);
-    if (script_.tick_callback) {
-        py::incref(static_cast<PyObject*>(script_.tick_callback));
+    if (current_script->tick_callback) {
+        py::decref(static_cast<PyObject*>(current_script->tick_callback));
+    }
+    current_script->tick_callback = cb;
+    if (cb) {
+        py::incref(static_cast<PyObject*>(cb));
     }
 }
 
 void ScriptingEngine::tick() {
-    if (!available || !script_.tick_callback) {
+    if (!available) {
         return;
     }
-    PyObject* res = py::call_no_args(static_cast<PyObject*>(script_.tick_callback));
-    if (res) {
-        py::decref(res);
+    for (auto& s : scripts_) {
+        if (!s.tick_callback) {
+            continue;
+        }
+        current_script = &s;
+        PyObject* res = py::call_no_args(static_cast<PyObject*>(s.tick_callback));
+        if (res) {
+            py::decref(res);
+        }
+        current_script = nullptr;
     }
 }
 
@@ -164,7 +232,10 @@ ScriptingEngine* ScriptingEngine::instance = nullptr;
 bool ScriptingEngine::init(Application*) { return false; }
 void ScriptingEngine::shutdown() {}
 bool ScriptingEngine::is_available() { return false; }
-bool ScriptingEngine::run_string(const std::string&) { return false; }
+int ScriptingEngine::add_script() { return -1; }
+void ScriptingEngine::remove_script(int) {}
+void ScriptingEngine::run_script(int) {}
+void ScriptingEngine::stop_script(int) {}
 void ScriptingEngine::set_tick_callback(void*) {}
 void ScriptingEngine::tick() {}
 void ScriptingEngine::set_output_handler(std::function<void(std::string_view)>) {}
