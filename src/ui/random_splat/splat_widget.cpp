@@ -30,6 +30,16 @@ std::optional<std::vector<FluidSource>> SplatWidget::render(SplatSettings& s, Ve
 
     ImGui::Checkbox("Apply Color", &s.applyColor);
 
+    if (s.applyColor) {
+        if (ImGui::RadioButton("Additive", !s.dyeReplace)) {
+            s.dyeReplace = false;
+        }
+        ImGui::SameLine();
+        if (ImGui::RadioButton("Replace", s.dyeReplace)) {
+            s.dyeReplace = true;
+        }
+    }
+
     if (!ImGui::Button("Splat!", ImVec2(-1, 0))) {
         return std::nullopt;
     }
@@ -70,7 +80,9 @@ std::vector<FluidSource> SplatWidget::generate(const SplatSettings& s, VelocityI
             s.applyColor ? ColorUtils::Generator::randomVibrant(rng_) : std::array{1.f, 1.f, 1.f};
 
         sources.emplace_back(posDist(rng_), posDist(rng_), vx, vy, radiusDist(rng_), color).mode_mask =
-            (s.applyVelocity ? FluidSource::Mode::VELOCITY : 0) | (s.applyColor ? FluidSource::Mode::DYE : 0);
+            (s.applyVelocity ? FluidSource::Mode::VELOCITY : 0) |
+            (s.applyColor ? (s.dyeReplace ? FluidSource::Mode::DYE_REPLACE : FluidSource::Mode::DYE_ADDITIVE)
+                          : 0);
         ;
     }
 

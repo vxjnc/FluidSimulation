@@ -18,4 +18,5 @@ struct SplatSettings {
     float magMin = 0.f, magMax = 100.f;
 
     bool applyColor = true;
+    bool dyeReplace = false;
 };

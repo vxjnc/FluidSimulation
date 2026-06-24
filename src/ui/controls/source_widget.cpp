@@ -20,7 +20,7 @@ bool SourceWidget::render(FluidSource& s, size_t idx, AppSettings& settings) {
     }
 
     bool has_velocity = s.mode_mask & FluidSource::Mode::VELOCITY;
-    bool has_dye = s.mode_mask & FluidSource::Mode::DYE;
+    bool has_dye = s.mode_mask & (FluidSource::Mode::DYE_ADDITIVE | FluidSource::Mode::DYE_REPLACE);
 
     ImGui::Text("Inject:");
     ImGui::SameLine();
@@ -35,10 +35,24 @@ bool SourceWidget::render(FluidSource& s, size_t idx, AppSettings& settings) {
     ImGui::SameLine();
     if (ImGui::Checkbox("Dye", &has_dye)) {
         if (has_dye) {
-            s.mode_mask |= FluidSource::Mode::DYE;
+            s.mode_mask |= FluidSource::Mode::DYE_ADDITIVE;
+            s.mode_mask &= ~FluidSource::Mode::DYE_REPLACE;
         }
         else {
-            s.mode_mask &= ~FluidSource::Mode::DYE;
+            s.mode_mask &= ~(FluidSource::Mode::DYE_ADDITIVE | FluidSource::Mode::DYE_REPLACE);
+        }
+    }
+
+    if (has_dye) {
+        bool additive = s.mode_mask & FluidSource::Mode::DYE_ADDITIVE;
+        if (ImGui::RadioButton("Additive", additive)) {
+            s.mode_mask &= ~FluidSource::Mode::DYE_REPLACE;
+            s.mode_mask |= FluidSource::Mode::DYE_ADDITIVE;
+        }
+        ImGui::SameLine();
+        if (ImGui::RadioButton("Replace", !additive)) {
+            s.mode_mask &= ~FluidSource::Mode::DYE_ADDITIVE;
+            s.mode_mask |= FluidSource::Mode::DYE_REPLACE;
         }
     }
 

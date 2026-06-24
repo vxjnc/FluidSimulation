@@ -83,15 +83,20 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
         }
 
         // --- dye ---
-        if in_dye && (inj.mode_mask & 2u) != 0u {
+        let dye_additive = (inj.mode_mask & 2u) != 0u;
+        let dye_replace = (inj.mode_mask & 4u) != 0u;
+        if in_dye && (dye_additive || dye_replace) {
             let dye_cell = vec2f(f32(x), f32(y));
             let src_dye = vec2f(inj.x * f32(params.dye_width), inj.y * f32(params.dye_height));
             let radius_dye = inj.radius * f32(params.dye_height);
             let eff_r = select(radius_dye, 2.0, inj.form == 1u);
             let d = calc_distance(dye_cell, src_dye, radius_dye, inj);
-            if d < eff_r {
+            if dye_additive && d < eff_r {
                 let falloff = 1.0 - d / eff_r;
                 dye[idx_dye(x, y)] = min(dye[idx_dye(x, y)] + vec4f(inj.color.rgb * falloff, falloff), vec4f(1.0));
+            }
+            else if dye_replace && d < radius_dye {
+                dye[idx_dye(x, y)] = vec4f(inj.color.rgb, 1.0);
             }
         }
     }

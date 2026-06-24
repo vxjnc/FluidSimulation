@@ -19,7 +19,7 @@ struct AppSettings {
     Observable<float> curlStrength = 30.f;
 
     BrushMode brushMode = BrushMode::Inject;
-    int brushModeMask = FluidSource::Mode::VELOCITY | FluidSource::Mode::DYE;
+    int brushModeMask = FluidSource::Mode::VELOCITY | FluidSource::Mode::DYE_ADDITIVE;
     float brushRadius = 0.1f;
     float brushStrength = 10.0f;
     std::array<float, 3> brushColor;

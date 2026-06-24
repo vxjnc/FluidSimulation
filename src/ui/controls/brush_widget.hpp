@@ -17,7 +17,9 @@ public:
         if (settings.brushMode == BrushMode::Inject) {
             ImGui::SliderFloat("Strength", &settings.brushStrength, 1.0f, 100.0f);
             bool vel = settings.brushModeMask & FluidSource::Mode::VELOCITY;
-            bool dye = settings.brushModeMask & FluidSource::Mode::DYE;
+            bool dye =
+                settings.brushModeMask & (FluidSource::Mode::DYE_ADDITIVE | FluidSource::Mode::DYE_REPLACE);
+
             ImGui::Text("Inject:");
             ImGui::SameLine();
             if (ImGui::Checkbox("Velocity", &vel)) {
@@ -25,7 +27,27 @@ public:
             }
             ImGui::SameLine();
             if (ImGui::Checkbox("Dye", &dye)) {
-                settings.brushModeMask ^= FluidSource::Mode::DYE;
+                if (dye) {
+                    settings.brushModeMask |= FluidSource::Mode::DYE_ADDITIVE;
+                    settings.brushModeMask &= ~FluidSource::Mode::DYE_REPLACE;
+                }
+                else {
+                    settings.brushModeMask &=
+                        ~(FluidSource::Mode::DYE_ADDITIVE | FluidSource::Mode::DYE_REPLACE);
+                }
+            }
+
+            if (dye) {
+                bool additive = settings.brushModeMask & FluidSource::Mode::DYE_ADDITIVE;
+                if (ImGui::RadioButton("Additive", additive)) {
+                    settings.brushModeMask &= ~FluidSource::Mode::DYE_REPLACE;
+                    settings.brushModeMask |= FluidSource::Mode::DYE_ADDITIVE;
+                }
+                ImGui::SameLine();
+                if (ImGui::RadioButton("Replace", !additive)) {
+                    settings.brushModeMask &= ~FluidSource::Mode::DYE_ADDITIVE;
+                    settings.brushModeMask |= FluidSource::Mode::DYE_REPLACE;
+                }
             }
         }
     }

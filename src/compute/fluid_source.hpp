@@ -7,7 +7,8 @@
 struct FluidSource {
     enum Mode : uint8_t {
         VELOCITY = 1 << 0,
-        DYE = 1 << 1,
+        DYE_ADDITIVE = 1 << 1,
+        DYE_REPLACE = 1 << 2,
     };
     enum class Form : uint8_t {
         CIRCLE,
@@ -30,6 +31,6 @@ struct FluidSource {
     float radius = 0.05f;
     bool active = true;
 
-    int mode_mask = Mode::VELOCITY | Mode::DYE;
+    int mode_mask = Mode::VELOCITY | Mode::DYE_ADDITIVE;
     Form form = Form::CIRCLE;
 };
