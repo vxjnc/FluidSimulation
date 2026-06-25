@@ -195,6 +195,14 @@ void ScriptingEngine::run_script(size_t idx) {
     if (s.compiled) {
         py::eval_code(static_cast<PyObject*>(s.compiled), static_cast<PyObject*>(s.globals),
                       static_cast<PyObject*>(s.globals));
+        if (py::err_occurred()) {
+            py::err_print();
+            py::err_clear();
+        }
+    }
+    else {
+        py::err_print();
+        py::err_clear();
     }
 
     current_script = nullptr;

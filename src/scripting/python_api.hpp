@@ -41,6 +41,8 @@ namespace py {
     extern int (*module_add_object)(PyObject*, const char*, PyObject*);     // PyModule_AddObject
     extern int (*module_add_int_constant)(PyObject*, const char*, long);    // PyModule_AddIntConstant
     extern void (*err_clear)();                                             // PyErr_Clear
+    extern void (*err_print)();                                             // PyErr_Print
+    extern PyObject* (*err_occurred)();                                     // PyErr_Occurred
 
     extern PyObject* none;               // _Py_NoneStruct
     extern PyObject* type_error;         // PyExc_TypeError
