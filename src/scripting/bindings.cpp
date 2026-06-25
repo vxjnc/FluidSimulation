@@ -95,16 +95,16 @@ static auto FluidSimMethods = py_util::make_table(
       }},
 
      {"get_sources", []() -> PyObject* {
-          auto& sources = ScriptingEngine::instance->app->getSources();
-          PyObject* py_list = py::list_new(sources.size());
-          if (!py_list) {
+          const auto& sources = ScriptingEngine::instance->app->getSources();
+          PyObject* py_tuple = py::tuple_new(sources.size());
+          if (!py_tuple) {
               return nullptr;
           }
 
           for (size_t i = 0; i < sources.size(); ++i) {
-              py::list_set_item(py_list, i, py_util::to_py(to_agregat(sources[i])));
+              py::tuple_set_item(py_tuple, i, py_util::to_py(to_agregat(sources[i])));
           }
-          return py_list;
+          return py_tuple;
       }}});
 
 static PyModuleDef fluidsim_module = {PyModuleDef_HEAD_INIT,
