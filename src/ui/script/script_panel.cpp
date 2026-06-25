@@ -1,8 +1,11 @@
 #include "script_panel.hpp"
 
+#include <fstream>
+
 #include <imgui.h>
 
 #include "src/scripting/scripting_engine.hpp"
+#include "src/utils/file_dialog.hpp"
 
 void ScriptPanel::render(bool& open) {
     if (ScriptingEngine::instance->scripts().empty()) {
@@ -11,9 +14,32 @@ void ScriptPanel::render(bool& open) {
     }
 
     ImGui::SetNextWindowSize(ImVec2(600, 500), ImGuiCond_FirstUseEver);
-    if (!ImGui::Begin("Script Editor", &open)) {
+    if (!ImGui::Begin("Script Editor", &open, ImGuiWindowFlags_MenuBar)) {
         ImGui::End();
         return;
+    }
+
+    if (ImGui::BeginMenuBar()) {
+        if (ImGui::BeginMenu("File")) {
+            if (ImGui::MenuItem("Open...")) {
+                nfdu8filteritem_t filters[] = {{"Python Script", "py"}};
+                FileDialog::Open(filters, [this](const char* path) {
+                    std::ifstream f(path);
+                    std::string code((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
+                    editor_.set_code(code);
+                    ScriptingEngine::instance->scripts()[active_idx_].code = code;
+                });
+            }
+            if (ImGui::MenuItem("Save...")) {
+                nfdu8filteritem_t filters[] = {{"Python Script", "py"}};
+                FileDialog::Save("script.py", filters, [this](const char* path) {
+                    std::ofstream f(path);
+                    f << editor_.code();
+                });
+            }
+            ImGui::EndMenu();
+        }
+        ImGui::EndMenuBar();
     }
 
     if (ImGui::BeginTabBar("##scripts")) {
