@@ -13,6 +13,7 @@ Real-time fluid simulation on the GPU using WebGPU. Just something pretty to loo
 - Save/load simulation state
 - Screenshot to clipboard or file
 - Multiple render modes: dye, velocity, pressure, divergence, curl
+- Python scripting engine with per-script isolated namespaces and tick callbacks
 
 ## Building
 
@@ -31,6 +32,8 @@ cmake -B build -DWEBGPU_BACKEND=WGPU
 ```
 
 All other dependencies (GLFW, ImGui, sigslot, nfd, stb, etc.) are fetched automatically via CMake FetchContent.
+
+Python scripting is enabled automatically if Python 3.10+ development headers are found. To disable, build without Python headers installed.
 
 ## Controls
 
