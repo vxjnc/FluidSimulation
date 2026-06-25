@@ -1,4 +1,4 @@
-# APP_VERSION -> git describe -> dev + дата
+# APP_VERSION -> git describe -> dev + date
 if(NOT DEFINED APP_VERSION)
     find_package(Git QUIET)
     if(GIT_FOUND)

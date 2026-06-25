@@ -1,5 +1,6 @@
 #include "script_panel.hpp"
 
+#include <algorithm>
 #include <fstream>
 
 #include <imgui.h>
@@ -46,10 +47,8 @@ void ScriptPanel::render(bool& open) {
         auto& scripts = ScriptingEngine::instance->scripts();
         for (size_t i = 0; i < scripts.size(); i++) {
             bool tab_open = true;
-            char label[32];
-            std::snprintf(label, sizeof(label), "Script %zu", i + 1);
-
-            if (ImGui::BeginTabItem(label, &tab_open)) {
+            auto label = std::format("{}Script {}", scripts[i].tick_callback ? "• " : "", i + 1);
+            if (ImGui::BeginTabItem(label.c_str(), &tab_open)) {
                 if (active_idx_ != i) {
                     ScriptingEngine::instance->scripts()[active_idx_].code = editor_.code();
                     active_idx_ = i;
@@ -60,16 +59,14 @@ void ScriptPanel::render(bool& open) {
             }
             if (!tab_open) {
                 ScriptingEngine::instance->remove_script(i);
-                if (active_idx_ >= scripts.size()) {
-                    active_idx_ = scripts.size() - 1;
-                }
+                active_idx_ = std::clamp(active_idx_, 0zu, scripts.size() - 1);
                 editor_.set_code(ScriptingEngine::instance->scripts()[active_idx_].code);
             }
         }
         if (ImGui::TabItemButton("+")) {
             ScriptingEngine::instance->scripts()[active_idx_].code = editor_.code();
             active_idx_ = ScriptingEngine::instance->add_script();
-            editor_.set_code("");
+            editor_.set_code("print('Hello, World!')");
         }
         ImGui::EndTabBar();
     }
@@ -110,6 +107,5 @@ void ScriptPanel::renderTab(size_t idx) {
     }
     ImGui::PopStyleColor();
 
-    ImGui::TextDisabled("console");
     console_.render(consoleH, s);
 }

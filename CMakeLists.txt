@@ -173,6 +173,7 @@ set(GENERATED_DIR  "${GENERATED_ROOT}/generated")
 
 include(shaders)
 include(version)
+include(embedded_resources)
 
 # --- fluid_compute ---
 add_library(fluid_compute INTERFACE)
@@ -196,7 +197,7 @@ target_include_directories(fluid_gui
         ${imguicolortextedit_SOURCE_DIR}
 )
 target_link_libraries(fluid_gui PUBLIC webgpu wesl glfw imgui glfw3webgpu clip stb_headers nfd zpp_bits_headers Pal::Sigslot pfr)
-add_dependencies(fluid_gui wgsl_shaders)
+add_dependencies(fluid_gui wgsl_shaders embedded_resources)
 
 # --- Executable ---
 add_executable(${PROJECT_NAME} main.cpp ${SOURCE_FILES})

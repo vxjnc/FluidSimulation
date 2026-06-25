@@ -1,8 +1,7 @@
 #include "imgui_manager.hpp"
 
-#include <array>
-
 #include "generated/version.h"
+#include "src/ui/font_manager.hpp"
 #include "src/ui/imgui_style.hpp"
 #include "src/ui/widgets/common.hpp"
 #include "src/utils/file_dialog.hpp"
@@ -14,7 +13,10 @@ void ImGuiManager::init(GLFWwindow* window, wgpu::Device device, wgpu::TextureFo
     this->settings = settings;
 
     ImGui::CreateContext();
-    ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_DockingEnable;
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_DockingEnable;
+    FontManager::init(io);
+    io.FontDefault = FontManager::ui();
 
     ImGuiSettingsHandler handler{};
     handler.TypeName = "FluidSim";
