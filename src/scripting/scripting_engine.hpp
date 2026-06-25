@@ -1,4 +1,5 @@
 #pragma once
+#ifdef SCRIPTING_AVAILABLE
 
 #include <string>
 #include <string_view>
@@ -34,3 +35,5 @@ private:
     bool available = false;
     std::vector<Script> scripts_;
 };
+
+#endif

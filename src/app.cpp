@@ -32,10 +32,12 @@ Application::Application(uint32_t width, uint32_t height, std::string_view title
         WGPUContext::instance().resize(static_cast<uint32_t>(w), static_cast<uint32_t>(h));
     });
 
+#ifdef SCRIPTING_AVAILABLE
     scripting.init(this, settings.scripting.pythonPath);
     if (scripting.is_available()) {
         settings.scripting.pythonPath = scripting.python_path();
     }
+#endif
     uiProfiler.init(ctx.device());
     renderer.init(ctx.device());
     viewport.init(ctx.device(), width, height, ctx.surfaceFormat());
@@ -154,7 +156,9 @@ void Application::run() {
         renderer.profiler.requestReadback();
         uiProfiler.requestReadback();
 
+#ifdef SCRIPTING_AVAILABLE
         scripting.tick();
+#endif
     }
 }
 

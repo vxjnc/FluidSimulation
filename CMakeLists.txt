@@ -264,7 +264,7 @@ if(Python_FOUND)
     endif()
 else()
     message(STATUS "Python not found - scripting disabled (engine.cpp stub only)")
-    target_sources(${PROJECT_NAME} PRIVATE src/scripting/engine.cpp)
+    target_sources(${PROJECT_NAME} PRIVATE src/scripting/scripting_engine.cpp)
 endif()
 
 # --- Google Benchmark ---

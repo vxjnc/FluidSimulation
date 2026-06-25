@@ -20,20 +20,28 @@ Real-time fluid simulation on the GPU using WebGPU. Just something pretty to loo
 Requires CMake 3.28+, a C++23 compiler, and ZLIB.
 
 ```bash
-cmake -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build
+cmake --preset release
+cmake --build --preset release
 ./FluidSimulation
 ```
 
 By default uses the Dawn WebGPU backend. To use wgpu-native instead:
 
 ```bash
-cmake -B build -DWEBGPU_BACKEND=WGPU
+cmake --preset release-wgpu
+cmake --build --preset release-wgpu
+./FluidSimulation
 ```
 
 All other dependencies (GLFW, ImGui, sigslot, nfd, stb, etc.) are fetched automatically via CMake FetchContent.
 
-Python scripting is enabled automatically if Python 3.10+ development headers are found. To disable, build without Python headers installed.
+Python scripting is enabled automatically if Python 3.10+ development headers are found. To disable, build without Python headers installed, or force disable it along with all scripting UI components using the specific preset:
+
+```bash
+cmake --preset release-no-python
+cmake --build --preset release-no-python
+./FluidSimulation
+```
 
 ## Controls
 

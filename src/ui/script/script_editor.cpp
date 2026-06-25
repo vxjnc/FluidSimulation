@@ -1,3 +1,5 @@
+#ifdef SCRIPTING_AVAILABLE
+
 #include "script_editor.hpp"
 
 #include <imgui.h>
@@ -23,3 +25,5 @@ bool ScriptEditor::render(float height) {
 
     return run;
 }
+
+#endif

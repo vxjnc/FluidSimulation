@@ -1,5 +1,4 @@
 #pragma once
-
 #ifdef SCRIPTING_AVAILABLE
 
 #include <array>

@@ -1,8 +1,6 @@
-#include "scripting_engine.hpp"
-
-#include "src/scripting/python_binding.hpp"
-
 #ifdef SCRIPTING_AVAILABLE
+
+#include "scripting_engine.hpp"
 
 #include "python_api.hpp"
 
@@ -11,6 +9,8 @@
 
 #include <Python.h>
 #include <dlfcn.h>
+
+#include "src/scripting/python_binding.hpp"
 
 extern "C" PyObject* PyInit_fluidsim();
 
@@ -69,9 +69,14 @@ static std::string find_python_exe() {
 }
 
 static std::string find_libpython(const std::string& python_exe) {
+#ifdef _WIN32
+    return popen_result(python_exe + " -c \"import sysconfig; print(sysconfig.get_config_var('BINDIR') + "
+                                     "'/python' + sysconfig.get_config_var('py_version_nodot') + '.dll')\"");
+#else
     return popen_result(python_exe + " -c \"import sysconfig; print("
                                      "sysconfig.get_config_var('LIBDIR') + '/libpython'"
                                      " + sysconfig.get_config_var('LDVERSION') + '.so.1.0')\"");
+#endif
 }
 
 static PyObject* init_fluidsim_io() {
@@ -245,20 +250,5 @@ void ScriptingEngine::tick() {
         current_script = nullptr;
     }
 }
-
-#else
-
-ScriptingEngine* ScriptingEngine::instance = nullptr;
-
-bool ScriptingEngine::init(Application*) { return false; }
-void ScriptingEngine::shutdown() {}
-bool ScriptingEngine::is_available() { return false; }
-int ScriptingEngine::add_script() { return -1; }
-void ScriptingEngine::remove_script(int) {}
-void ScriptingEngine::run_script(int) {}
-void ScriptingEngine::stop_script(int) {}
-void ScriptingEngine::set_tick_callback(void*) {}
-void ScriptingEngine::tick() {}
-void ScriptingEngine::set_output_handler(std::function<void(std::string_view)>) {}
 
 #endif

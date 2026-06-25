@@ -1,3 +1,5 @@
+#ifdef SCRIPTING_AVAILABLE
+
 #include "script_panel.hpp"
 
 #include <algorithm>
@@ -84,16 +86,12 @@ void ScriptPanel::renderTab(size_t idx) {
 
     if (editor_.render(editorH)) {
         s.code = editor_.code();
-#ifdef SCRIPTING_AVAILABLE
         if (ScriptingEngine::instance->is_available()) {
             ScriptingEngine::instance->run_script(idx);
         }
         else {
             s.append_output("[error] Python not available");
         }
-#else
-        s.append_output("[error] Scripting not compiled");
-#endif
     }
 
     ImGui::Separator();
@@ -109,3 +107,5 @@ void ScriptPanel::renderTab(size_t idx) {
 
     console_.render(consoleH, s);
 }
+
+#endif

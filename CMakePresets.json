@@ -42,6 +42,14 @@
             "cacheVariables": {
                 "BUILD_BENCHMARKS": "ON"
             }
+        },
+        {
+            "name": "release-no-python",
+            "inherits": "release",
+            "displayName": "Release (No Python / No Scripting)",
+            "cacheVariables": {
+                "CMAKE_DISABLE_FIND_PACKAGE_Python": true
+            }
         }
     ],
     "buildPresets": [
@@ -60,6 +68,10 @@
         {
             "name": "release-benchmarks",
             "configurePreset": "release-benchmarks"
+        },
+        {
+            "name": "release-no-python",
+            "configurePreset": "release-no-python"
         }
     ]
 }

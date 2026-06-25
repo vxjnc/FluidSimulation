@@ -93,9 +93,11 @@ void ImGuiManager::renderUI(FluidViewport& viewport, MouseState& mouse, FluidSim
     if (visibility.controls) {
         controlsPanel.render(visibility.controls, viewport, sim, *settings, sources);
     }
+#ifdef SCRIPTING_AVAILABLE
     if (visibility.script) {
         scriptPanel.render(visibility.script);
     }
+#endif
     if (visibility.randomSplat) {
         splatPanel.render(visibility.randomSplat, settings->splatSettings, settings->ui.velocityMode);
         if (auto splats = splatPanel.takeSplats()) {
@@ -231,7 +233,9 @@ void ImGuiManager::renderMenuBar() {
         ImGui::MenuItem("Random Splat", nullptr, &visibility.randomSplat);
         ImGui::MenuItem("Import", nullptr, &visibility.import);
         Widgets::MenuItem("Stats", nullptr, visibility.stats);
+#ifdef SCRIPTING_AVAILABLE
         ImGui::MenuItem("Script", nullptr, &visibility.script);
+#endif
 
         ImGui::Separator();
         if (ImGui::MenuItem("Reset Layout")) {
@@ -267,8 +271,8 @@ void ImGuiManager::renderSettingsModal() {
             settings->ui.velocityMode = static_cast<VelocityInputMode>(mode);
             ImGui::EndTabItem();
         }
-        if (ImGui::BeginTabItem("Scripting")) {
 #ifdef SCRIPTING_AVAILABLE
+        if (ImGui::BeginTabItem("Scripting")) {
             ImGui::Text("Python Executable");
             ImGui::SetNextItemWidth(-40);
             ImGui::TextUnformatted(settings->scripting.pythonPath.c_str());
@@ -277,11 +281,9 @@ void ImGuiManager::renderSettingsModal() {
                 FileDialog::Open(std::span<const nfdu8filteritem_t>(),
                                  [this](const char* path) { settings->scripting.pythonPath = path; });
             }
-#else
-            ImGui::TextDisabled("Scripting not compiled");
-#endif
             ImGui::EndTabItem();
         }
+#endif
         if (ImGui::BeginTabItem("Style")) {
             ImGui::ShowStyleEditor();
             ImGui::EndTabItem();

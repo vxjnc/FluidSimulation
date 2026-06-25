@@ -1,4 +1,6 @@
 #pragma once
+#ifdef SCRIPTING_AVAILABLE
+
 #include <string>
 #include <string_view>
 
@@ -23,3 +25,5 @@ public:
 private:
     std::string output;
 };
+
+#endif

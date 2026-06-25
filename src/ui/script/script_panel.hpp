@@ -1,4 +1,5 @@
 #pragma once
+#ifdef SCRIPTING_AVAILABLE
 
 #include "src/ui/script/script_console.hpp"
 #include "src/ui/script/script_editor.hpp"
@@ -13,3 +14,5 @@ private:
     ScriptEditor editor_;
     ScriptConsole console_;
 };
+
+#endif

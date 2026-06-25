@@ -33,7 +33,9 @@ struct PanelVisibility {
     bool controls = true;
     bool randomSplat = false;
     bool import = false;
+#ifdef SCRIPTING_AVAILABLE
     bool script = false;
+#endif
     Observable<bool> stats = true;
 };
 
@@ -75,7 +77,10 @@ public:
     SplatPanel splatPanel;
     ImportPanel importPanel;
     StatsPanel statsPanel;
+
+#ifdef SCRIPTING_AVAILABLE
     ScriptPanel scriptPanel;
+#endif
 
 private:
     AppSettings* settings;

@@ -1,3 +1,5 @@
+#ifdef SCRIPTING_AVAILABLE
+
 #include "script_console.hpp"
 
 #include <imgui.h>
@@ -15,3 +17,5 @@ void ScriptConsole::render(float height, Script& script) {
     ImGui::PopFont();
     ImGui::EndChild();
 }
+
+#endif
