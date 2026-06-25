@@ -6,6 +6,7 @@
 
 #include "python_api.hpp"
 
+#include <functional>
 #include <string>
 
 #include <Python.h>
@@ -182,8 +183,20 @@ void ScriptingEngine::run_script(size_t idx) {
         py::decref(builtins);
     }
     current_script = &s;
-    py::run_string(s.code.c_str(), Py_file_input, static_cast<PyObject*>(s.globals),
-                   static_cast<PyObject*>(s.globals));
+
+    size_t new_hash = std::hash<std::string>{}(s.code);
+    if (!s.compiled || s.code_hash != new_hash) {
+        if (s.compiled) {
+            py::decref(static_cast<PyObject*>(s.compiled));
+        }
+        s.compiled = py::compile_string(s.code.c_str(), "<script>", Py_file_input);
+        s.code_hash = new_hash;
+    }
+    if (s.compiled) {
+        py::eval_code(static_cast<PyObject*>(s.compiled), static_cast<PyObject*>(s.globals),
+                      static_cast<PyObject*>(s.globals));
+    }
+
     current_script = nullptr;
 }
 

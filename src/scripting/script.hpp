@@ -16,7 +16,9 @@ public:
     std::string code;
 
     void* tick_callback = nullptr; // PyObject*
+    void* compiled = nullptr;      // PyObject*
     void* globals;                 // PyObject*
+    size_t code_hash = 0;
 
 private:
     std::string output;

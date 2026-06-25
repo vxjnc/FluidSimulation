@@ -16,6 +16,8 @@ namespace py {
     extern int (*run_simple_string)(const char*, PyCompilerFlags*);         // PyRun_SimpleStringFlags
     extern PyObject* (*module_get_dict)(PyObject*);                         // PyModule_GetDict
     extern PyObject* (*run_string)(const char*, int, PyObject*, PyObject*); // PyRun_String
+    extern PyObject* (*compile_string)(const char*, const char*, int);      // Py_CompileString
+    extern PyObject* (*eval_code)(PyObject*, PyObject*, PyObject*);         // PyEval_EvalCode
     extern int (*append_inittab)(const char*, PyObject* (*)());             // PyImport_AppendInittab
     extern PyObject* (*call_no_args)(PyObject*);                            // PyObject_CallNoArgs
     extern PyObject* (*long_from_size_t)(size_t);                           // PyLong_FromSize_t
