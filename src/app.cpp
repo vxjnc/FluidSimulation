@@ -2,6 +2,8 @@
 
 #include <ranges>
 
+#include <dlfcn.h>
+
 #include "src/capture/screenshot_capture.hpp"
 #include "src/utils/color_generator.hpp"
 #include "src/utils/file_dialog.hpp"
@@ -33,11 +35,12 @@ Application::Application(uint32_t width, uint32_t height, std::string_view title
     });
 
 #ifdef SCRIPTING_AVAILABLE
-    scripting.init(this, settings.scripting.pythonPath);
-    if (scripting.is_available()) {
-        settings.scripting.pythonPath = scripting.python_path();
+    scripting.init(&sources, settings.scripting.pythonPath);
+    if (scripting.engine().is_available()) {
+        settings.scripting.pythonPath = scripting.engine().python_path();
     }
 #endif
+
     uiProfiler.init(ctx.device());
     renderer.init(ctx.device());
     viewport.init(ctx.device(), width, height, ctx.surfaceFormat());
@@ -142,7 +145,7 @@ void Application::run() {
 
         processInput(enc, frameSources);
         update(enc, frameSources);
-        imguiManager.renderUI(viewport, mouse, simulation, renderer, sources, uiProfiler);
+        imguiManager.renderUI(viewport, mouse, simulation, renderer, sources, uiProfiler, scripting.engine());
         auto [target, targetView] = render(enc);
 
         wgpu::raii::CommandBuffer cmd = enc->finish({});
@@ -157,7 +160,7 @@ void Application::run() {
         uiProfiler.requestReadback();
 
 #ifdef SCRIPTING_AVAILABLE
-        scripting.tick();
+        scripting.engine().tick();
 #endif
     }
 }

@@ -1,134 +1,86 @@
 #ifdef SCRIPTING_AVAILABLE
 
-#include <array>
+#include <nanobind/nanobind.h>
+#include <nanobind/stl/array.h>
 
-#include <Python.h>
-
-#include "src/app.hpp"
-#include "src/scripting/python_api.hpp"
-#include "src/scripting/python_binding.hpp"
+#include "src/compute/fluid_source.hpp"
 #include "src/scripting/scripting_engine.hpp"
 
-extern "C" void _Py_Dealloc(PyObject*) {}
+namespace nb = nanobind;
 
-namespace {
-    struct PyFluidSource {
-        std::array<float, 3> color;
-        float x;
-        float y;
-        float vx;
-        float vy;
-        float radius;
-        bool active;
-        int mask;
-    };
-
-    inline PyFluidSource to_agregat(const FluidSource& src) {
-        return PyFluidSource{
-            .color = src.color,
-            .x = src.x,
-            .y = src.y,
-            .vx = src.vx,
-            .vy = src.vy,
-            .radius = src.radius,
-            .active = src.active,
-            .mask = src.mode_mask,
-        };
-    }
+NB_MODULE(_fluidsim_io, m) {
+    m.def("output", [](const char* text) {
+        if (text && ScriptingEngine::instance->current_script) {
+            ScriptingEngine::instance->current_script->append_output(text);
+        }
+    });
 }
 
-static auto FluidSimMethods = py_util::make_table(
-    {{"on_tick",
-      [](PyObject* cb) {
-          if (!py::Callable_Check(cb)) {
-              py::Err_SetString(py::type_error, "argument must be callable");
-          }
-          ScriptingEngine::instance->set_tick_callback(cb);
-      }},
+NB_MODULE(fluidsim, m) {
+    nb::class_<FluidSource>(m, "FluidSource")
+        .def_rw("color", &FluidSource::color)
+        .def_rw("x", &FluidSource::x)
+        .def_rw("y", &FluidSource::y)
+        .def_rw("vx", &FluidSource::vx)
+        .def_rw("vy", &FluidSource::vy)
+        .def_rw("radius", &FluidSource::radius)
+        .def_rw("active", &FluidSource::active)
+        .def_rw("mask", &FluidSource::mode_mask);
 
-     {"add_source",
-      [](float x, float y, float vx, float vy, float radius, float r, float g, float b) {
-          auto& sources = ScriptingEngine::instance->app->getSources();
-          sources.push_back(FluidSource(x, y, vx, vy, radius, std::array<float, 3>{r, g, b}));
-          return sources.size() - 1;
-      }},
+    nb::enum_<FluidSource::Mode>(m, "Mode", nb::is_arithmetic())
+        .value("VELOCITY", FluidSource::Mode::VELOCITY)
+        .value("DYE_ADDITIVE", FluidSource::Mode::DYE_ADDITIVE)
+        .value("DYE_REPLACE", FluidSource::Mode::DYE_REPLACE);
 
-     {
-         "remove_source",
-         [](int idx) {
-             auto& sources = ScriptingEngine::instance->app->getSources();
-             if (idx < 0 || idx >= static_cast<int>(sources.size())) {
-                 py::Err_SetString(py::type_error, "index out of range");
-                 return;
-             }
-             sources.erase(sources.begin() + idx);
-         },
-     },
+    m.def("on_tick", [](nb::callable cb) { ScriptingEngine::instance->set_tick_callback(cb.ptr()); });
 
-     {"set_source",
-      [](int idx, float x, float y, float vx, float vy, float radius, float r, float g, float b, bool active,
-         int mask) {
-          auto& sources = ScriptingEngine::instance->app->getSources();
-          if (idx < 0 || idx >= static_cast<int>(sources.size())) {
-              py::Err_SetString(py::type_error, "index out of range");
-              return;
-          }
-          auto& src = sources[idx];
-          src.x = x;
-          src.y = y;
-          src.vx = vx;
-          src.vy = vy;
-          src.radius = radius;
-          src.active = active;
-          src.color = {r, g, b};
-          src.mode_mask = mask;
-      }},
+    m.def("add_source", [](float x, float y, float vx, float vy, float radius, std::array<float, 3> color) {
+        auto& sources = *ScriptingEngine::instance->sources;
+        sources.push_back(FluidSource(x, y, vx, vy, radius, color));
+        return sources.size() - 1;
+    });
 
-     {"get_source",
-      [](int idx) -> PyObject* {
-          auto& sources = ScriptingEngine::instance->app->getSources();
-          if (idx < 0 || idx >= static_cast<int>(sources.size())) {
-              py::Err_SetString(py::type_error, "index out of range");
-              return nullptr;
-          }
-          return py_util::to_py(to_agregat(sources[idx]));
-      }},
+    m.def("remove_source", [](int idx) {
+        auto& sources = *ScriptingEngine::instance->sources;
+        if (idx < 0 || idx >= static_cast<int>(sources.size())) {
+            throw nb::index_error("index out of range");
+        }
+        sources.erase(sources.begin() + idx);
+    });
 
-     {"get_sources", []() -> PyObject* {
-          const auto& sources = ScriptingEngine::instance->app->getSources();
-          PyObject* py_tuple = py::tuple_new(sources.size());
-          if (!py_tuple) {
-              return nullptr;
-          }
+    m.def("set_source", [](int idx, float x, float y, float vx, float vy, float radius,
+                           std::array<float, 3> color, bool active, int mask) {
+        auto& sources = *ScriptingEngine::instance->sources;
+        if (idx < 0 || idx >= static_cast<int>(sources.size())) {
+            throw nb::index_error("index out of range");
+        }
+        auto& src = sources[idx];
+        src.x = x;
+        src.y = y;
+        src.vx = vx;
+        src.vy = vy;
+        src.radius = radius;
+        src.active = active;
+        src.color = color;
+        src.mode_mask = mask;
+    });
 
-          for (size_t i = 0; i < sources.size(); ++i) {
-              py::tuple_set_item(py_tuple, i, py_util::to_py(to_agregat(sources[i])));
-          }
-          return py_tuple;
-      }}});
+    m.def("get_source", [](int idx) {
+        auto& sources = *ScriptingEngine::instance->sources;
+        if (idx < 0 || idx >= static_cast<int>(sources.size())) {
+            throw nb::index_error("index out of range");
+        }
+        return sources[idx];
+    });
 
-static PyModuleDef fluidsim_module = {PyModuleDef_HEAD_INIT,
-                                      "fluidsim",
-                                      nullptr,
-                                      -1,
-                                      FluidSimMethods.data(),
-                                      nullptr,
-                                      nullptr,
-                                      nullptr,
-                                      nullptr};
-
-PyMODINIT_FUNC PyInit_fluidsim() {
-    PyObject* module = py::Module_Create2(&fluidsim_module, PYTHON_API_VERSION);
-    if (!module) {
-        return nullptr;
-    }
-
-    py::module_add_int_constant(module, "VELOCITY", FluidSource::Mode::VELOCITY);
-    py::module_add_int_constant(module, "DYE_ADDITIVE", FluidSource::Mode::DYE_ADDITIVE);
-    py::module_add_int_constant(module, "DYE_REPLACE", FluidSource::Mode::DYE_REPLACE);
-
-    py_util::register_namedtuple<PyFluidSource>(module, "FluidSource");
-    return module;
+    m.def("get_sources", []() {
+        const auto& sources = *ScriptingEngine::instance->sources;
+        nb::list result;
+        for (const auto& src : sources) {
+            result.append(src);
+        }
+        return result;
+    });
 }
 
 #endif

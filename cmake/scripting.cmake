@@ -1,29 +1,36 @@
-find_package(Python 3.10 COMPONENTS Interpreter Development.Embed QUIET)
+find_package(Python 3.10 COMPONENTS Interpreter Development QUIET)
 
 if(Python_FOUND)
-    message(STATUS "Python ${Python_VERSION} found at ${Python_EXECUTABLE} - scripting enabled")
-    set(PYTHON_API_CPP "${CMAKE_CURRENT_BINARY_DIR}/python_api.cpp")
-    add_custom_command(
-        OUTPUT "${PYTHON_API_CPP}"
-        COMMAND ${Python_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/src/scripting/generate_loader.py" "${CMAKE_CURRENT_SOURCE_DIR}/src/scripting/python_api.hpp" "${PYTHON_API_CPP}"
-        DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/scripting/python_api.hpp" "${CMAKE_CURRENT_SOURCE_DIR}/src/scripting/generate_loader.py"
-        VERBATIM
-    )
+    message(STATUS "Python ${Python_VERSION} found - scripting enabled")
 
-    target_sources(${PROJECT_NAME} PRIVATE
+    FetchContent_Declare(
+        nanobind
+        GIT_REPOSITORY https://github.com/wjakob/nanobind.git
+        GIT_TAG        v2.13.0
+        GIT_SHALLOW    ON
+    )
+    FetchContent_MakeAvailable(nanobind)
+
+    add_library(scripting SHARED
         src/scripting/scripting_engine.cpp
         src/scripting/bindings.cpp
-        "${PYTHON_API_CPP}"
+        ${nanobind_SOURCE_DIR}/src/nb_combined.cpp
+    )
+    target_include_directories(scripting PRIVATE
+        ${CMAKE_SOURCE_DIR}
+        ${nanobind_SOURCE_DIR}/include
+        ${nanobind_SOURCE_DIR}/ext/robin_map/include
+        ${Python_INCLUDE_DIRS}
+    )
+    target_compile_definitions(scripting PRIVATE SCRIPTING_AVAILABLE)
+    target_link_options(scripting PRIVATE -Wl,--allow-shlib-undefined)
+    set_target_properties(scripting PROPERTIES
+        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}"
     )
 
-    target_include_directories(${PROJECT_NAME} PRIVATE ${Python_INCLUDE_DIRS})
     target_compile_definitions(${PROJECT_NAME} PRIVATE SCRIPTING_AVAILABLE)
+    target_link_libraries(${PROJECT_NAME} PRIVATE dl)
 
-    if(APPLE)
-        target_link_options(${PROJECT_NAME} PRIVATE -undefined dynamic_lookup)
-    elseif(UNIX)
-    endif()
 else()
-    message(STATUS "Python not found - scripting disabled (engine.cpp stub only)")
-    target_sources(${PROJECT_NAME} PRIVATE src/scripting/scripting_engine.cpp)
+    message(STATUS "Python not found - scripting disabled")
 endif()

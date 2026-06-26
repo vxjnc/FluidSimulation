@@ -66,7 +66,8 @@ public:
     }
 
     void renderUI(FluidViewport& viewport, MouseState& mouse, FluidSim& sim, Render& render,
-                  std::vector<FluidSource>& sources, const GpuProfiler<>& uiProfiler);
+                  std::vector<FluidSource>& sources, const GpuProfiler<>& uiProfiler,
+                  ScriptingEngine& scripting);
 
     void endFrame(WGPURenderPassEncoder passEncoder) {
         ImGui_ImplWGPU_RenderDrawData(ImGui::GetDrawData(), passEncoder);

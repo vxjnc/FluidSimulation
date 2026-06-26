@@ -1,39 +1,39 @@
 #pragma once
 #ifdef SCRIPTING_AVAILABLE
 
-#include <string>
 #include <string_view>
 #include <vector>
 
+#include "src/compute/fluid_source.hpp"
 #include "src/scripting/script.hpp"
 
 class Application;
 
 class ScriptingEngine {
 public:
-    void init(Application* app, std::string_view pythonPath = "");
-    ~ScriptingEngine();
+    virtual ~ScriptingEngine() = default;
 
-    bool is_available() { return available; }
-    size_t add_script();
-    void remove_script(size_t idx);
-    void run_script(size_t idx);
-    void stop_script(size_t idx);
-
-    void set_tick_callback(void* cb);
-    void tick();
-
-    std::string_view python_path() { return pythonPath_; }
-    std::vector<Script>& scripts() { return scripts_; }
+    virtual bool is_available() { return false; }
+    virtual size_t add_script() { return 0; }
+    virtual void remove_script(size_t) {}
+    virtual void run_script(size_t) {}
+    virtual void stop_script(size_t) {}
+    virtual void set_tick_callback(void*) {}
+    virtual void tick() {}
+    virtual std::string_view python_path() { return ""; }
+    virtual std::vector<Script>& scripts() {
+        static std::vector<Script> empty;
+        return empty;
+    }
 
     static ScriptingEngine* instance;
-    Application* app;
-    Script* current_script = nullptr;
 
-private:
-    std::string pythonPath_;
-    bool available = false;
-    std::vector<Script> scripts_;
+    std::vector<FluidSource>* sources = nullptr;
+    Script* current_script = nullptr;
 };
+
+extern "C" ScriptingEngine* create_scripting_engine(std::vector<FluidSource>* sources,
+                                                    std::string_view pythonPath);
+extern "C" void destroy_scripting_engine(ScriptingEngine* engine);
 
 #endif

@@ -20,6 +20,7 @@ endif()
 
 file(GLOB_RECURSE SOURCE_FILES "src/*.cpp")
 list(FILTER SOURCE_FILES EXCLUDE REGEX "src/scripting/.*")
+list(APPEND SOURCE_FILES "src/scripting/scripting_loader.cpp")
 
 set(WEBGPU_BACKEND "DAWN" CACHE STRING "WebGPU backend")
 set(WGPU_LINK_TYPE "STATIC" CACHE STRING "Link webgpu statically" FORCE)
