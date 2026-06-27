@@ -4,9 +4,8 @@
 
 #include <string>
 
-#include <dlfcn.h>
-
 #include "src/scripting/scripting_engine.hpp"
+#include "src/utils/dynlib.hpp"
 #include "src/utils/python_find.hpp"
 
 void ScriptingLoader::init(std::vector<FluidSource>* sources, std::string_view pythonPath) {
@@ -22,26 +21,24 @@ void ScriptingLoader::init(std::vector<FluidSource>* sources, std::string_view p
         return;
     }
 
-    libpython_ = dlopen(libpath.c_str(), RTLD_NOW | RTLD_GLOBAL);
-    if (!libpython_) {
+    libpython_ = DynLib(libpath, true);
+    if (!libpython_.valid()) {
         engine_ = new ScriptingEngine();
         return;
     }
 
-    libscripting_ = dlopen("libscripting.so", RTLD_NOW | RTLD_GLOBAL);
-    if (!libscripting_) {
-        dlclose(libpython_);
-        libpython_ = nullptr;
+    libscripting_ = DynLib(python_find::find_libscripting(), true);
+    if (!libscripting_.valid()) {
+        libpython_.close();
         engine_ = new ScriptingEngine();
         return;
     }
 
     using factory_fn = ScriptingEngine*(std::vector<FluidSource>*, std::string_view);
-    auto factory = reinterpret_cast<factory_fn*>(dlsym(libscripting_, "create_scripting_engine"));
+    auto factory = libscripting_.fn<factory_fn>("create_scripting_engine");
     if (!factory) {
-        dlclose(libscripting_);
-        dlclose(libpython_);
-        libscripting_ = libpython_ = nullptr;
+        libscripting_.close();
+        libpython_.close();
         engine_ = new ScriptingEngine();
         return;
     }
@@ -51,21 +48,14 @@ void ScriptingLoader::init(std::vector<FluidSource>* sources, std::string_view p
 
 ScriptingLoader::~ScriptingLoader() {
     if (engine_) {
-        using destroy_fn = void(ScriptingEngine*);
-        auto destroy = reinterpret_cast<destroy_fn*>(dlsym(libscripting_, "destroy_scripting_engine"));
+        auto destroy = libscripting_.fn<void(ScriptingEngine*)>("destroy_scripting_engine");
         if (destroy) {
             destroy(engine_);
         }
         engine_ = nullptr;
     }
-    if (libscripting_) {
-        dlclose(libscripting_);
-        libscripting_ = nullptr;
-    }
-    if (libpython_) {
-        dlclose(libpython_);
-        libpython_ = nullptr;
-    }
+    libscripting_.close();
+    libpython_.close();
 }
 
 #endif

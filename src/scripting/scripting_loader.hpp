@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "src/compute/fluid_source.hpp"
+#include "src/utils/dynlib.hpp"
 
 class Application;
 class ScriptingEngine;
@@ -21,8 +22,8 @@ public:
     ScriptingEngine& engine() { return *engine_; }
 
 private:
-    void* libpython_ = nullptr;
-    void* libscripting_ = nullptr;
+    DynLib libpython_;
+    DynLib libscripting_;
     ScriptingEngine* engine_ = nullptr;
 };
 
