@@ -14,6 +14,7 @@ if(Python_FOUND)
     add_library(scripting SHARED
         src/scripting/scripting_engine.cpp
         src/scripting/bindings.cpp
+        src/utils/python_find.cpp
         ${nanobind_SOURCE_DIR}/src/nb_combined.cpp
     )
     target_include_directories(scripting PRIVATE

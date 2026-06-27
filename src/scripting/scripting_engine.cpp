@@ -7,26 +7,12 @@
 #include <Python.h>
 #include <dlfcn.h>
 
+#import "src/utils/python_find.hpp"
+
 extern "C" PyObject* PyInit_fluidsim();
 extern "C" PyObject* PyInit__fluidsim_io();
 
 ScriptingEngine* ScriptingEngine::instance = nullptr;
-namespace {
-    static std::string popen_result(const std::string& cmd) {
-        FILE* pipe = popen(cmd.c_str(), "r");
-        if (!pipe) {
-            return {};
-        }
-        char buf[1024] = {};
-        fgets(buf, sizeof(buf), pipe);
-        pclose(pipe);
-        std::string s(buf);
-        while (!s.empty() && (s.back() == '\n' || s.back() == '\r')) {
-            s.pop_back();
-        }
-        return s;
-    }
-}
 
 class ScriptingEngineImpl : public ScriptingEngine {
 public:
@@ -36,7 +22,7 @@ public:
 
         pythonPath_ = pythonPath;
 
-        std::string prefix = popen_result(pythonPath_ + " -c \"import sys; print(sys.base_prefix)\"");
+        std::string prefix = python_find::find_prefix(pythonPath_);
         if (!prefix.empty()) {
             setenv("PYTHONHOME", prefix.c_str(), 1);
         }

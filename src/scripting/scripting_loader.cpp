@@ -2,57 +2,21 @@
 
 #include "scripting_loader.hpp"
 
-#include "scripting_engine.hpp"
-
-#include <format>
 #include <string>
 
 #include <dlfcn.h>
 
-namespace {
-    std::string popen_result(const std::string& cmd) {
-        FILE* pipe = popen(cmd.c_str(), "r");
-        if (!pipe) {
-            return {};
-        }
-        char buf[1024] = {};
-        if (fgets(buf, sizeof(buf), pipe) == nullptr) {
-            pclose(pipe);
-            return {};
-        }
-        pclose(pipe);
-        std::string s(buf);
-        while (!s.empty() && (s.back() == '\n' || s.back() == '\r')) {
-            s.pop_back();
-        }
-        return s;
-    }
-
-    std::string find_python_exe() {
-        for (const char* c : {"python3", "python3.12", "python3.11", "python3.10"}) {
-            std::string r = popen_result(std::format("which {} 2>/dev/null", c));
-            if (!r.empty()) {
-                return r;
-            }
-        }
-        return {};
-    }
-
-    std::string find_libpython(const std::string& python_exe) {
-        return popen_result(python_exe + " -c \"import sysconfig; print("
-                                         "sysconfig.get_config_var('LIBDIR') + '/libpython'"
-                                         " + sysconfig.get_config_var('LDVERSION') + '.so.1.0')\"");
-    }
-}
+#include "src/scripting/scripting_engine.hpp"
+#include "src/utils/python_find.hpp"
 
 void ScriptingLoader::init(std::vector<FluidSource>* sources, std::string_view pythonPath) {
-    std::string exe = pythonPath.empty() ? find_python_exe() : std::string(pythonPath);
+    std::string exe = pythonPath.empty() ? python_find::find_exe() : std::string(pythonPath);
     if (exe.empty()) {
         engine_ = new ScriptingEngine();
         return;
     }
 
-    std::string libpath = find_libpython(exe);
+    std::string libpath = python_find::find_libpython(exe);
     if (libpath.empty()) {
         engine_ = new ScriptingEngine();
         return;
