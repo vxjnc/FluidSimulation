@@ -9,39 +9,60 @@ on:
 jobs:
   build-linux:
     runs-on: ubuntu-24.04
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - preset: release
+            suffix: linux
+          - preset: release-no-python
+            suffix: linux-no-scripting
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Cache CMake build
         uses: actions/cache@v4
         with:
           path: build/_deps
-          key: ${{ runner.os }}-deps-${{ hashFiles('CMakeLists.txt') }}
-          restore-keys: ${{ runner.os }}-deps-
+          key: ${{ runner.os }}-${{ matrix.preset }}-deps-${{ hashFiles('CMakeLists.txt') }}
+          restore-keys: ${{ runner.os }}-${{ matrix.preset }}-deps-
 
       - name: Install dependencies
-        run: sudo apt-get install -y gcc-14 g++-14 libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libgl1-mesa-dev libdbus-1-dev libpng-dev
+        run: sudo apt-get install -y gcc-14 g++-14 libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libgl1-mesa-dev libdbus-1-dev libpng-dev python3-dev
 
       - name: Configure CMake
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14 -DAPP_VERSION=${{ github.ref_name }}
+        run: cmake --preset ${{ matrix.preset }} -DAPP_VERSION=${{ github.ref_name }} -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14
 
       - name: Build
-        run: cmake --build build -j$(nproc)
+        run: cmake --build --preset ${{ matrix.preset }} -j$(nproc)
 
       - name: Package
         run: |
           mkdir -p dist/FluidSimulation
           cp FluidSimulation dist/FluidSimulation/
-          tar -czf FluidSimulation-linux.tar.gz -C dist FluidSimulation
+          if [ -f libscripting.so ]; then
+            cp libscripting.so dist/FluidSimulation/
+          fi
+          tar -czf FluidSimulation-${{ matrix.suffix }}.tar.gz -C dist FluidSimulation
 
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: FluidSimulation-linux
-          path: FluidSimulation-linux.tar.gz
+          name: FluidSimulation-${{ matrix.suffix }}
+          path: FluidSimulation-${{ matrix.suffix }}.tar.gz
 
   build-windows:
     runs-on: windows-latest
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - preset: release
+            suffix: windows
+          - preset: release-no-python
+            suffix: windows-no-scripting
     steps:
       - uses: actions/checkout@v4
 
@@ -49,33 +70,37 @@ jobs:
         uses: actions/cache@v4
         with:
           path: build/_deps
-          key: ${{ runner.os }}-deps-${{ hashFiles('CMakeLists.txt') }}
-          restore-keys: ${{ runner.os }}-deps-
+          key: ${{ runner.os }}-${{ matrix.preset }}-deps-${{ hashFiles('CMakeLists.txt') }}
+          restore-keys: ${{ runner.os }}-${{ matrix.preset }}-deps-
 
       - name: Install dependencies
         run: vcpkg install zlib
 
       - name: Configure CMake
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="C:/vcpkg/scripts/buildsystems/vcpkg.cmake" -DAPP_VERSION=${{ github.ref_name }}
+        run: cmake --preset ${{ matrix.preset }} -DAPP_VERSION=${{ github.ref_name }} -DCMAKE_TOOLCHAIN_FILE="C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
 
       - name: Build
-        run: cmake --build build --config Release
+        run: cmake --build --preset ${{ matrix.preset }} --config Release
 
       - name: Package
         shell: bash
         run: |
           mkdir -p dist
           cp Release/FluidSimulation.exe dist/
-          cd dist && 7z a ../FluidSimulation-windows.zip .
+          if [ -f Release/scripting.dll ]; then
+            cp Release/scripting.dll dist/
+          fi
+          cd dist && 7z a ../FluidSimulation-${{ matrix.suffix }}.zip .
 
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: FluidSimulation-windows
-          path: FluidSimulation-windows.zip
+          name: FluidSimulation-${{ matrix.suffix }}
+          path: FluidSimulation-${{ matrix.suffix }}.zip
 
   release:
     needs: [build-linux, build-windows]
+    if: always()
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -87,4 +112,6 @@ jobs:
         with:
           files: |
             FluidSimulation-linux/FluidSimulation-linux.tar.gz
+            FluidSimulation-linux-no-scripting/FluidSimulation-linux-no-scripting.tar.gz
             FluidSimulation-windows/FluidSimulation-windows.zip
+            FluidSimulation-windows-no-scripting/FluidSimulation-windows-no-scripting.zip
