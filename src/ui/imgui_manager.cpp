@@ -319,6 +319,12 @@ void ImGuiManager::renderAboutModal() {
     ImGui::Text("WebGPU backend: wgpu-native");
 #endif
 
+#ifdef SCRIPTING_AVAILABLE
+    ImGui::Text("Scripting: Enabled");
+#else
+    ImGui::Text("Scripting: Disabled");
+#endif
+
 #ifdef NDEBUG
     ImGui::Text("Build type: Release");
 #else
