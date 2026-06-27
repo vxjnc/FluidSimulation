@@ -20,7 +20,7 @@ endif()
 
 file(GLOB_RECURSE SOURCE_FILES "src/*.cpp")
 list(FILTER SOURCE_FILES EXCLUDE REGEX "src/scripting/.*")
-list(APPEND SOURCE_FILES "src/scripting/scripting_loader.cpp")
+list(APPEND SOURCE_FILES "${CMAKE_SOURCE_DIR}/src/scripting/scripting_loader.cpp")
 
 set(WEBGPU_BACKEND "DAWN" CACHE STRING "WebGPU backend")
 set(WGPU_LINK_TYPE "STATIC" CACHE STRING "Link webgpu statically" FORCE)
@@ -88,8 +88,9 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
         target_compile_options(${PROJECT_NAME} PRIVATE -O3)
     endif()
     set_property(TARGET ${PROJECT_NAME} PROPERTY INTERPROCEDURAL_OPTIMIZATION ON)
-    target_link_options(${PROJECT_NAME} PRIVATE -s)
-
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        STRIP_SYMBOLS ON
+    )
 elseif(CMAKE_BUILD_TYPE STREQUAL "Debug")
     message(STATUS "Configuring project ${PROJECT_NAME} for PROFILING/DEBUG mode (Debug)")
     target_compile_options(${PROJECT_NAME} PRIVATE -g -fno-omit-frame-pointer)

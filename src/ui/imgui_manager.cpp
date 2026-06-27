@@ -45,8 +45,12 @@ void ImGuiManager::init(GLFWwindow* window, wgpu::Device device, wgpu::TextureFo
 }
 
 void ImGuiManager::renderUI(FluidViewport& viewport, MouseState& mouse, FluidSim& sim, Render& render,
-                            std::vector<FluidSource>& sources, const GpuProfiler<>& uiProfiler,
-                            ScriptingEngine& engine) {
+                            std::vector<FluidSource>& sources, const GpuProfiler<>& uiProfiler
+#ifdef SCRIPTING_AVAILABLE
+                            ,
+                            ScriptingEngine& engine
+#endif
+) {
     ImGuiIO& io = ImGui::GetIO();
 
     ImGuiID dockspaceId = ImGui::DockSpaceOverViewport(ImGui::GetMainViewport()->ID);

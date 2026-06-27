@@ -2,8 +2,6 @@
 
 #include <ranges>
 
-#include <dlfcn.h>
-
 #include "src/capture/screenshot_capture.hpp"
 #include "src/utils/color_generator.hpp"
 #include "src/utils/file_dialog.hpp"
@@ -145,7 +143,12 @@ void Application::run() {
 
         processInput(enc, frameSources);
         update(enc, frameSources);
-        imguiManager.renderUI(viewport, mouse, simulation, renderer, sources, uiProfiler, scripting.engine());
+        imguiManager.renderUI(viewport, mouse, simulation, renderer, sources, uiProfiler
+#ifdef SCRIPTING_AVAILABLE
+                              ,
+                              scripting.engine()
+#endif
+        );
         auto [target, targetView] = render(enc);
 
         wgpu::raii::CommandBuffer cmd = enc->finish({});

@@ -5,9 +5,8 @@
 #include <string>
 
 #include <Python.h>
-#include <dlfcn.h>
 
-#import "src/utils/python_find.hpp"
+#include "src/utils/python_find.hpp"
 
 extern "C" PyObject* PyInit_fluidsim();
 extern "C" PyObject* PyInit__fluidsim_io();
