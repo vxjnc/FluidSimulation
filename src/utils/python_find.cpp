@@ -70,12 +70,11 @@ namespace python_find {
 
     std::string find_libscripting() {
 #ifdef _WIN32
-        return "scripting.dll";
+        return "fluid_scripting.dll";
 #else
-        return "libscripting.so";
+        return "libfluid_scripting.so";
 #endif
     }
-
 }
 
 #endif

@@ -11,26 +11,26 @@ if(Python_FOUND)
     )
     FetchContent_MakeAvailable(nanobind)
 
-    add_library(scripting SHARED
+    add_library(fluid_scripting SHARED
         src/scripting/scripting_engine.cpp
         src/scripting/bindings.cpp
         src/utils/python_find.cpp
         ${nanobind_SOURCE_DIR}/src/nb_combined.cpp
     )
-    target_include_directories(scripting PRIVATE
+    target_include_directories(fluid_scripting PRIVATE
         ${CMAKE_SOURCE_DIR}
         ${nanobind_SOURCE_DIR}/include
         ${nanobind_SOURCE_DIR}/ext/robin_map/include
         ${Python_INCLUDE_DIRS}
     )
-    target_compile_definitions(scripting PRIVATE SCRIPTING_AVAILABLE)
-    target_link_options(scripting PRIVATE -Wl,--allow-shlib-undefined)
-    set_target_properties(scripting PROPERTIES
+    target_compile_definitions(fluid_scripting PRIVATE SCRIPTING_AVAILABLE)
+    target_link_options(fluid_scripting PRIVATE -Wl,--allow-shlib-undefined)
+    set_target_properties(fluid_scripting PROPERTIES
         LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}"
     )
 
-    target_compile_definitions(${PROJECT_NAME} PRIVATE SCRIPTING_AVAILABLE)
-    target_link_libraries(${PROJECT_NAME} PRIVATE dl)
+    target_compile_definitions(fluid_gui PUBLIC SCRIPTING_AVAILABLE)
+    target_link_libraries(fluid_gui PUBLIC dl)
 
 else()
     message(STATUS "Python not found - scripting disabled")

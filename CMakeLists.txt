@@ -18,10 +18,6 @@ if(CCACHE_PROGRAM)
     message(STATUS "Using ccache: ${CCACHE_PROGRAM}")
 endif()
 
-file(GLOB_RECURSE SOURCE_FILES "src/*.cpp")
-list(FILTER SOURCE_FILES EXCLUDE REGEX "src/scripting/.*")
-list(APPEND SOURCE_FILES "${CMAKE_SOURCE_DIR}/src/scripting/scripting_loader.cpp")
-
 set(WEBGPU_BACKEND "DAWN" CACHE STRING "WebGPU backend")
 set(WGPU_LINK_TYPE "STATIC" CACHE STRING "Link webgpu statically" FORCE)
 set_property(CACHE WEBGPU_BACKEND PROPERTY STRINGS "DAWN" "WGPU")
@@ -42,17 +38,23 @@ include(version)
 include(embedded_resources)
 
 # --- fluid_compute ---
-add_library(fluid_compute INTERFACE)
-target_include_directories(fluid_compute INTERFACE
+file(GLOB_RECURSE COMPUTE_FILES "src/compute/*.cpp")
+
+add_library(fluid_compute STATIC ${COMPUTE_FILES})
+target_include_directories(fluid_compute PUBLIC
     ${CMAKE_SOURCE_DIR}
     ${GENERATED_ROOT}
 )
-target_link_libraries(fluid_compute INTERFACE webgpu wesl)
+target_link_libraries(fluid_compute PUBLIC webgpu wesl)
 add_dependencies(fluid_compute wgsl_shaders)
 
 # --- fluid_gui ---
-add_library(fluid_gui STATIC)
-target_sources(fluid_gui PRIVATE
+file(GLOB_RECURSE GUI_FILES "src/*.cpp")
+list(FILTER GUI_FILES EXCLUDE REGEX "src/compute/.*")
+list(FILTER GUI_FILES EXCLUDE REGEX "src/scripting/.*")
+list(APPEND GUI_FILES "${CMAKE_SOURCE_DIR}/src/scripting/scripting_loader.cpp")
+add_library(fluid_gui STATIC 
+    ${GUI_FILES}
     ${imguicolortextedit_SOURCE_DIR}/TextEditor.cpp
 )
 target_include_directories(fluid_gui
@@ -62,16 +64,12 @@ target_include_directories(fluid_gui
     SYSTEM PUBLIC
         ${imguicolortextedit_SOURCE_DIR}
 )
-target_link_libraries(fluid_gui PUBLIC webgpu wesl glfw imgui glfw3webgpu clip stb_headers nfd zpp_bits_headers Pal::Sigslot pfr)
+target_link_libraries(fluid_gui PUBLIC fluid_compute glfw imgui glfw3webgpu clip stb_headers nfd zpp_bits_headers Pal::Sigslot pfr)
 add_dependencies(fluid_gui wgsl_shaders embedded_resources)
 
 # --- Executable ---
-add_executable(${PROJECT_NAME} main.cpp ${SOURCE_FILES})
-
-target_link_libraries(${PROJECT_NAME} PRIVATE
-    fluid_compute
-    fluid_gui
-)
+add_executable(${PROJECT_NAME} main.cpp)
+target_link_libraries(${PROJECT_NAME} PRIVATE fluid_gui)
 
 if(NOT MSVC AND NOT DEFINED ENV{CI})
     target_compile_options(${PROJECT_NAME} PRIVATE
