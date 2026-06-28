@@ -7,6 +7,7 @@
 #include "src/compute/fluid_sim.hpp"
 #include "src/save/fsim_file.hpp"
 #include "src/save/fsim_serializer.hpp"
+#include "src/wgpu_context.hpp"
 
 void SaveManager::save(const std::filesystem::path& path, FluidSim& sim, std::span<const FluidSource> sources,
                        const AppSettings& settings) {
@@ -38,18 +39,20 @@ void SaveManager::save(const std::filesystem::path& path, FluidSim& sim, std::sp
     uint64_t dyeSize = sim.state.dye_width * sim.state.dye_height * 4 * sizeof(float);
     uint64_t obsSize = sim.state.width * sim.state.height * sizeof(uint32_t);
 
-    GpuReadback::request<float>(*sim.state.velocity, velSize,
+    WGPUContext& ctx = WGPUContext::instance();
+    GpuReadback::request<float>(ctx.device(), *sim.state.velocity, velSize,
                                 [state, tryFinish](std::span<const float> data) {
                                     state->velocity.assign(data.begin(), data.end());
                                     tryFinish();
                                 });
 
-    GpuReadback::request<float>(*sim.state.dye, dyeSize, [state, tryFinish](std::span<const float> data) {
-        state->dye.assign(data.begin(), data.end());
-        tryFinish();
-    });
+    GpuReadback::request<float>(ctx.device(), *sim.state.dye, dyeSize,
+                                [state, tryFinish](std::span<const float> data) {
+                                    state->dye.assign(data.begin(), data.end());
+                                    tryFinish();
+                                });
 
-    GpuReadback::request<uint32_t>(*sim.state.obstacles, obsSize,
+    GpuReadback::request<uint32_t>(ctx.device(), *sim.state.obstacles, obsSize,
                                    [state, tryFinish](std::span<const uint32_t> data) {
                                        state->obstacles.assign(data.begin(), data.end());
                                        tryFinish();

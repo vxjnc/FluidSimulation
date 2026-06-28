@@ -58,13 +58,13 @@ public:
         state_->pending = true;
     }
 
-    void requestReadback() {
+    void requestReadback(wgpu::Device device) {
         if (!supported_ || !enabled || !state_->pending) {
             return;
         }
 
         auto state = state_;
-        GpuReadback::request<size_t>(*resolveBuffer_, 2 * sizeof(size_t),
+        GpuReadback::request<size_t>(device, *resolveBuffer_, 2 * sizeof(size_t),
                                      [state](std::span<const size_t> timestamps) {
                                          size_t delta = timestamps[1] - timestamps[0];
 
@@ -95,7 +95,7 @@ public:
         size_t result = 0;
         bool done = false;
 
-        GpuReadback::request<size_t>(*resolveBuffer_, 2 * sizeof(size_t),
+        GpuReadback::request<size_t>(device, *resolveBuffer_, 2 * sizeof(size_t),
                                      [&](std::span<const size_t> timestamps) {
                                          result = timestamps[1] - timestamps[0];
                                          done = true;

@@ -53,7 +53,7 @@ namespace ScreenshotCapture {
         uint32_t bytesPerRow = GpuReadback::alignUp(w * 4, 256);
 
         GpuReadback::request(
-            *viewport.texture, w, h, ctx.surfaceFormat(),
+            ctx.device(), *viewport.texture, w, h, ctx.surfaceFormat(),
             [w, h, isBGRA, bytesPerRow, mode, path = std::move(path)](std::span<const std::byte> raw) {
                 std::vector<std::byte> pixels =
                     ImageProcessor::processRawGPUData(raw.data(), w, h, bytesPerRow, isBGRA);

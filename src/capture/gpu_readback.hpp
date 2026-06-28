@@ -4,7 +4,7 @@
 
 #include <webgpu/webgpu-raii.hpp>
 
-#include "src/wgpu_context.hpp"
+#include "src/compute/wgpu_helper.hpp"
 
 namespace GpuReadback {
     template <typename T, typename Callback>
@@ -20,37 +20,31 @@ namespace GpuReadback {
 
     template <typename T = std::byte, typename Callback>
         requires ReadbackCallback<T, Callback>
-    inline void request(wgpu::Buffer buffer, uint64_t size, Callback callback) {
-        WGPUContext& ctx = WGPUContext::instance();
+    inline void request(wgpu::Device device, wgpu::Buffer buffer, uint64_t size, Callback callback) {
+        auto* state = new State<Callback>{
+            WGPUHelper::makeBuffer(device, size, wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::MapRead,
+                                   "ReadbackBuffer"),
+            size, std::move(callback)};
 
-        wgpu::BufferDescriptor desc{};
-        desc.size = size;
-        desc.usage = wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::MapRead;
-
-        auto* state = new State<Callback>{ctx.device().createBuffer(desc), size, std::move(callback)};
-
-        wgpu::raii::CommandEncoder enc = ctx.device().createCommandEncoder({});
+        wgpu::raii::CommandEncoder enc = device.createCommandEncoder({});
         enc->copyBufferToBuffer(buffer, 0, *state->staging, 0, size);
         wgpu::raii::CommandBuffer cmd = enc->finish({});
-        ctx.queue().submit(1, &*cmd);
+        device.getQueue().submit(1, &*cmd);
 
         mapAsync<T, Callback>(state);
     }
 
     template <typename T = std::byte, typename Callback>
         requires ReadbackCallback<T, Callback>
-    inline void request(wgpu::Texture texture, uint32_t w, uint32_t h, wgpu::TextureFormat,
-                        Callback callback) {
-        WGPUContext& ctx = WGPUContext::instance();
-
+    inline void request(wgpu::Device device, wgpu::Texture texture, uint32_t w, uint32_t h,
+                        wgpu::TextureFormat, Callback callback) {
         uint32_t bytesPerRow = alignUp(w * 4, 256);
         uint64_t size = static_cast<uint64_t>(bytesPerRow) * h;
 
-        wgpu::BufferDescriptor desc{};
-        desc.size = size;
-        desc.usage = wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::MapRead;
-
-        auto* state = new State<Callback>{ctx.device().createBuffer(desc), size, std::move(callback)};
+        auto* state = new State<Callback>{
+            WGPUHelper::makeBuffer(device, size, wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::MapRead,
+                                   "ReadbackBuffer"),
+            size, std::move(callback)};
 
         wgpu::TexelCopyTextureInfo src{};
         src.texture = texture;
@@ -64,10 +58,10 @@ namespace GpuReadback {
         dst.layout.bytesPerRow = bytesPerRow;
         dst.layout.rowsPerImage = h;
 
-        wgpu::raii::CommandEncoder enc = ctx.device().createCommandEncoder({});
+        wgpu::raii::CommandEncoder enc = device.createCommandEncoder({});
         enc->copyTextureToBuffer(src, dst, {w, h, 1});
         wgpu::raii::CommandBuffer cmd = enc->finish({});
-        ctx.queue().submit(1, &*cmd);
+        device.getQueue().submit(1, &*cmd);
 
         mapAsync<T, Callback>(state);
     }

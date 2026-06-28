@@ -6,6 +6,7 @@
 #include "src/utils/color_generator.hpp"
 #include "src/utils/file_dialog.hpp"
 #include "src/utils/process_stats.hpp"
+#include "src/wgpu_context.hpp"
 
 Application::Application(uint32_t width, uint32_t height, std::string_view title) {
     if (!glfwInit()) {
@@ -158,9 +159,9 @@ void Application::run() {
 
         ctx.present();
 
-        simulation.profiler.requestReadback();
-        renderer.profiler.requestReadback();
-        uiProfiler.requestReadback();
+        simulation.profiler.requestReadback(ctx.device());
+        renderer.profiler.requestReadback(ctx.device());
+        uiProfiler.requestReadback(ctx.device());
 
 #ifdef SCRIPTING_AVAILABLE
         scripting.engine().tick();
