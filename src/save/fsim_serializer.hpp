@@ -2,7 +2,7 @@
 
 #include <filesystem>
 
-class FsimFile;
+struct FsimFile;
 
 class FsimSerializer {
 public:

@@ -5,8 +5,8 @@
 
 #include "src/ui/ui_settings.hpp"
 
-class FluidSource;
-class SplatSettings;
+struct FluidSource;
+struct SplatSettings;
 
 class SplatWidget {
 public:

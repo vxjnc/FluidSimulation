@@ -9,7 +9,7 @@
 #include "src/compute/gpu_profiler.hpp"
 #include "src/compute/resample_pipelines.hpp"
 
-class FluidSource;
+struct FluidSource;
 
 class FluidSim {
 public:

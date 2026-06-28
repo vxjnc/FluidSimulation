@@ -1,6 +1,6 @@
 #pragma once
 
-class RenderSettings;
+struct RenderSettings;
 
 class RenderWidget {
 public:

@@ -75,7 +75,10 @@ if(NOT MSVC AND NOT DEFINED ENV{CI})
     target_compile_options(${PROJECT_NAME} PRIVATE
         -Wall -Wextra -Wconversion
         -march=native -mtune=native
+        -Wmismatched-tags
     )
+    target_compile_options(fluid_compute PRIVATE -Wmismatched-tags)
+    target_compile_options(fluid_gui PRIVATE -Wmismatched-tags)
 endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")

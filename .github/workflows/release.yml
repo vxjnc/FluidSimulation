@@ -24,7 +24,7 @@ jobs:
       - name: Cache CMake build
         uses: actions/cache@v4
         with:
-          path: build/_deps
+          path: build/${{ matrix.preset }}/_deps
           key: ${{ runner.os }}-${{ matrix.preset }}-deps-${{ hashFiles('CMakeLists.txt') }}
           restore-keys: ${{ runner.os }}-${{ matrix.preset }}-deps-
 
@@ -41,8 +41,8 @@ jobs:
         run: |
           mkdir -p dist/FluidSimulation
           cp FluidSimulation dist/FluidSimulation/
-          if [ -f libscripting.so ]; then
-            cp libscripting.so dist/FluidSimulation/
+          if [ -f libfluid_scripting.so ]; then
+            cp libfluid_scripting.so dist/FluidSimulation/
           fi
           tar -czf FluidSimulation-${{ matrix.suffix }}.tar.gz -C dist FluidSimulation
 
@@ -69,7 +69,7 @@ jobs:
       - name: Cache CMake build
         uses: actions/cache@v4
         with:
-          path: build/_deps
+          path: build/${{ matrix.preset }}/_deps
           key: ${{ runner.os }}-${{ matrix.preset }}-deps-${{ hashFiles('CMakeLists.txt') }}
           restore-keys: ${{ runner.os }}-${{ matrix.preset }}-deps-
 
@@ -77,7 +77,7 @@ jobs:
         run: vcpkg install zlib
 
       - name: Configure CMake
-        run: cmake --preset ${{ matrix.preset }} -DAPP_VERSION=${{ github.ref_name }} -DCMAKE_TOOLCHAIN_FILE="C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
+        run: cmake --preset ${{ matrix.preset }} -DAPP_VERSION=${{ github.ref_name }} -DCMAKE_TOOLCHAIN_FILE="C:/vcpkg/scripts/buildsystems/vcpkg.cmake" -DCMAKE_VERBOSE_MAKEFILE=ON
 
       - name: Build
         run: cmake --build --preset ${{ matrix.preset }} --config Release
@@ -86,9 +86,9 @@ jobs:
         shell: bash
         run: |
           mkdir -p dist
-          cp Release/FluidSimulation.exe dist/
-          if [ -f Release/scripting.dll ]; then
-            cp Release/scripting.dll dist/
+          cp FluidSimulation.exe dist/
+          if [ -f fluid_scripting.dll ]; then
+            cp fluid_scripting.dll dist/
           fi
           cd dist && 7z a ../FluidSimulation-${{ matrix.suffix }}.zip .
 

@@ -2,8 +2,8 @@
 
 #include <cstddef>
 
-class FluidSource;
-class AppSettings;
+struct FluidSource;
+struct AppSettings;
 
 class SourceWidget {
 public:

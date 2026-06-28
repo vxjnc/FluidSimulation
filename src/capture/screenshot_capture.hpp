@@ -2,7 +2,7 @@
 #include <cstdint>
 #include <filesystem>
 
-class FluidViewport;
+struct FluidViewport;
 
 namespace ScreenshotCapture {
     enum class Mode : uint8_t {

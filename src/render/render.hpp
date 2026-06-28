@@ -3,7 +3,7 @@
 #include "src/compute/gpu_profiler.hpp"
 
 class FluidSim;
-class RenderSettings;
+struct RenderSettings;
 
 class Render {
     struct RenderParams {

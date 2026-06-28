@@ -4,8 +4,8 @@
 #include <vector>
 
 class FluidSim;
-class AppSettings;
-class FluidSource;
+struct AppSettings;
+struct FluidSource;
 
 namespace SaveManager {
     void save(const std::filesystem::path& path, FluidSim& sim, std::span<const FluidSource> sources,

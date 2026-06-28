@@ -5,7 +5,7 @@
 #include "src/ui/random_splat/splat_widget.hpp"
 #include "src/ui/ui_settings.hpp"
 
-class SplatSettings;
+struct SplatSettings;
 
 class SplatPanel {
 public:

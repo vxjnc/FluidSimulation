@@ -1,8 +1,8 @@
 #pragma once
 
-class AppSettings;
+struct AppSettings;
 class FluidSim;
-class FluidViewport;
+struct FluidViewport;
 
 class SimulationWidget {
 public:
