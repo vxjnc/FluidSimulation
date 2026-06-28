@@ -87,6 +87,7 @@ jobs:
         run: |
           mkdir -p dist
           cp FluidSimulation.exe dist/
+          cp *.dll dist/ 2>/dev/null || true
           if [ -f fluid_scripting.dll ]; then
             cp fluid_scripting.dll dist/
           fi
