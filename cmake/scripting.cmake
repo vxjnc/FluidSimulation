@@ -24,13 +24,18 @@ if(Python_FOUND)
         ${Python_INCLUDE_DIRS}
     )
     target_compile_definitions(fluid_scripting PRIVATE SCRIPTING_AVAILABLE)
-    target_link_options(fluid_scripting PRIVATE -Wl,--allow-shlib-undefined)
+    target_compile_definitions(fluid_gui PUBLIC SCRIPTING_AVAILABLE)
+    if(MSVC)
+        target_link_options(fluid_scripting PRIVATE /FORCE:UNRESOLVED)
+    else()
+        target_link_options(fluid_scripting PRIVATE -Wl,--allow-shlib-undefined)
+    endif()
+    if(UNIX)
+        target_link_libraries(fluid_gui PUBLIC dl)
+    endif()
     set_target_properties(fluid_scripting PROPERTIES
         LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}"
     )
-
-    target_compile_definitions(fluid_gui PUBLIC SCRIPTING_AVAILABLE)
-    target_link_libraries(fluid_gui PUBLIC dl)
 
 else()
     message(STATUS "Python not found - scripting disabled")
