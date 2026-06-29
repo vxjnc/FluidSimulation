@@ -5,11 +5,14 @@
 #include <string>
 
 #include <Python.h>
+#include <nanobind/nanobind.h>
 
 #include "src/utils/python_find.hpp"
 
 extern "C" PyObject* PyInit_fluidsim();
 extern "C" PyObject* PyInit__fluidsim_io();
+
+namespace nb = nanobind;
 
 ScriptingEngine* ScriptingEngine::instance = nullptr;
 
@@ -29,6 +32,14 @@ public:
         PyImport_AppendInittab("_fluidsim_io", PyInit__fluidsim_io);
         PyImport_AppendInittab("fluidsim", PyInit_fluidsim);
         Py_Initialize();
+
+#ifdef NDEBUG
+        PyObject* mod = PyImport_ImportModule("fluidsim");
+        if (mod) {
+            Py_DECREF(mod);
+        }
+        nb::set_leak_warnings(false);
+#endif
 
         PyObject* err = PyErr_Occurred();
         if (err) {
