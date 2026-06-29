@@ -2,6 +2,10 @@
 
 #include <nanobind/nanobind.h>
 #include <nanobind/stl/array.h>
+#include <nanobind/stl/function.h>
+#include <nanobind/stl/map.h>
+#include <nanobind/stl/string.h>
+#include <nanobind/stl/variant.h>
 
 #include "src/compute/fluid_source.hpp"
 #include "src/scripting/scripting_engine.hpp"
@@ -80,6 +84,34 @@ NB_MODULE(fluidsim, m) {
             result.append(src);
         }
         return result;
+    });
+
+    nb::class_<PluginPanel>(m, "Panel")
+        .def(nb::init<>())
+        .def("add_button",
+             [](PluginPanel& p, std::string id, std::string label, nb::callable on_click) {
+                 Button b;
+                 b.id = std::move(id);
+                 b.label = std::move(label);
+                 b.on_click = [on_click](const std::map<std::string, ExportValue>& vars) { on_click(vars); };
+                 p.widgets.push_back(std::move(b));
+             })
+        .def("add_slider",
+             [](PluginPanel& p, std::string id, std::string label, float default_val, float min, float max) {
+                 p.widgets.push_back(SliderF{std::move(id), std::move(label), default_val, min, max});
+             })
+        .def("add_checkbox",
+             [](PluginPanel& p, std::string id, std::string label, bool default_val) {
+                 p.widgets.push_back(Checkbox{std::move(id), std::move(label), default_val});
+             })
+        .def("add_drag_int", [](PluginPanel& p, std::string id, std::string label, int default_val) {
+            p.widgets.push_back(DragInt{std::move(id), std::move(label), default_val});
+        });
+
+    m.def("set_panel", [](PluginPanel panel) {
+        if (ScriptingEngine::instance->current_script) {
+            ScriptingEngine::instance->current_script->panel = std::move(panel);
+        }
     });
 }
 

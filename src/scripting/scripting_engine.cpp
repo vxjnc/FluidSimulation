@@ -40,17 +40,10 @@ sys.stdout = sys.stderr = _Capture()
     }
 
     ~ScriptingEngineImpl() override {
-        for (auto& s : scripts_) {
-            if (s.tick_callback) {
-                Py_DECREF(static_cast<PyObject*>(s.tick_callback));
-            }
-            if (s.compiled) {
-                Py_DECREF(static_cast<PyObject*>(s.compiled));
-            }
-            if (s.globals) {
-                Py_DECREF(static_cast<PyObject*>(s.globals));
-            }
+        for (size_t i = 0; i < scripts_.size(); i++) {
+            stop_script(i);
         }
+        scripts_.clear();
         Py_FinalizeEx();
         instance = nullptr;
     }
@@ -117,6 +110,20 @@ sys.stdout = sys.stderr = _Capture()
         if (s.tick_callback) {
             Py_DECREF(static_cast<PyObject*>(s.tick_callback));
             s.tick_callback = nullptr;
+        }
+        if (s.compiled) {
+            Py_DECREF(static_cast<PyObject*>(s.compiled));
+        }
+        if (s.globals) {
+            Py_DECREF(static_cast<PyObject*>(s.globals));
+        }
+        if (s.panel) {
+            for (auto& w : s.panel->widgets) {
+                if (auto* b = std::get_if<Button>(&w)) {
+                    b->on_click = nullptr;
+                }
+            }
+            s.panel.reset();
         }
     }
 

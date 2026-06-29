@@ -1,8 +1,10 @@
 #pragma once
 #ifdef SCRIPTING_AVAILABLE
-
+#include <optional>
 #include <string>
 #include <string_view>
+
+#include "src/ui/script/plugin/plugin_panel.hpp"
 
 class Script {
 public:
@@ -16,6 +18,7 @@ public:
     void clear_output() { output.clear(); }
 
     std::string code;
+    std::optional<PluginPanel> panel;
 
     void* tick_callback = nullptr; // PyObject*
     void* compiled = nullptr;      // PyObject*
