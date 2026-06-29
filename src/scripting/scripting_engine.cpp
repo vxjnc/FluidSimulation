@@ -84,28 +84,22 @@ sys.stdout = sys.stderr = _Capture()
         Script& s = scripts_[idx];
         s.clear_output();
 
-        if (!s.globals) {
-            s.globals = PyDict_New();
-            PyObject* builtins = PyImport_ImportModule("builtins");
-            PyDict_SetItemString(static_cast<PyObject*>(s.globals), "__builtins__", builtins);
-            Py_DECREF(builtins);
+        if (s.globals) {
+            Py_DECREF(static_cast<PyObject*>(s.globals));
+            s.globals = nullptr;
         }
+        nb::dict globals;
+        nb::object builtins = nb::module_::import_("builtins");
+        globals["__builtins__"] = builtins;
+        s.globals = globals.release().ptr();
 
         current_script = &s;
 
-        size_t new_hash = std::hash<std::string>{}(s.code);
-        if (!s.compiled || s.code_hash != new_hash) {
-            if (s.compiled) {
-                Py_DECREF(static_cast<PyObject*>(s.compiled));
-            }
-            s.compiled = Py_CompileString(s.code.c_str(), "<script>", Py_file_input);
-            s.code_hash = new_hash;
-        }
-
-        if (s.compiled) {
-            PyObject* result =
-                PyEval_EvalCode(static_cast<PyObject*>(s.compiled), static_cast<PyObject*>(s.globals),
-                                static_cast<PyObject*>(s.globals));
+        PyObject* compiled = Py_CompileString(s.code.c_str(), "<script>", Py_file_input);
+        if (compiled) {
+            PyObject* result = PyEval_EvalCode(compiled, static_cast<PyObject*>(s.globals),
+                                               static_cast<PyObject*>(s.globals));
+            Py_DECREF(compiled);
             if (result) {
                 Py_DECREF(result);
             }
@@ -128,11 +122,9 @@ sys.stdout = sys.stderr = _Capture()
             Py_DECREF(static_cast<PyObject*>(s.tick_callback));
             s.tick_callback = nullptr;
         }
-        if (s.compiled) {
-            Py_DECREF(static_cast<PyObject*>(s.compiled));
-        }
         if (s.globals) {
             Py_DECREF(static_cast<PyObject*>(s.globals));
+            s.globals = nullptr;
         }
         if (s.panel) {
             for (auto& w : s.panel->widgets) {
