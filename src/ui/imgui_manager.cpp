@@ -45,12 +45,8 @@ void ImGuiManager::init(GLFWwindow* window, wgpu::Device device, wgpu::TextureFo
 }
 
 void ImGuiManager::renderUI(FluidViewport& viewport, MouseState& mouse, FluidSim& sim, Render& render,
-                            std::vector<FluidSource>& sources, const GpuProfiler<>& uiProfiler
-#ifdef SCRIPTING_AVAILABLE
-                            ,
-                            ScriptingEngine& engine
-#endif
-) {
+                            std::vector<FluidSource>& sources, const GpuProfiler<>& uiProfiler,
+                            ScriptingEngine& engine) {
     ImGuiIO& io = ImGui::GetIO();
 
     ImGuiID dockspaceId = ImGui::DockSpaceOverViewport(ImGui::GetMainViewport()->ID);
@@ -86,7 +82,7 @@ void ImGuiManager::renderUI(FluidViewport& viewport, MouseState& mouse, FluidSim
     }
 
     if (settings->ui.menuBarVisible) {
-        renderMenuBar();
+        renderMenuBar(engine);
     }
 
     renderSettingsModal();
@@ -98,11 +94,9 @@ void ImGuiManager::renderUI(FluidViewport& viewport, MouseState& mouse, FluidSim
     if (visibility.controls) {
         controlsPanel.render(visibility.controls, viewport, sim, *settings, sources);
     }
-#ifdef SCRIPTING_AVAILABLE
     if (visibility.script) {
         scriptPanel.render(visibility.script, engine);
     }
-#endif
     if (visibility.randomSplat) {
         splatPanel.render(visibility.randomSplat, settings->splatSettings, settings->ui.velocityMode);
         if (auto splats = splatPanel.takeSplats()) {
@@ -192,7 +186,7 @@ void ImGuiManager::renderUI(FluidViewport& viewport, MouseState& mouse, FluidSim
     ImGui::Render();
 }
 
-void ImGuiManager::renderMenuBar() {
+void ImGuiManager::renderMenuBar(ScriptingEngine& engine) {
     if (!ImGui::BeginMainMenuBar()) {
         return;
     }
@@ -238,9 +232,9 @@ void ImGuiManager::renderMenuBar() {
         ImGui::MenuItem("Random Splat", nullptr, &visibility.randomSplat);
         ImGui::MenuItem("Import", nullptr, &visibility.import);
         Widgets::MenuItem("Stats", nullptr, visibility.stats);
-#ifdef SCRIPTING_AVAILABLE
-        ImGui::MenuItem("Script", nullptr, &visibility.script);
-#endif
+        if (engine.is_available()) {
+            ImGui::MenuItem("Script", nullptr, &visibility.script);
+        }
 
         ImGui::Separator();
         if (ImGui::MenuItem("Reset Layout")) {
@@ -276,7 +270,6 @@ void ImGuiManager::renderSettingsModal() {
             settings->ui.velocityMode = static_cast<VelocityInputMode>(mode);
             ImGui::EndTabItem();
         }
-#ifdef SCRIPTING_AVAILABLE
         if (ImGui::BeginTabItem("Scripting")) {
             ImGui::Text("Python Executable");
             ImGui::SetNextItemWidth(-40);
@@ -288,7 +281,6 @@ void ImGuiManager::renderSettingsModal() {
             }
             ImGui::EndTabItem();
         }
-#endif
         if (ImGui::BeginTabItem("Style")) {
             ImGui::ShowStyleEditor();
             ImGui::EndTabItem();

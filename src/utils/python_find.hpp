@@ -1,5 +1,4 @@
 #pragma once
-#ifdef SCRIPTING_AVAILABLE
 
 #include <string>
 
@@ -10,5 +9,3 @@ namespace python_find {
     std::string find_prefix(const std::string& python_exe);
     std::string find_libscripting();
 }
-
-#endif

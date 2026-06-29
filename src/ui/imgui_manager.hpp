@@ -11,6 +11,7 @@
 
 #include "src/app_settings.hpp"
 #include "src/compute/fluid_sim.hpp"
+#include "src/scripting/scripting_engine.hpp"
 #include "src/ui/controls/controls_panel.hpp"
 #include "src/ui/fluid_viewport.hpp"
 #include "src/ui/imgui_serialization.hpp"
@@ -33,9 +34,7 @@ struct PanelVisibility {
     bool controls = true;
     bool randomSplat = false;
     bool import = false;
-#ifdef SCRIPTING_AVAILABLE
     bool script = false;
-#endif
     Observable<bool> stats = true;
 };
 
@@ -66,12 +65,8 @@ public:
     }
 
     void renderUI(FluidViewport& viewport, MouseState& mouse, FluidSim& sim, Render& render,
-                  std::vector<FluidSource>& sources, const GpuProfiler<>& uiProfiler
-#ifdef SCRIPTING_AVAILABLE
-                  ,
-                  ScriptingEngine& scripting
-#endif
-    );
+                  std::vector<FluidSource>& sources, const GpuProfiler<>& uiProfiler,
+                  ScriptingEngine& scripting);
 
     void endFrame(WGPURenderPassEncoder passEncoder) {
         ImGui_ImplWGPU_RenderDrawData(ImGui::GetDrawData(), passEncoder);
@@ -83,14 +78,12 @@ public:
     ImportPanel importPanel;
     StatsPanel statsPanel;
 
-#ifdef SCRIPTING_AVAILABLE
     ScriptPanel scriptPanel;
-#endif
 
 private:
     AppSettings* settings;
 
-    void renderMenuBar();
+    void renderMenuBar(ScriptingEngine& engine);
 
     void renderSettingsModal();
     void renderAboutModal();

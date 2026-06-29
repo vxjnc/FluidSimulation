@@ -1,5 +1,4 @@
 #pragma once
-#ifdef SCRIPTING_AVAILABLE
 
 #include "TextEditor.h"
 
@@ -15,5 +14,3 @@ public:
 private:
     TextEditor editor_;
 };
-
-#endif

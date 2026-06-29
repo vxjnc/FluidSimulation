@@ -1,4 +1,3 @@
-#ifdef SCRIPTING_AVAILABLE
 
 #include "script_editor.hpp"
 
@@ -25,5 +24,3 @@ bool ScriptEditor::render(float height) {
 
     return run;
 }
-
-#endif

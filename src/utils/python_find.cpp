@@ -1,5 +1,3 @@
-#ifdef SCRIPTING_AVAILABLE
-
 #include "python_find.hpp"
 
 #include <format>
@@ -76,5 +74,3 @@ namespace python_find {
 #endif
     }
 }
-
-#endif

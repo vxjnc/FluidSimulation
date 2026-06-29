@@ -1,5 +1,4 @@
 #pragma once
-#ifdef SCRIPTING_AVAILABLE
 
 #include <array>
 #include <functional>
@@ -106,5 +105,3 @@ public:
         return state;
     }
 };
-
-#endif

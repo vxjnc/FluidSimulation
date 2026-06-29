@@ -33,12 +33,10 @@ Application::Application(uint32_t width, uint32_t height, std::string_view title
         WGPUContext::instance().resize(static_cast<uint32_t>(w), static_cast<uint32_t>(h));
     });
 
-#ifdef SCRIPTING_AVAILABLE
     scripting.init(&sources, settings.scripting.pythonPath);
     if (scripting.engine().is_available()) {
         settings.scripting.pythonPath = scripting.engine().python_path();
     }
-#endif
 
     uiProfiler.init(ctx.device());
     renderer.init(ctx.device());
@@ -144,12 +142,7 @@ void Application::run() {
 
         processInput(enc, frameSources);
         update(enc, frameSources);
-        imguiManager.renderUI(viewport, mouse, simulation, renderer, sources, uiProfiler
-#ifdef SCRIPTING_AVAILABLE
-                              ,
-                              scripting.engine()
-#endif
-        );
+        imguiManager.renderUI(viewport, mouse, simulation, renderer, sources, uiProfiler, scripting.engine());
         auto [target, targetView] = render(enc);
 
         wgpu::raii::CommandBuffer cmd = enc->finish({});
@@ -163,9 +156,7 @@ void Application::run() {
         renderer.profiler.requestReadback(ctx.device());
         uiProfiler.requestReadback(ctx.device());
 
-#ifdef SCRIPTING_AVAILABLE
         scripting.engine().tick();
-#endif
     }
 }
 

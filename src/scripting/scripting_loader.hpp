@@ -1,5 +1,4 @@
 #pragma once
-#ifdef SCRIPTING_AVAILABLE
 
 #include <string_view>
 #include <vector>
@@ -26,5 +25,3 @@ private:
     DynLib libscripting_;
     ScriptingEngine* engine_ = nullptr;
 };
-
-#endif

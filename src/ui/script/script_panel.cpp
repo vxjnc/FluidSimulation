@@ -1,4 +1,3 @@
-#ifdef SCRIPTING_AVAILABLE
 
 #include "script_panel.hpp"
 
@@ -35,6 +34,13 @@ namespace {
 }
 
 void ScriptPanel::render(bool& open, ScriptingEngine& engine) {
+    if (!engine.is_available()) {
+        ImGui::Begin("Script Editor", &open);
+        ImGui::TextDisabled("Python not available");
+        ImGui::End();
+        return;
+    }
+
     if (engine.scripts().empty()) {
         active_idx_ = engine.add_script();
         editor_.set_code("print('Hello, World!')");
@@ -143,5 +149,3 @@ void ScriptPanel::renderTab(size_t idx, ScriptingEngine& engine) {
 
     console_.render(consoleH, s);
 }
-
-#endif

@@ -1,4 +1,3 @@
-#ifdef SCRIPTING_AVAILABLE
 
 #include "scripting_loader.hpp"
 
@@ -57,5 +56,3 @@ ScriptingLoader::~ScriptingLoader() {
     libscripting_.close();
     libpython_.close();
 }
-
-#endif

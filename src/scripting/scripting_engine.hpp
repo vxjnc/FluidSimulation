@@ -1,5 +1,4 @@
 #pragma once
-#ifdef SCRIPTING_AVAILABLE
 
 #include <string_view>
 #include <vector>
@@ -35,5 +34,3 @@ public:
 extern "C" ScriptingEngine* create_scripting_engine(std::vector<FluidSource>* sources,
                                                     std::string_view pythonPath);
 extern "C" void destroy_scripting_engine(ScriptingEngine* engine);
-
-#endif

@@ -41,9 +41,7 @@ private:
 
     GpuProfiler<> uiProfiler;
 
-#ifdef SCRIPTING_AVAILABLE
     ScriptingLoader scripting;
-#endif
 
     GLFWwindow* window = nullptr;
     [[maybe_unused]] NFD::Guard nfdGuard;

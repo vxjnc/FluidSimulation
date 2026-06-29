@@ -31,9 +31,7 @@ struct AppSettings {
     SplatSettings splatSettings;
 
     UISettings ui;
-#ifdef SCRIPTING_AVAILABLE
     ScriptingSettings scripting;
-#endif
 
     bool dockInitialized = false;
 };
