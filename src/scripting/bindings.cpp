@@ -111,9 +111,11 @@ NB_MODULE(fluidsim, m) {
              [](PluginPanel& p, std::string id, std::string label, bool default_val) {
                  p.widgets.push_back(Checkbox{std::move(id), std::move(label), default_val});
              })
-        .def("add_drag_int", [](PluginPanel& p, std::string id, std::string label, int default_val) {
-            p.widgets.push_back(DragInt{std::move(id), std::move(label), default_val});
-        });
+        .def("add_drag_int",
+             [](PluginPanel& p, std::string id, std::string label, int default_val) {
+                 p.widgets.push_back(DragInt{std::move(id), std::move(label), default_val});
+             })
+        .def("sameline", [](PluginPanel& p) { p.widgets.push_back(SameLine{}); });
 
     m.def("set_panel", [](PluginPanel panel) {
         if (ScriptingEngine::instance->current_script) {

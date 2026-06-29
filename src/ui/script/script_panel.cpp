@@ -14,6 +14,7 @@ namespace {
     void draw_plugin_panel(PluginPanel& panel) {
         for (auto& w : panel.widgets) {
             std::visit(PluginPanel::overloaded{
+                           [&](SameLine&) { ImGui::SameLine(); },
                            [&](Button& b) {
                                if (ImGui::Button(b.label.c_str()) && b.on_click) {
                                    if (auto result = b.on_click(panel.collect_state())) {

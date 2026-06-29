@@ -47,7 +47,9 @@ struct Checkbox {
     bool val;
 };
 
-using Widget = std::variant<Button, SliderF, DragInt, DragF2, Checkbox>;
+struct SameLine {};
+
+using Widget = std::variant<SameLine, Button, SliderF, DragInt, DragF2, Checkbox>;
 
 class PluginPanel {
 public:
@@ -61,6 +63,7 @@ public:
     void set_value(const std::string& id, ExportValue value) {
         for (auto& w : widgets) {
             std::visit(overloaded{
+                           [&](SameLine&) {},
                            [&](Button&) {},
                            [&](SliderF& s) {
                                if (s.id == id) {
@@ -91,6 +94,7 @@ public:
         std::map<std::string, ExportValue> state;
         for (const auto& w : widgets) {
             std::visit(overloaded{
+                           [&](const SameLine&) {},
                            [&](const Button&) {},
                            [&](const SliderF& s) { state[s.id] = s.val; },
                            [&](const DragInt& i) { state[i.id] = i.val; },
