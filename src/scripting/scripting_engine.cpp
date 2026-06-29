@@ -30,6 +30,12 @@ public:
         PyImport_AppendInittab("fluidsim", PyInit_fluidsim);
         Py_Initialize();
 
+        PyObject* err = PyErr_Occurred();
+        if (err) {
+            PyErr_Print();
+            PyErr_Clear();
+        }
+
         PyRun_SimpleString(R"(
 import sys, _fluidsim_io
 class _Capture:

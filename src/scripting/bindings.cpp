@@ -93,7 +93,14 @@ NB_MODULE(fluidsim, m) {
                  Button b;
                  b.id = std::move(id);
                  b.label = std::move(label);
-                 b.on_click = [on_click](const std::map<std::string, ExportValue>& vars) { on_click(vars); };
+                 b.on_click = [on_click](const std::map<std::string, ExportValue>& vars)
+                     -> std::optional<std::map<std::string, ExportValue>> {
+                     auto result = on_click(vars);
+                     if (result.is_none()) {
+                         return std::nullopt;
+                     }
+                     return nb::cast<std::map<std::string, ExportValue>>(result);
+                 };
                  p.widgets.push_back(std::move(b));
              })
         .def("add_slider",

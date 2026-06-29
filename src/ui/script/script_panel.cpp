@@ -10,6 +10,29 @@
 #include "src/scripting/scripting_engine.hpp"
 #include "src/utils/file_dialog.hpp"
 
+namespace {
+    void draw_plugin_panel(PluginPanel& panel) {
+        for (auto& w : panel.widgets) {
+            std::visit(PluginPanel::overloaded{
+                           [&](Button& b) {
+                               if (ImGui::Button(b.label.c_str()) && b.on_click) {
+                                   if (auto result = b.on_click(panel.collect_state())) {
+                                       for (auto& [k, v] : *result) {
+                                           panel.set_value(k, v);
+                                       }
+                                   }
+                               }
+                           },
+                           [&](SliderF& s) { ImGui::SliderFloat(s.label.c_str(), &s.val, s.min, s.max); },
+                           [&](DragInt& i) { ImGui::DragInt(i.label.c_str(), &i.val); },
+                           [&](DragF2& f) { ImGui::DragFloat2(f.label.c_str(), f.val.data()); },
+                           [&](Checkbox& c) { ImGui::Checkbox(c.label.c_str(), &c.val); },
+                       },
+                       w);
+        }
+    }
+}
+
 void ScriptPanel::render(bool& open, ScriptingEngine& engine) {
     if (engine.scripts().empty()) {
         active_idx_ = engine.add_script();
@@ -71,6 +94,18 @@ void ScriptPanel::render(bool& open, ScriptingEngine& engine) {
             editor_.set_code("print('Hello, World!')");
         }
         ImGui::EndTabBar();
+    }
+
+    for (size_t i = 0; i < engine.scripts().size(); i++) {
+        auto& s = engine.scripts()[i];
+        if (s.panel) {
+            auto title = std::format("Script {} Panel", i + 1);
+            ImGui::Begin(title.c_str());
+            engine.current_script = &s;
+            draw_plugin_panel(*s.panel);
+            engine.current_script = nullptr;
+            ImGui::End();
+        }
     }
 
     ImGui::End();
