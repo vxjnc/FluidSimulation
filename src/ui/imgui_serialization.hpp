@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstdio>
+#include <map>
+#include <string>
 #include <string_view>
 
 #include <imgui_internal.h>
@@ -59,6 +61,22 @@ public:
             }
             return false;
         }
+        else if constexpr (std::is_same_v<T, std::map<std::string, bool>>) {
+            size_t len = std::strlen(name);
+            if (std::strncmp(line, name, len) == 0 && line[len] == '.') {
+                const char* rest = line + len + 1;
+                const char* eq = std::strchr(rest, '=');
+                if (eq) {
+                    std::string key(rest, eq - rest);
+                    int v = 0;
+                    if (std::sscanf(eq + 1, "%d", &v) == 1) {
+                        out[key] = (v != 0);
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
         else {
             return false;
         }
@@ -96,6 +114,11 @@ public:
         }
         else if constexpr (std::is_same_v<T, std::string>) {
             buf->appendf("%s=%s\n", name, StringEscaping::encodeString(value).c_str());
+        }
+        else if constexpr (std::is_same_v<T, std::map<std::string, bool>>) {
+            for (const auto& [key, val] : value) {
+                buf->appendf("%s.%s=%d\n", name, key.c_str(), val ? 1 : 0);
+            }
         }
     };
     template <typename Obj>
