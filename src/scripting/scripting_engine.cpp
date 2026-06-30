@@ -2,6 +2,7 @@
 
 #include "scripting_engine.hpp"
 
+#include <chrono>
 #include <format>
 #include <string>
 
@@ -83,10 +84,14 @@ sys.stdout = sys.stderr = _Capture()
         PyObject* compiled = Py_CompileString(source.code.c_str(),
                                               std::format("<script {}>", source.id).c_str(), Py_file_input);
         if (compiled) {
+            auto start = std::chrono::steady_clock::now();
             PyObject* result = PyEval_EvalCode(compiled, rt.globals, rt.globals);
+            auto elapsed = std::chrono::steady_clock::now() - start;
             Py_DECREF(compiled);
             if (result) {
                 Py_DECREF(result);
+                auto ms = std::chrono::duration<double, std::milli>(elapsed).count();
+                append_output(std::format("Completed in {:.2f}ms\n", ms));
             }
             else {
                 PyErr_Print();
