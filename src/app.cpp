@@ -38,6 +38,8 @@ Application::Application(uint32_t width, uint32_t height, std::string_view title
         settings.scripting.pythonPath = scripting.engine().python_path();
     }
 
+    pluginManager.scan();
+
     uiProfiler.init(ctx.device());
     renderer.init(ctx.device());
     viewport.init(ctx.device(), width, height, ctx.surfaceFormat());
@@ -134,6 +136,8 @@ void Application::run() {
     imguiManager.onScreenshotFile.connect(
         [&](auto path) { ScreenshotCapture::request(viewport, ScreenshotCapture::Mode::File, path); });
 
+    pluginManager.run_enabled(scripting.engine(), settings.plugins);
+
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
         ctx.processEvents();
@@ -152,7 +156,7 @@ void Application::run() {
         processInput(enc, frameSources);
         update(enc, frameSources);
         imguiManager.renderUI(viewport, mouse, simulation, renderer, sources, uiProfiler, scripting.engine(),
-                              scripts);
+                              scripts, pluginManager);
         auto [target, targetView] = render(enc);
 
         wgpu::raii::CommandBuffer cmd = enc->finish({});

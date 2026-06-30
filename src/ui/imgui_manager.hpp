@@ -17,10 +17,13 @@
 #include "src/ui/imgui_serialization.hpp"
 #include "src/ui/import/import_panel.hpp"
 #include "src/ui/random_splat/splat_panel.hpp"
+#include "src/ui/script/plugin/plugins_panel.hpp"
 #include "src/ui/script/script_panel.hpp"
 #include "src/ui/stats/stats_panel.hpp"
 
 enum class ImportTarget : uint8_t { Dye, Velocity, Obstacles };
+
+class PluginManager;
 
 struct MouseState {
     float x = 0, y = 0;
@@ -35,6 +38,7 @@ struct PanelVisibility {
     bool randomSplat = false;
     bool import = false;
     bool script = false;
+    bool plugins = false;
     Observable<bool> stats = true;
 };
 
@@ -66,7 +70,8 @@ public:
 
     void renderUI(FluidViewport& viewport, MouseState& mouse, FluidSim& sim, Render& render,
                   std::vector<FluidSource>& sources, const GpuProfiler<>& uiProfiler,
-                  ScriptingEngine& scripting, std::vector<ScriptSource>& scripts);
+                  ScriptingEngine& scripting, std::vector<ScriptSource>& scripts,
+                  PluginManager& pluginManager);
 
     void endFrame(WGPURenderPassEncoder passEncoder) {
         ImGui_ImplWGPU_RenderDrawData(ImGui::GetDrawData(), passEncoder);
@@ -79,6 +84,7 @@ public:
     StatsPanel statsPanel;
 
     ScriptPanel scriptPanel;
+    PluginsPanel pluginsPanel;
 
 private:
     AppSettings* settings;

@@ -11,6 +11,7 @@
 #include "src/compute/gpu_profiler.hpp"
 #include "src/render/render.hpp"
 #include "src/save/save_manager.hpp"
+#include "src/scripting/plugin_manager.hpp"
 #include "src/scripting/script_source.hpp"
 #include "src/scripting/scripting_engine.hpp"
 #include "src/scripting/scripting_loader.hpp"
@@ -43,6 +44,7 @@ private:
     GpuProfiler<> uiProfiler;
 
     ScriptingLoader scripting;
+    PluginManager pluginManager;
 
     GLFWwindow* window = nullptr;
     [[maybe_unused]] NFD::Guard nfdGuard;

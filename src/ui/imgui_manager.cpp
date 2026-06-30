@@ -46,7 +46,8 @@ void ImGuiManager::init(GLFWwindow* window, wgpu::Device device, wgpu::TextureFo
 
 void ImGuiManager::renderUI(FluidViewport& viewport, MouseState& mouse, FluidSim& sim, Render& render,
                             std::vector<FluidSource>& sources, const GpuProfiler<>& uiProfiler,
-                            ScriptingEngine& engine, std::vector<ScriptSource>& scripts) {
+                            ScriptingEngine& engine, std::vector<ScriptSource>& scripts,
+                            PluginManager& pluginManager) {
     ImGuiIO& io = ImGui::GetIO();
 
     ImGuiID dockspaceId = ImGui::DockSpaceOverViewport(ImGui::GetMainViewport()->ID);
@@ -130,6 +131,9 @@ void ImGuiManager::renderUI(FluidViewport& viewport, MouseState& mouse, FluidSim
                                      onImport(ImportTarget::Obstacles, std::move(pixels), ow, oh);
                                  }}},
             visibility.import);
+    }
+    if (visibility.plugins) {
+        pluginsPanel.render(visibility.plugins, pluginManager, settings->plugins, engine);
     }
 
     // --- Viewport Panel ---
@@ -241,6 +245,13 @@ void ImGuiManager::renderMenuBar(ScriptingEngine& engine) {
             settings->ui.dockInitialized = false;
             visibility = PanelVisibility();
         }
+        ImGui::EndMenu();
+    }
+
+    if (ImGui::BeginMenu("Plugins")) {
+        // TODO: Plugins panels
+        ImGui::Separator();
+        ImGui::MenuItem("Manage Plugins", nullptr, &visibility.plugins);
         ImGui::EndMenu();
     }
 

@@ -7,6 +7,7 @@
 
 #include "src/scripting/scripting_engine.hpp"
 #include "src/utils/file_dialog.hpp"
+#include "src/utils/file_utils.hpp"
 
 namespace {
     void draw_plugin_panel(PluginPanel& panel) {
@@ -60,8 +61,7 @@ void ScriptPanel::render(bool& open, ScriptingEngine& engine, std::vector<Script
             if (ImGui::MenuItem("Open...")) {
                 nfdu8filteritem_t filters[] = {{"Python Script", "py"}};
                 FileDialog::Open(filters, [this, &scripts](const char* path) {
-                    std::ifstream f(path);
-                    std::string code((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
+                    std::string code = FileUtils::read_file(path);
                     addScript(std::move(code));
                     active_idx_ = scripts.size() - 1;
                     editor_.set_code(scripts[active_idx_].code);
