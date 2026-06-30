@@ -1,4 +1,4 @@
-find_package(Python 3.10 COMPONENTS Interpreter Development QUIET)
+find_package(Python 3.12 COMPONENTS Interpreter Development QUIET)
 
 if(Python_FOUND)
     message(STATUS "Python ${Python_VERSION} found - scripting enabled")
@@ -23,6 +23,7 @@ if(Python_FOUND)
         ${nanobind_SOURCE_DIR}/ext/robin_map/include
         ${Python_INCLUDE_DIRS}
     )
+    target_link_libraries(fluid_scripting PRIVATE nfd)
     target_compile_definitions(fluid_scripting PRIVATE SCRIPTING_AVAILABLE)
     target_compile_definitions(fluid_gui PUBLIC SCRIPTING_AVAILABLE)
     if(MSVC)

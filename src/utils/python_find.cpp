@@ -40,7 +40,7 @@ namespace python_find {
             }
         }
 #else
-        for (const char* c : {"python3", "python3.12", "python3.11", "python3.10"}) {
+        for (const char* c : {"python3", "python3.14", "python3.13", "python3.12"}) {
             std::string r = popen_result(std::format("which {} 2>/dev/null", c));
             if (!r.empty()) {
                 return r;

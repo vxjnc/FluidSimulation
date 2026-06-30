@@ -35,7 +35,7 @@ cmake --build --preset release-wgpu
 
 All other dependencies (GLFW, ImGui, sigslot, nfd, stb, etc.) are fetched automatically via CMake FetchContent.
 
-Python scripting is enabled automatically if Python 3.10+ development headers are found. To disable, build without Python headers installed, or force disable it along with all scripting UI components using the specific preset:
+Python scripting is enabled automatically if Python 3.12+ development headers are found. To disable, build without Python headers installed, or force disable it along with all scripting UI components using the specific preset:
 
 ```bash
 cmake --preset release-no-python
