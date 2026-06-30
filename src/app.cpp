@@ -117,10 +117,10 @@ void Application::run() {
         });
     });
 
-    imguiManager.scriptPanel.addScript.connect(
+    imguiManager.scriptIDE.addScript.connect(
         [&](std::string code) { scripts.push_back({.code = std::move(code)}); });
 
-    imguiManager.scriptPanel.removeScript.connect([&](size_t id) {
+    imguiManager.scriptIDE.removeScript.connect([&](size_t id) {
         scripting.engine().clear_output(id);
         scripting.engine().stop_script(id);
         std::erase_if(scripts, [&](auto& s) { return s.id == id; });

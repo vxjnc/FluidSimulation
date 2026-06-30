@@ -95,8 +95,8 @@ void ImGuiManager::renderUI(FluidViewport& viewport, MouseState& mouse, FluidSim
     if (visibility.controls) {
         controlsPanel.render(visibility.controls, viewport, sim, *settings, sources);
     }
-    if (visibility.script) {
-        scriptPanel.render(visibility.script, engine, scripts);
+    if (visibility.scriptIDE) {
+        scriptIDE.render(visibility.scriptIDE, engine, scripts);
     }
     if (visibility.randomSplat) {
         splatPanel.render(visibility.randomSplat, settings->splatSettings, settings->ui.velocityMode);
@@ -237,7 +237,7 @@ void ImGuiManager::renderMenuBar(ScriptingEngine& engine) {
         ImGui::MenuItem("Import", nullptr, &visibility.import);
         Widgets::MenuItem("Stats", nullptr, visibility.stats);
         if (engine.is_available()) {
-            ImGui::MenuItem("Script", nullptr, &visibility.script);
+            ImGui::MenuItem("Script", nullptr, &visibility.scriptIDE);
         }
 
         ImGui::Separator();

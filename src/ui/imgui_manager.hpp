@@ -18,7 +18,7 @@
 #include "src/ui/import/import_panel.hpp"
 #include "src/ui/random_splat/splat_panel.hpp"
 #include "src/ui/script/plugin/plugins_panel.hpp"
-#include "src/ui/script/script_panel.hpp"
+#include "src/ui/script/script_ide.hpp"
 #include "src/ui/stats/stats_panel.hpp"
 
 enum class ImportTarget : uint8_t { Dye, Velocity, Obstacles };
@@ -37,7 +37,7 @@ struct PanelVisibility {
     bool controls = true;
     bool randomSplat = false;
     bool import = false;
-    bool script = false;
+    bool scriptIDE = false;
     bool plugins = false;
     Observable<bool> stats = true;
 };
@@ -83,7 +83,7 @@ public:
     ImportPanel importPanel;
     StatsPanel statsPanel;
 
-    ScriptPanel scriptPanel;
+    ScriptIDE scriptIDE;
     PluginsPanel pluginsPanel;
 
 private:

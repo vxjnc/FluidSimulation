@@ -7,7 +7,7 @@
 
 class ScriptingEngine;
 
-class ScriptPanel {
+class ScriptIDE {
 public:
     sigslot::signal<std::string> addScript;
     sigslot::signal<size_t> removeScript;

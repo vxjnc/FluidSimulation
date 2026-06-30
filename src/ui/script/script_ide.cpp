@@ -1,5 +1,5 @@
 
-#include "script_panel.hpp"
+#include "script_ide.hpp"
 
 #include <fstream>
 
@@ -33,7 +33,7 @@ namespace {
     }
 }
 
-void ScriptPanel::render(bool& open, ScriptingEngine& engine, std::vector<ScriptSource>& scripts) {
+void ScriptIDE::render(bool& open, ScriptingEngine& engine, std::vector<ScriptSource>& scripts) {
     if (!engine.is_available()) {
         ImGui::Begin("Script Editor", &open);
         ImGui::TextDisabled("Python not available");
@@ -111,7 +111,7 @@ void ScriptPanel::render(bool& open, ScriptingEngine& engine, std::vector<Script
     ImGui::End();
 }
 
-void ScriptPanel::renderTab(ScriptSource& s, ScriptingEngine& engine) {
+void ScriptIDE::renderTab(ScriptSource& s, ScriptingEngine& engine) {
     float totalH = ImGui::GetContentRegionAvail().y;
     float buttonsH = ImGui::GetFrameHeightWithSpacing() * 2;
     float editorH = totalH * 0.6f;
