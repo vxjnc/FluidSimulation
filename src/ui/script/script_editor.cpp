@@ -5,10 +5,7 @@
 
 #include "src/ui/font_manager.hpp"
 
-ScriptEditor::ScriptEditor() {
-    editor_.SetLanguage(TextEditor::Language::Python());
-    editor_.SetText("print('Hello, World!')");
-}
+ScriptEditor::ScriptEditor() { editor_.SetLanguage(TextEditor::Language::Python()); }
 
 bool ScriptEditor::render(float height) {
     ImVec2 padding = ImGui::GetStyle().FramePadding;

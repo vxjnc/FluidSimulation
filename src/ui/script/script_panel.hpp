@@ -9,10 +9,10 @@ class ScriptingEngine;
 
 class ScriptPanel {
 public:
-    sigslot::signal<> addScript;
+    sigslot::signal<std::string> addScript;
     sigslot::signal<size_t> removeScript;
 
-    void render(bool& open, ScriptingEngine& engine, std::span<ScriptSource> scripts);
+    void render(bool& open, ScriptingEngine& engine, std::vector<ScriptSource>& scripts);
     void renderTab(ScriptSource& s, ScriptingEngine& engine);
 
 private:

@@ -116,7 +116,7 @@ void Application::run() {
     });
 
     imguiManager.scriptPanel.addScript.connect(
-        [&]() { scripts.push_back({.code = "print('Hello, World!')"}); });
+        [&](std::string code) { scripts.push_back({.code = std::move(code)}); });
 
     imguiManager.scriptPanel.removeScript.connect([&](size_t id) {
         scripting.engine().clear_output(id);

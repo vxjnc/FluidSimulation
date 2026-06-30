@@ -32,7 +32,7 @@ namespace {
     }
 }
 
-void ScriptPanel::render(bool& open, ScriptingEngine& engine, std::span<ScriptSource> scripts) {
+void ScriptPanel::render(bool& open, ScriptingEngine& engine, std::vector<ScriptSource>& scripts) {
     if (!engine.is_available()) {
         ImGui::Begin("Script Editor", &open);
         ImGui::TextDisabled("Python not available");
@@ -62,8 +62,9 @@ void ScriptPanel::render(bool& open, ScriptingEngine& engine, std::span<ScriptSo
                 FileDialog::Open(filters, [this, &scripts](const char* path) {
                     std::ifstream f(path);
                     std::string code((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
-                    editor_.set_code(code);
-                    scripts[active_idx_].code = code;
+                    addScript(std::move(code));
+                    active_idx_ = scripts.size() - 1;
+                    editor_.set_code(scripts[active_idx_].code);
                 });
             }
             if (ImGui::MenuItem("Save...")) {
@@ -100,7 +101,9 @@ void ScriptPanel::render(bool& open, ScriptingEngine& engine, std::span<ScriptSo
             if (!scripts.empty()) {
                 scripts[active_idx_].code = editor_.code();
             }
-            addScript();
+            addScript("print('Hello, World!')");
+            active_idx_ = scripts.size() - 1;
+            editor_.set_code(scripts[active_idx_].code);
         }
         ImGui::EndTabBar();
     }
