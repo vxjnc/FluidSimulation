@@ -14,8 +14,8 @@ namespace nb = nanobind;
 
 NB_MODULE(_fluidsim_io, m) {
     m.def("output", [](const char* text) {
-        if (text && ScriptingEngine::instance->current_script) {
-            ScriptingEngine::instance->current_script->append_output(text);
+        if (text) {
+            ScriptingEngine::instance->append_output(text);
         }
     });
 }
@@ -117,11 +117,7 @@ NB_MODULE(fluidsim, m) {
              })
         .def("sameline", [](PluginPanel& p) { p.widgets.push_back(SameLine{}); });
 
-    m.def("set_panel", [](PluginPanel panel) {
-        if (ScriptingEngine::instance->current_script) {
-            ScriptingEngine::instance->current_script->panel = std::move(panel);
-        }
-    });
+    m.def("set_panel", [](PluginPanel panel) { ScriptingEngine::instance->set_panel(std::move(panel)); });
 }
 
 #endif

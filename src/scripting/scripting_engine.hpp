@@ -4,7 +4,8 @@
 #include <vector>
 
 #include "src/compute/fluid_source.hpp"
-#include "src/scripting/script.hpp"
+#include "src/scripting/script_source.hpp"
+#include "src/ui/script/plugin/plugin_panel.hpp"
 
 class Application;
 
@@ -13,22 +14,29 @@ public:
     virtual ~ScriptingEngine() = default;
 
     virtual bool is_available() { return false; }
-    virtual size_t add_script() { return 0; }
-    virtual void remove_script(size_t) {}
-    virtual void run_script(size_t) {}
+
+    virtual void run_script(const ScriptSource&) {}
     virtual void stop_script(size_t) {}
+
     virtual void set_tick_callback(void*) {}
     virtual void tick() {}
-    virtual std::string_view python_path() { return ""; }
-    virtual std::vector<Script>& scripts() {
-        static std::vector<Script> empty;
+
+    virtual void append_output(std::string_view) {}
+    virtual const std::string& get_output(size_t) const {
+        static std::string empty;
         return empty;
     }
+    virtual void clear_output(size_t) {}
+
+    virtual void set_panel(PluginPanel) {}
+
+    virtual std::string_view python_path() { return ""; }
+
+    virtual void set_current_context(size_t) {}
+    virtual void for_each_panel(std::function<void(size_t id, PluginPanel&)>) {}
 
     static ScriptingEngine* instance;
-
     std::vector<FluidSource>* sources = nullptr;
-    Script* current_script = nullptr;
 };
 
 extern "C" ScriptingEngine* create_scripting_engine(std::vector<FluidSource>* sources,

@@ -46,7 +46,7 @@ void ImGuiManager::init(GLFWwindow* window, wgpu::Device device, wgpu::TextureFo
 
 void ImGuiManager::renderUI(FluidViewport& viewport, MouseState& mouse, FluidSim& sim, Render& render,
                             std::vector<FluidSource>& sources, const GpuProfiler<>& uiProfiler,
-                            ScriptingEngine& engine) {
+                            ScriptingEngine& engine, std::vector<ScriptSource>& scripts) {
     ImGuiIO& io = ImGui::GetIO();
 
     ImGuiID dockspaceId = ImGui::DockSpaceOverViewport(ImGui::GetMainViewport()->ID);
@@ -95,7 +95,7 @@ void ImGuiManager::renderUI(FluidViewport& viewport, MouseState& mouse, FluidSim
         controlsPanel.render(visibility.controls, viewport, sim, *settings, sources);
     }
     if (visibility.script) {
-        scriptPanel.render(visibility.script, engine);
+        scriptPanel.render(visibility.script, engine, scripts);
     }
     if (visibility.randomSplat) {
         splatPanel.render(visibility.randomSplat, settings->splatSettings, settings->ui.velocityMode);

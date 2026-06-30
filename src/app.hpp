@@ -11,6 +11,7 @@
 #include "src/compute/gpu_profiler.hpp"
 #include "src/render/render.hpp"
 #include "src/save/save_manager.hpp"
+#include "src/scripting/script_source.hpp"
 #include "src/scripting/scripting_engine.hpp"
 #include "src/scripting/scripting_loader.hpp"
 #include "src/ui/fluid_viewport.hpp"
@@ -50,6 +51,7 @@ private:
 
     FluidSim simulation;
     std::vector<FluidSource> sources;
+    std::vector<ScriptSource> scripts;
 
     Render renderer;
     FluidViewport viewport;

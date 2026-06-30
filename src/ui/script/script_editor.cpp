@@ -7,7 +7,7 @@
 
 ScriptEditor::ScriptEditor() {
     editor_.SetLanguage(TextEditor::Language::Python());
-    editor_.SetText("print('hello')");
+    editor_.SetText("print('Hello, World!')");
 }
 
 bool ScriptEditor::render(float height) {

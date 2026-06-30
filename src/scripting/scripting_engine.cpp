@@ -2,11 +2,14 @@
 
 #include "scripting_engine.hpp"
 
+#include <format>
 #include <string>
 
 #include <Python.h>
 #include <nanobind/nanobind.h>
 
+#include "src/scripting/script_runtime.hpp"
+#include "src/ui/script/plugin/plugin_panel.hpp"
 #include "src/utils/python_find.hpp"
 
 extern "C" PyObject* PyInit_fluidsim();
@@ -21,7 +24,6 @@ public:
     ScriptingEngineImpl(std::vector<FluidSource>* sources_, std::string_view pythonPath) {
         instance = this;
         sources = sources_;
-
         pythonPath_ = pythonPath;
 
         std::string prefix = python_find::find_prefix(pythonPath_);
@@ -57,48 +59,31 @@ sys.stdout = sys.stderr = _Capture()
     }
 
     ~ScriptingEngineImpl() override {
-        for (size_t i = 0; i < scripts_.size(); i++) {
-            stop_script(i);
-        }
-        scripts_.clear();
+        runtimes_.clear();
         Py_FinalizeEx();
         instance = nullptr;
     }
 
     bool is_available() override { return true; }
     std::string_view python_path() override { return pythonPath_; }
-    std::vector<Script>& scripts() override { return scripts_; }
 
-    size_t add_script() override {
-        scripts_.emplace_back();
-        return scripts_.size() - 1;
-    }
+    void run_script(const ScriptSource& source) override {
+        clear_output(source.id);
+        stop_script(source.id);
 
-    void remove_script(size_t idx) override {
-        stop_script(idx);
-        scripts_.erase(scripts_.begin() + idx);
-    }
+        ScriptRuntime rt;
 
-    void run_script(size_t idx) override {
-        stop_script(idx);
-        Script& s = scripts_[idx];
-        s.clear_output();
-
-        if (s.globals) {
-            Py_DECREF(static_cast<PyObject*>(s.globals));
-            s.globals = nullptr;
-        }
         nb::dict globals;
-        nb::object builtins = nb::module_::import_("builtins");
-        globals["__builtins__"] = builtins;
-        s.globals = globals.release().ptr();
+        globals["__builtins__"] = nb::module_::import_("builtins");
+        rt.globals = globals.release().ptr();
 
-        current_script = &s;
+        current_id_ = source.id;
+        current_script_ = &rt;
 
-        PyObject* compiled = Py_CompileString(s.code.c_str(), "<script>", Py_file_input);
+        PyObject* compiled = Py_CompileString(source.code.c_str(),
+                                              std::format("<script {}>", source.id).c_str(), Py_file_input);
         if (compiled) {
-            PyObject* result = PyEval_EvalCode(compiled, static_cast<PyObject*>(s.globals),
-                                               static_cast<PyObject*>(s.globals));
+            PyObject* result = PyEval_EvalCode(compiled, rt.globals, rt.globals);
             Py_DECREF(compiled);
             if (result) {
                 Py_DECREF(result);
@@ -113,49 +98,37 @@ sys.stdout = sys.stderr = _Capture()
             PyErr_Clear();
         }
 
-        current_script = nullptr;
+        current_script_ = nullptr;
+        current_id_ = ScriptSource::INVALID_ID;
+
+        if (rt.is_alive()) {
+            runtimes_.emplace(source.id, std::move(rt));
+        }
     }
 
-    void stop_script(size_t idx) override {
-        auto& s = scripts_[idx];
-        if (s.tick_callback) {
-            Py_DECREF(static_cast<PyObject*>(s.tick_callback));
-            s.tick_callback = nullptr;
-        }
-        if (s.globals) {
-            Py_DECREF(static_cast<PyObject*>(s.globals));
-            s.globals = nullptr;
-        }
-        if (s.panel) {
-            for (auto& w : s.panel->widgets) {
-                if (auto* b = std::get_if<Button>(&w)) {
-                    b->on_click = nullptr;
-                }
-            }
-            s.panel.reset();
-        }
-    }
+    void stop_script(size_t id) override { runtimes_.erase(id); }
 
     void set_tick_callback(void* cb) override {
-        if (!current_script) {
+        if (!current_script_) {
             return;
         }
-        if (current_script->tick_callback) {
-            Py_DECREF(static_cast<PyObject*>(current_script->tick_callback));
+        if (current_script_->tick_callback) {
+            Py_DECREF(static_cast<PyObject*>(current_script_->tick_callback));
         }
-        current_script->tick_callback = cb;
+        current_script_->tick_callback = static_cast<PyObject*>(cb);
         if (cb) {
             Py_INCREF(static_cast<PyObject*>(cb));
         }
     }
 
     void tick() override {
-        for (auto& s : scripts_) {
-            if (!s.tick_callback) {
+        for (auto& [id, rt] : runtimes_) {
+            if (!rt.tick_callback) {
                 continue;
             }
-            current_script = &s;
-            PyObject* res = PyObject_CallNoArgs(static_cast<PyObject*>(s.tick_callback));
+            current_script_ = &rt;
+            current_id_ = id;
+            PyObject* res = PyObject_CallNoArgs(rt.tick_callback);
             if (res) {
                 Py_DECREF(res);
             }
@@ -163,13 +136,62 @@ sys.stdout = sys.stderr = _Capture()
                 PyErr_Print();
                 PyErr_Clear();
             }
-            current_script = nullptr;
+            current_script_ = nullptr;
+            current_id_ = ScriptSource::INVALID_ID;
+        }
+    }
+
+    void append_output(std::string_view text) override {
+        if (!current_script_) {
+            return;
+        }
+        auto& out = outputs_[current_id_];
+        out += text;
+        if (out.size() > 10 * 1024) {
+            out.erase(0, out.size() - 10 * 1024);
+        }
+    }
+
+    const std::string& get_output(size_t id) const override {
+        static std::string empty;
+        auto it = outputs_.find(id);
+        return it != outputs_.end() ? it->second : empty;
+    }
+
+    void clear_output(size_t id) override { outputs_.erase(id); }
+
+    void set_panel(PluginPanel panel) override {
+        if (!current_script_) {
+            return;
+        }
+        current_script_->panel = std::move(panel);
+    }
+
+    void set_current_context(size_t id) override {
+        if (id == ScriptSource::INVALID_ID) {
+            current_script_ = nullptr;
+            current_id_ = ScriptSource::INVALID_ID;
+            return;
+        }
+        auto it = runtimes_.find(id);
+        current_script_ = it != runtimes_.end() ? &it->second : nullptr;
+        current_id_ = id;
+    }
+
+    void for_each_panel(std::function<void(size_t id, PluginPanel&)> fn) override {
+        for (auto& [id, rt] : runtimes_) {
+            if (rt.panel) {
+                fn(id, *rt.panel);
+            }
         }
     }
 
 private:
     std::string pythonPath_;
-    std::vector<Script> scripts_;
+    std::map<size_t, ScriptRuntime> runtimes_;
+    std::map<size_t, std::string> outputs_;
+    ScriptRuntime* current_script_ = nullptr;
+    size_t current_id_ = ScriptSource::INVALID_ID;
 };
 
 extern "C" ScriptingEngine* create_scripting_engine(std::vector<FluidSource>* sources,

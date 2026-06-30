@@ -115,6 +115,15 @@ void Application::run() {
         });
     });
 
+    imguiManager.scriptPanel.addScript.connect(
+        [&]() { scripts.push_back({.code = "print('Hello, World!')"}); });
+
+    imguiManager.scriptPanel.removeScript.connect([&](size_t id) {
+        scripting.engine().clear_output(id);
+        scripting.engine().stop_script(id);
+        std::erase_if(scripts, [&](auto& s) { return s.id == id; });
+    });
+
     imguiManager.onSaveRequested.connect(
         [&](auto path) { SaveManager::save(path, simulation, sources, settings); });
     imguiManager.onLoadRequested.connect(
@@ -142,7 +151,8 @@ void Application::run() {
 
         processInput(enc, frameSources);
         update(enc, frameSources);
-        imguiManager.renderUI(viewport, mouse, simulation, renderer, sources, uiProfiler, scripting.engine());
+        imguiManager.renderUI(viewport, mouse, simulation, renderer, sources, uiProfiler, scripting.engine(),
+                              scripts);
         auto [target, targetView] = render(enc);
 
         wgpu::raii::CommandBuffer cmd = enc->finish({});

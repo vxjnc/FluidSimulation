@@ -1,7 +1,6 @@
 
 #include "script_panel.hpp"
 
-#include <algorithm>
 #include <fstream>
 
 #include <imgui.h>
@@ -33,7 +32,7 @@ namespace {
     }
 }
 
-void ScriptPanel::render(bool& open, ScriptingEngine& engine) {
+void ScriptPanel::render(bool& open, ScriptingEngine& engine, std::span<ScriptSource> scripts) {
     if (!engine.is_available()) {
         ImGui::Begin("Script Editor", &open);
         ImGui::TextDisabled("Python not available");
@@ -41,10 +40,14 @@ void ScriptPanel::render(bool& open, ScriptingEngine& engine) {
         return;
     }
 
-    if (engine.scripts().empty()) {
-        active_idx_ = engine.add_script();
-        editor_.set_code("print('Hello, World!')");
-    }
+    engine.for_each_panel([&engine](size_t id, PluginPanel& panel) {
+        engine.set_current_context(id);
+        auto title = std::format("Script {} Panel", id);
+        ImGui::Begin(title.c_str());
+        draw_plugin_panel(panel);
+        ImGui::End();
+    });
+    engine.set_current_context(ScriptSource::INVALID_ID);
 
     ImGui::SetNextWindowSize(ImVec2(600, 500), ImGuiCond_FirstUseEver);
     if (!ImGui::Begin("Script Editor", &open, ImGuiWindowFlags_MenuBar)) {
@@ -56,11 +59,11 @@ void ScriptPanel::render(bool& open, ScriptingEngine& engine) {
         if (ImGui::BeginMenu("File")) {
             if (ImGui::MenuItem("Open...")) {
                 nfdu8filteritem_t filters[] = {{"Python Script", "py"}};
-                FileDialog::Open(filters, [this, &engine](const char* path) {
+                FileDialog::Open(filters, [this, &scripts](const char* path) {
                     std::ifstream f(path);
                     std::string code((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
                     editor_.set_code(code);
-                    engine.scripts()[active_idx_].code = code;
+                    scripts[active_idx_].code = code;
                 });
             }
             if (ImGui::MenuItem("Save...")) {
@@ -76,51 +79,36 @@ void ScriptPanel::render(bool& open, ScriptingEngine& engine) {
     }
 
     if (ImGui::BeginTabBar("##scripts")) {
-        auto& scripts = engine.scripts();
         for (size_t i = 0; i < scripts.size(); i++) {
             bool tab_open = true;
-            auto label = std::format("{}Script {}", scripts[i].tick_callback ? "• " : "", i + 1);
+            auto& s = scripts[i];
+            auto label = std::format("Script {}", i + 1);
             if (ImGui::BeginTabItem(label.c_str(), &tab_open)) {
                 if (active_idx_ != i) {
-                    engine.scripts()[active_idx_].code = editor_.code();
+                    scripts[active_idx_].code = editor_.code();
                     active_idx_ = i;
-                    editor_.set_code(scripts[i].code);
+                    editor_.set_code(s.code);
                 }
-                renderTab(i, engine);
+                renderTab(s, engine);
                 ImGui::EndTabItem();
             }
             if (!tab_open) {
-                engine.remove_script(i);
-                active_idx_ = std::clamp(active_idx_, 0zu, scripts.size() - 1);
-                editor_.set_code(engine.scripts()[active_idx_].code);
+                removeScript(s.id);
             }
         }
         if (ImGui::TabItemButton("+")) {
-            engine.scripts()[active_idx_].code = editor_.code();
-            active_idx_ = engine.add_script();
-            editor_.set_code("print('Hello, World!')");
+            if (!scripts.empty()) {
+                scripts[active_idx_].code = editor_.code();
+            }
+            addScript();
         }
         ImGui::EndTabBar();
-    }
-
-    for (size_t i = 0; i < engine.scripts().size(); i++) {
-        auto& s = engine.scripts()[i];
-        if (s.panel) {
-            auto title = std::format("Script {} Panel", i + 1);
-            ImGui::Begin(title.c_str());
-            engine.current_script = &s;
-            draw_plugin_panel(*s.panel);
-            engine.current_script = nullptr;
-            ImGui::End();
-        }
     }
 
     ImGui::End();
 }
 
-void ScriptPanel::renderTab(size_t idx, ScriptingEngine& engine) {
-    Script& s = engine.scripts()[idx];
-
+void ScriptPanel::renderTab(ScriptSource& s, ScriptingEngine& engine) {
     float totalH = ImGui::GetContentRegionAvail().y;
     float buttonsH = ImGui::GetFrameHeightWithSpacing() * 2;
     float editorH = totalH * 0.6f;
@@ -128,24 +116,19 @@ void ScriptPanel::renderTab(size_t idx, ScriptingEngine& engine) {
 
     if (editor_.render(editorH)) {
         s.code = editor_.code();
-        if (engine.is_available()) {
-            engine.run_script(idx);
-        }
-        else {
-            s.append_output("[error] Python not available");
-        }
+        engine.run_script(s);
     }
 
     ImGui::Separator();
     if (ImGui::SmallButton("Clear")) {
-        s.clear_output();
+        engine.clear_output(s.id);
     }
     ImGui::SameLine();
     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.6f, 0.1f, 0.1f, 1.0f));
     if (ImGui::SmallButton("Stop")) {
-        engine.stop_script(idx);
+        engine.stop_script(s.id);
     }
     ImGui::PopStyleColor();
 
-    console_.render(consoleH, s);
+    console_.render(consoleH, engine.get_output(s.id));
 }
