@@ -1,9 +1,12 @@
 #include "plugins_panel.hpp"
 
 #include <imgui.h>
+#include <imgui_markdown.h>
 
 #include "src/scripting/plugin_manager.hpp"
 #include "src/utils/file_utils.hpp"
+
+static ImGui::MarkdownConfig mdConfig{};
 
 void PluginsPanel::render(bool& open, PluginManager& manager, PluginSettings& settings,
                           ScriptingEngine& engine) {
@@ -49,7 +52,8 @@ void PluginsPanel::render(bool& open, PluginManager& manager, PluginSettings& se
                 if (readme_cache_.find(selected_) == readme_cache_.end()) {
                     readme_cache_[selected_] = FileUtils::read_file("plugins/" + selected_ + "/readme.md");
                 }
-                ImGui::TextWrapped("%s", readme_cache_[selected_].c_str());
+                const std::string& text = readme_cache_[selected_];
+                ImGui::Markdown(text.c_str(), text.size(), mdConfig);
                 ImGui::EndTabItem();
             }
             if (ImGui::BeginTabItem("Console")) {

@@ -105,6 +105,14 @@ FetchContent_Declare(
     GIT_SHALLOW    ON
 )
 
+# --- imgui_markdown ---
+FetchContent_Declare(
+    imgui_markdown
+    GIT_REPOSITORY https://github.com/enkisoftware/imgui_markdown.git
+    GIT_TAG        7f88a689f783b5f628a2c446ccc2e7198e732dfe
+    GIT_SHALLOW    ON
+)
+
 FetchContent_MakeAvailable(
     glfw
     webgpu_distribution
@@ -118,6 +126,7 @@ FetchContent_MakeAvailable(
     pfr
     wesl_distribution
     ImGuiColorTextEdit
+    imgui_markdown
 )
 set_target_properties(glfw webgpu PROPERTIES SYSTEM TRUE)
 
