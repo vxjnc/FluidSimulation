@@ -10,7 +10,7 @@
 #include <nanobind/nanobind.h>
 
 #include "src/scripting/script_runtime.hpp"
-#include "src/ui/script/plugin/plugin_panel.hpp"
+#include "src/ui/script/plugin/script_panel.hpp"
 #include "src/utils/python_find.hpp"
 
 extern "C" PyObject* PyInit_fluidsim();
@@ -165,7 +165,7 @@ sys.stdout = sys.stderr = _Capture()
 
     void clear_output(size_t id) override { outputs_.erase(id); }
 
-    void set_panel(PluginPanel panel) override {
+    void set_panel(ScriptPanel panel) override {
         if (!current_script_) {
             return;
         }
@@ -183,7 +183,7 @@ sys.stdout = sys.stderr = _Capture()
         current_id_ = id;
     }
 
-    void for_each_panel(std::function<void(size_t id, PluginPanel&)> fn) override {
+    void for_each_panel(std::function<void(size_t id, ScriptPanel&)> fn) override {
         for (auto& [id, rt] : runtimes_) {
             if (rt.panel) {
                 fn(id, *rt.panel);

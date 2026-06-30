@@ -7,12 +7,12 @@
 #include <dlfcn.h>
 #endif
 
-DynLib::DynLib(std::string_view path, bool global) {
+DynLib::DynLib(const std::string& path, bool global) {
 #ifdef _WIN32
     handle_ = LoadLibraryA(path.data());
 #else
     int flags = RTLD_NOW | (global ? RTLD_GLOBAL : RTLD_LOCAL);
-    handle_ = dlopen(path.data(), flags);
+    handle_ = dlopen(path.c_str(), flags);
 #endif
 }
 

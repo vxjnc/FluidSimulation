@@ -5,7 +5,7 @@
 
 #include <Python.h>
 
-#include "src/ui/script/plugin/plugin_panel.hpp"
+#include "src/ui/script/plugin/script_panel.hpp"
 
 struct ScriptRuntime {
     ScriptRuntime() = default;
@@ -38,5 +38,5 @@ struct ScriptRuntime {
 
     PyObject* globals = nullptr;
     PyObject* tick_callback = nullptr;
-    std::optional<PluginPanel> panel;
+    std::optional<ScriptPanel> panel;
 };

@@ -5,7 +5,7 @@
 
 #include "src/compute/fluid_source.hpp"
 #include "src/scripting/script_source.hpp"
-#include "src/ui/script/plugin/plugin_panel.hpp"
+#include "src/ui/script/plugin/script_panel.hpp"
 
 class Application;
 
@@ -28,12 +28,12 @@ public:
     }
     virtual void clear_output(size_t) {}
 
-    virtual void set_panel(PluginPanel) {}
+    virtual void set_panel(ScriptPanel) {}
 
     virtual std::string_view python_path() { return ""; }
 
     virtual void set_current_context(size_t) {}
-    virtual void for_each_panel(std::function<void(size_t id, PluginPanel&)>) {}
+    virtual void for_each_panel(std::function<void(size_t id, ScriptPanel&)>) {}
 
     static ScriptingEngine* instance;
     std::vector<FluidSource>* sources = nullptr;

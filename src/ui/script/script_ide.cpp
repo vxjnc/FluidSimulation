@@ -10,9 +10,9 @@
 #include "src/utils/file_utils.hpp"
 
 namespace {
-    void draw_plugin_panel(PluginPanel& panel) {
+    void draw_script_panel(ScriptPanel& panel) {
         for (auto& w : panel.widgets) {
-            std::visit(PluginPanel::overloaded{
+            std::visit(ScriptPanel::overloaded{
                            [&](SameLine&) { ImGui::SameLine(); },
                            [&](Button& b) {
                                if (ImGui::Button(b.label.c_str()) && b.on_click) {
@@ -41,11 +41,11 @@ void ScriptIDE::render(bool& open, ScriptingEngine& engine, std::vector<ScriptSo
         return;
     }
 
-    engine.for_each_panel([&engine](size_t id, PluginPanel& panel) {
+    engine.for_each_panel([&engine](size_t id, ScriptPanel& panel) {
         engine.set_current_context(id);
         auto title = std::format("Script {} Panel", id);
         ImGui::Begin(title.c_str());
-        draw_plugin_panel(panel);
+        draw_script_panel(panel);
         ImGui::End();
     });
     engine.set_current_context(ScriptSource::INVALID_ID);

@@ -93,10 +93,10 @@ NB_MODULE(fluidsim, m) {
         return result;
     });
 
-    nb::class_<PluginPanel>(m, "Panel")
+    nb::class_<ScriptPanel>(m, "Panel")
         .def(nb::init<>())
         .def("add_button",
-             [](PluginPanel& p, std::string id, std::string label, nb::callable on_click) {
+             [](ScriptPanel& p, std::string id, std::string label, nb::callable on_click) {
                  Button b;
                  b.id = std::move(id);
                  b.label = std::move(label);
@@ -111,20 +111,20 @@ NB_MODULE(fluidsim, m) {
                  p.widgets.push_back(std::move(b));
              })
         .def("add_slider",
-             [](PluginPanel& p, std::string id, std::string label, float default_val, float min, float max) {
+             [](ScriptPanel& p, std::string id, std::string label, float default_val, float min, float max) {
                  p.widgets.push_back(SliderF{std::move(id), std::move(label), default_val, min, max});
              })
         .def("add_checkbox",
-             [](PluginPanel& p, std::string id, std::string label, bool default_val) {
+             [](ScriptPanel& p, std::string id, std::string label, bool default_val) {
                  p.widgets.push_back(Checkbox{std::move(id), std::move(label), default_val});
              })
         .def("add_drag_int",
-             [](PluginPanel& p, std::string id, std::string label, int default_val) {
+             [](ScriptPanel& p, std::string id, std::string label, int default_val) {
                  p.widgets.push_back(DragInt{std::move(id), std::move(label), default_val});
              })
-        .def("sameline", [](PluginPanel& p) { p.widgets.push_back(SameLine{}); });
+        .def("sameline", [](ScriptPanel& p) { p.widgets.push_back(SameLine{}); });
 
-    m.def("set_panel", [](PluginPanel panel) { ScriptingEngine::instance->set_panel(std::move(panel)); });
+    m.def("set_panel", [](ScriptPanel panel) { ScriptingEngine::instance->set_panel(std::move(panel)); });
 
     m.def(
         "open_file_dialog",

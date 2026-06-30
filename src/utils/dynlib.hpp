@@ -1,10 +1,10 @@
 #pragma once
-#include <string_view>
+#include <string>
 
 class DynLib {
 public:
     DynLib() = default;
-    explicit DynLib(std::string_view path, bool global = false);
+    explicit DynLib(const std::string& path, bool global = false);
     ~DynLib();
 
     DynLib(const DynLib&) = delete;

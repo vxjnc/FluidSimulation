@@ -50,7 +50,7 @@ struct SameLine {};
 
 using Widget = std::variant<SameLine, Button, SliderF, DragInt, DragF2, Checkbox>;
 
-class PluginPanel {
+class ScriptPanel {
 public:
     std::vector<Widget> widgets;
 
