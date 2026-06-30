@@ -43,6 +43,7 @@ NB_MODULE(fluidsim, m) {
         .value("DYE_REPLACE", FluidSource::Mode::DYE_REPLACE);
 
     m.def("on_tick", [](nb::callable cb) { ScriptingEngine::instance->set_tick_callback(cb.ptr()); });
+    m.def("on_tick", [](std::nullptr_t) { ScriptingEngine::instance->set_tick_callback(nullptr); });
 
     m.def("add_source", [](float x, float y, float vx, float vy, float radius, std::array<float, 3> color) {
         auto& sources = *ScriptingEngine::instance->sources;
