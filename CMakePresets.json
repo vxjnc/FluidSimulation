@@ -72,6 +72,13 @@
         {
             "name": "release-no-python",
             "configurePreset": "release-no-python"
+        },
+        {
+            "name": "generate-stubs",
+            "configurePreset": "release",
+            "targets": [
+                "generate_stubs"
+            ]
         }
     ]
 }

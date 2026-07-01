@@ -43,6 +43,14 @@ cmake --build --preset release-no-python
 ./FluidSimulation
 ```
 
+To regenerate `fluidsim.pyi` type stubs after modifying `bindings.cpp`:
+
+```bash
+cmake --build --preset generate-stubs
+```
+
+Requires `libclang` Python package.
+
 ## Controls
 
 | Input | Action |
