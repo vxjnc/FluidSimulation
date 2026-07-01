@@ -13,6 +13,7 @@ struct FluidSource {
     enum class Form : uint8_t {
         CIRCLE,
         LINE,
+        RADIAL,
     };
 
     FluidSource() = default;

@@ -401,7 +401,7 @@ void ImGuiManager::drawSourceOverlay(ImVec2 origin, ImVec2 size, std::span<const
         float speed = std::hypot(dir.x, dir.y);
         ImVec2 normDir = speed > 1e-6f ? ImVec2{dir.x / speed, dir.y / speed} : ImVec2{1.f, 0.f};
 
-        if (source.form == FluidSource::Form::CIRCLE) {
+        if (source.form == FluidSource::Form::CIRCLE || source.form == FluidSource::Form::RADIAL) {
             drawList->AddCircle(pos, source.radius * size.y, col, 0, 1.5f);
         }
         else {

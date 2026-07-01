@@ -1,6 +1,9 @@
 #include "source_widget.hpp"
 
+#include <print>
+
 #include <imgui.h>
+#include <pfr.hpp>
 
 #include "src/app_settings.hpp"
 #include "src/compute/fluid_source.hpp"
@@ -14,8 +17,8 @@ bool SourceWidget::render(FluidSource& s, size_t idx, AppSettings& settings) {
     ImGui::Text("Source %zu", idx + 1);
 
     int current_form = static_cast<int>(s.form);
-    const char* forms[] = {"Circle", "Line"};
-    if (ImGui::Combo("Form", &current_form, forms, 2)) {
+    const char* forms[] = {"Circle", "Line", "Radial"};
+    if (ImGui::Combo("Form", &current_form, forms, sizeof(forms) / sizeof(forms[0]))) {
         s.form = static_cast<FluidSource::Form>(current_form);
     }
 

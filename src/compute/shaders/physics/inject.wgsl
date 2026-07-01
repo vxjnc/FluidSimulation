@@ -43,7 +43,7 @@ fn distance_to_segment(p: vec2f, a: vec2f, b: vec2f) -> f32 {
 }
 
 fn calc_distance(cell: vec2f, src: vec2f, radius: f32, inject: Inject) -> f32 {
-    if inject.form == 0u {
+    if inject.form == 0u || inject.form == 2u {
         return distance(cell, src);
     }
     let vel = vec2f(inject.vx, inject.vy);
@@ -77,7 +77,12 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
             let d = calc_distance(phys_cell, src_phys, radius_phys, inj);
             if d < eff_r {
                 let falloff = 1.0 - d / eff_r;
-                let vel_phys = vec2f(inj.vx, inj.vy) * f32(params.height) * params.dt;
+                let vel_dir = select(
+                    vec2f(inj.vx, inj.vy),
+                    normalize(phys_cell - src_phys + vec2f(0.0001)) * length(vec2f(inj.vx, inj.vy)),
+                    inj.form == 2u
+                );
+                let vel_phys = vel_dir * f32(params.height) * params.dt;
                 velocity[idx_phys(x, y)] += vel_phys * falloff;
             }
         }
