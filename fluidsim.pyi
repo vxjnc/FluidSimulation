@@ -52,12 +52,25 @@ class FluidSource:
     @mask.setter
     def mask(self, arg: int, /) -> None: ...
 
-class Mode(enum.IntEnum):
+    @property
+    def form(self) -> Form: ...
+
+    @form.setter
+    def form(self, arg: Form, /) -> None: ...
+
+class Mode(enum.Flag):
     VELOCITY = 1
 
     DYE_ADDITIVE = 2
 
     DYE_REPLACE = 4
+
+class Form(enum.Enum):
+    CIRCLE = 0
+
+    LINE = 1
+
+    RADIAL = 2
 
 @overload
 def on_tick(callback: Callable) -> None: ...
@@ -69,7 +82,7 @@ def add_source(x: float, y: float, vx: float, vy: float, radius: float, color: S
 
 def remove_source(idx: int) -> None: ...
 
-def set_source(idx: int, x: float, y: float, vx: float, vy: float, radius: float, color: Sequence[float], active: bool, mask: int) -> None: ...
+def set_source(idx: int, x: float, y: float, vx: float, vy: float, radius: float, color: Sequence[float], active: bool, mask: Mode, form: Form) -> None: ...
 
 def get_source(idx: int) -> FluidSource: ...
 

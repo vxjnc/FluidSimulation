@@ -35,12 +35,18 @@ NB_MODULE(fluidsim, m) {
         .def_rw("vy", &FluidSource::vy)
         .def_rw("radius", &FluidSource::radius)
         .def_rw("active", &FluidSource::active)
-        .def_rw("mask", &FluidSource::mode_mask);
+        .def_rw("mask", &FluidSource::mode_mask)
+        .def_rw("form", &FluidSource::form);
 
-    nb::enum_<FluidSource::Mode>(m, "Mode", nb::is_arithmetic())
+    nb::enum_<FluidSource::Mode>(m, "Mode", nb::is_flag())
         .value("VELOCITY", FluidSource::Mode::VELOCITY)
         .value("DYE_ADDITIVE", FluidSource::Mode::DYE_ADDITIVE)
         .value("DYE_REPLACE", FluidSource::Mode::DYE_REPLACE);
+
+    nb::enum_<FluidSource::Form>(m, "Form")
+        .value("CIRCLE", FluidSource::Form::CIRCLE)
+        .value("LINE", FluidSource::Form::LINE)
+        .value("RADIAL", FluidSource::Form::RADIAL);
 
     m.def("on_tick",
           [](nb::callable callback) { ScriptingEngine::instance->set_tick_callback(callback.ptr()); });
@@ -60,22 +66,24 @@ NB_MODULE(fluidsim, m) {
         sources.erase(sources.begin() + idx);
     });
 
-    m.def("set_source", [](int idx, float x, float y, float vx, float vy, float radius,
-                           std::array<float, 3> color, bool active, int mask) {
-        auto& sources = *ScriptingEngine::instance->sources;
-        if (idx < 0 || idx >= static_cast<int>(sources.size())) {
-            throw nb::index_error("index out of range");
-        }
-        auto& src = sources[idx];
-        src.x = x;
-        src.y = y;
-        src.vx = vx;
-        src.vy = vy;
-        src.radius = radius;
-        src.active = active;
-        src.color = color;
-        src.mode_mask = mask;
-    });
+    m.def("set_source",
+          [](int idx, float x, float y, float vx, float vy, float radius, std::array<float, 3> color,
+             bool active, FluidSource::Mode mask, FluidSource::Form form) {
+              auto& sources = *ScriptingEngine::instance->sources;
+              if (idx < 0 || idx >= static_cast<int>(sources.size())) {
+                  throw nb::index_error("index out of range");
+              }
+              auto& src = sources[idx];
+              src.x = x;
+              src.y = y;
+              src.vx = vx;
+              src.vy = vy;
+              src.radius = radius;
+              src.active = active;
+              src.color = color;
+              src.mode_mask = mask;
+              src.form = form;
+          });
 
     m.def("get_source", [](int idx) {
         auto& sources = *ScriptingEngine::instance->sources;
