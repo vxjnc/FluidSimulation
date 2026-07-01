@@ -9,30 +9,6 @@
 #include "src/utils/file_dialog.hpp"
 #include "src/utils/file_utils.hpp"
 
-namespace {
-    void draw_script_panel(ScriptPanel& panel) {
-        for (auto& w : panel.widgets) {
-            std::visit(ScriptPanel::overloaded{
-                           [&](SameLine&) { ImGui::SameLine(); },
-                           [&](Button& b) {
-                               if (ImGui::Button(b.label.c_str()) && b.on_click) {
-                                   if (auto result = b.on_click(panel.collect_state())) {
-                                       for (auto& [k, v] : *result) {
-                                           panel.set_value(k, v);
-                                       }
-                                   }
-                               }
-                           },
-                           [&](SliderF& s) { ImGui::SliderFloat(s.label.c_str(), &s.val, s.min, s.max); },
-                           [&](DragInt& i) { ImGui::DragInt(i.label.c_str(), &i.val); },
-                           [&](DragF2& f) { ImGui::DragFloat2(f.label.c_str(), f.val.data()); },
-                           [&](Checkbox& c) { ImGui::Checkbox(c.label.c_str(), &c.val); },
-                       },
-                       w);
-        }
-    }
-}
-
 void ScriptIDE::render(bool& open, ScriptingEngine& engine, std::vector<ScriptSource>& scripts) {
     if (!engine.is_available()) {
         ImGui::Begin("Script Editor", &open);
@@ -40,15 +16,6 @@ void ScriptIDE::render(bool& open, ScriptingEngine& engine, std::vector<ScriptSo
         ImGui::End();
         return;
     }
-
-    engine.for_each_panel([&engine](size_t id, ScriptPanel& panel) {
-        engine.set_current_context(id);
-        auto title = std::format("Script {} Panel", id);
-        ImGui::Begin(title.c_str());
-        draw_script_panel(panel);
-        ImGui::End();
-    });
-    engine.set_current_context(ScriptSource::INVALID_ID);
 
     ImGui::SetNextWindowSize(ImVec2(600, 500), ImGuiCond_FirstUseEver);
     if (!ImGui::Begin("Script Editor", &open, ImGuiWindowFlags_MenuBar)) {

@@ -8,6 +8,30 @@
 #include "src/utils/image_processor.hpp"
 #include "src/wgpu_context.hpp"
 
+namespace {
+    void draw_script_panel(ScriptPanel& panel) {
+        for (auto& w : panel.widgets) {
+            std::visit(ScriptPanel::overloaded{
+                           [&](SameLine&) { ImGui::SameLine(); },
+                           [&](Button& b) {
+                               if (ImGui::Button(b.label.c_str()) && b.on_click) {
+                                   if (auto result = b.on_click(panel.collect_state())) {
+                                       for (auto& [k, v] : *result) {
+                                           panel.set_value(k, v);
+                                       }
+                                   }
+                               }
+                           },
+                           [&](SliderF& s) { ImGui::SliderFloat(s.label.c_str(), &s.val, s.min, s.max); },
+                           [&](DragInt& i) { ImGui::DragInt(i.label.c_str(), &i.val); },
+                           [&](DragF2& f) { ImGui::DragFloat2(f.label.c_str(), f.val.data()); },
+                           [&](Checkbox& c) { ImGui::Checkbox(c.label.c_str(), &c.val); },
+                       },
+                       w);
+        }
+    }
+}
+
 void ImGuiManager::init(GLFWwindow* window, wgpu::Device device, wgpu::TextureFormat surfaceFormat,
                         AppSettings* settings) {
     this->settings = settings;
@@ -135,6 +159,16 @@ void ImGuiManager::renderUI(FluidViewport& viewport, MouseState& mouse, FluidSim
     if (visibility.plugins) {
         pluginsPanel.render(visibility.plugins, pluginManager, settings->plugins, engine);
     }
+
+    std::string title;
+    engine.for_each_panel([&engine, &title](size_t id, ScriptPanel& panel) {
+        engine.set_current_context(id);
+        title = panel.title.empty() ? std::format("Script {}", id) : panel.title;
+        ImGui::Begin(title.c_str());
+        draw_script_panel(panel);
+        ImGui::End();
+    });
+    engine.set_current_context(ScriptSource::INVALID_ID);
 
     // --- Viewport Panel ---
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));

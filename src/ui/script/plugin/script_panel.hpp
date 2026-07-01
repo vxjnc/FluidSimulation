@@ -52,6 +52,7 @@ using Widget = std::variant<SameLine, Button, SliderF, DragInt, DragF2, Checkbox
 
 class ScriptPanel {
 public:
+    std::string title;
     std::vector<Widget> widgets;
 
     template <class... Ts> struct overloaded : Ts... {

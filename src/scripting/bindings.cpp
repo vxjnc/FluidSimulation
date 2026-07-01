@@ -95,6 +95,7 @@ NB_MODULE(fluidsim, m) {
 
     nb::class_<ScriptPanel>(m, "Panel")
         .def(nb::init<>())
+        .def_rw("title", &ScriptPanel::title)
         .def("add_button",
              [](ScriptPanel& p, std::string id, std::string label, nb::callable on_click) {
                  Button b;
