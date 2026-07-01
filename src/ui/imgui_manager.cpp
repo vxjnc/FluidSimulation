@@ -162,9 +162,12 @@ void ImGuiManager::renderUI(FluidViewport& viewport, MouseState& mouse, FluidSim
 
     std::string title;
     engine.for_each_panel([&engine, &title](size_t id, ScriptPanel& panel) {
+        if (!panel.open) {
+            return;
+        }
         engine.set_current_context(id);
         title = panel.title.empty() ? std::format("Script {}", id) : panel.title;
-        ImGui::Begin(title.c_str());
+        ImGui::Begin(title.c_str(), &panel.open);
         draw_script_panel(panel);
         ImGui::End();
     });
@@ -283,7 +286,10 @@ void ImGuiManager::renderMenuBar(ScriptingEngine& engine) {
     }
 
     if (ImGui::BeginMenu("Plugins")) {
-        // TODO: Plugins panels
+        engine.for_each_panel([&engine](size_t id, ScriptPanel& panel) {
+            auto title = panel.title.empty() ? std::format("Script {}", id) : panel.title;
+            ImGui::MenuItem(title.c_str(), nullptr, &panel.open);
+        });
         ImGui::Separator();
         ImGui::MenuItem("Manage Plugins", nullptr, &visibility.plugins);
         ImGui::EndMenu();

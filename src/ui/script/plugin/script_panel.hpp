@@ -52,6 +52,7 @@ using Widget = std::variant<SameLine, Button, SliderF, DragInt, DragF2, Checkbox
 
 class ScriptPanel {
 public:
+    bool open = true;
     std::string title;
     std::vector<Widget> widgets;
 
