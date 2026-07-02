@@ -21,6 +21,8 @@ Application::Application(uint32_t width, uint32_t height, std::string_view title
         throw std::runtime_error("Failed to create window");
     }
 
+    sources.reserve(1024);
+
     ProcessStats::Monitor::start();
 
     WGPUContext& ctx = WGPUContext::instance();

@@ -30,7 +30,11 @@ def collect_def_params(tu, src_path: str, fluidsim_line: int):
             and cursor.location.file
             and cursor.location.file.name.endswith(src_path)
         ):
-            if not enclosing_lambdas and cursor.location.line > fluidsim_line:
+            if (
+                not enclosing_lambdas
+                and cursor.location.line > fluidsim_line
+                and (parent_call is None or parent_call.spelling != 'def_prop_rw')
+            ):
                 params = [
                     c.spelling
                     for c in cursor.get_children()

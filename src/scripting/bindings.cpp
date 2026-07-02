@@ -35,7 +35,9 @@ NB_MODULE(fluidsim, m) {
         .def_rw("vy", &FluidSource::vy)
         .def_rw("radius", &FluidSource::radius)
         .def_rw("active", &FluidSource::active)
-        .def_rw("mask", &FluidSource::mode_mask)
+        .def_prop_rw(
+            "mask", [](FluidSource& s) { return static_cast<FluidSource::Mode>(s.mode_mask); },
+            [](FluidSource& s, FluidSource::Mode m) { s.mode_mask = static_cast<int>(m); })
         .def_rw("form", &FluidSource::form);
 
     nb::enum_<FluidSource::Mode>(m, "Mode", nb::is_flag())
@@ -52,11 +54,17 @@ NB_MODULE(fluidsim, m) {
           [](nb::callable callback) { ScriptingEngine::instance->set_tick_callback(callback.ptr()); });
     m.def("on_tick", [](std::nullptr_t callback) { ScriptingEngine::instance->set_tick_callback(nullptr); });
 
-    m.def("add_source", [](float x, float y, float vx, float vy, float radius, std::array<float, 3> color) {
-        auto& sources = *ScriptingEngine::instance->sources;
-        sources.push_back(FluidSource(x, y, vx, vy, radius, color));
-        return sources.size() - 1;
-    });
+    m.def(
+        "add_source",
+        [](float x, float y, float vx, float vy, float radius, std::array<float, 3> color) -> FluidSource& {
+            auto& sources = *ScriptingEngine::instance->sources;
+            if (sources.size() >= sources.capacity()) {
+                throw nb::index_error("source limit (1024) reached");
+            }
+            sources.push_back(FluidSource(x, y, vx, vy, radius, color));
+            return sources.back();
+        },
+        nb::rv_policy::reference);
 
     m.def("remove_source", [](int idx) {
         auto& sources = *ScriptingEngine::instance->sources;
@@ -66,38 +74,22 @@ NB_MODULE(fluidsim, m) {
         sources.erase(sources.begin() + idx);
     });
 
-    m.def("set_source",
-          [](int idx, float x, float y, float vx, float vy, float radius, std::array<float, 3> color,
-             bool active, FluidSource::Mode mask, FluidSource::Form form) {
-              auto& sources = *ScriptingEngine::instance->sources;
-              if (idx < 0 || idx >= static_cast<int>(sources.size())) {
-                  throw nb::index_error("index out of range");
-              }
-              auto& src = sources[idx];
-              src.x = x;
-              src.y = y;
-              src.vx = vx;
-              src.vy = vy;
-              src.radius = radius;
-              src.active = active;
-              src.color = color;
-              src.mode_mask = mask;
-              src.form = form;
-          });
-
-    m.def("get_source", [](int idx) {
-        auto& sources = *ScriptingEngine::instance->sources;
-        if (idx < 0 || idx >= static_cast<int>(sources.size())) {
-            throw nb::index_error("index out of range");
-        }
-        return sources[idx];
-    });
+    m.def(
+        "get_source",
+        [](int idx) -> FluidSource& {
+            auto& sources = *ScriptingEngine::instance->sources;
+            if (idx < 0 || idx >= static_cast<int>(sources.size())) {
+                throw nb::index_error("index out of range");
+            }
+            return sources[idx];
+        },
+        nb::rv_policy::reference);
 
     m.def("get_sources", []() {
-        const auto& sources = *ScriptingEngine::instance->sources;
+        auto& sources = *ScriptingEngine::instance->sources;
         nb::list result;
-        for (const auto& src : sources) {
-            result.append(src);
+        for (auto& src : sources) {
+            result.append(nb::cast(src, nb::rv_policy::reference));
         }
         return result;
     });
