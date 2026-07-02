@@ -1,6 +1,7 @@
 #ifdef SCRIPTING_AVAILABLE
 
 #include <filesystem>
+#include <optional>
 
 #include <nanobind/nanobind.h>
 #include <nanobind/stl/array.h>
@@ -50,9 +51,9 @@ NB_MODULE(fluidsim, m) {
         .value("LINE", FluidSource::Form::LINE)
         .value("RADIAL", FluidSource::Form::RADIAL);
 
-    m.def("on_tick",
-          [](nb::callable callback) { ScriptingEngine::instance->set_tick_callback(callback.ptr()); });
-    m.def("on_tick", [](std::nullptr_t callback) { ScriptingEngine::instance->set_tick_callback(nullptr); });
+    m.def("on_tick", [](std::optional<nb::callable> callback) {
+        ScriptingEngine::instance->set_tick_callback(callback.has_value() ? callback->ptr() : nullptr);
+    });
 
     m.def(
         "add_source",

@@ -1,6 +1,5 @@
 from collections.abc import Callable, Sequence
 import enum
-from typing import overload
 
 
 class FluidSource:
@@ -72,11 +71,7 @@ class Form(enum.Enum):
 
     RADIAL = 2
 
-@overload
-def on_tick(callback: Callable) -> None: ...
-
-@overload
-def on_tick(callback: None | None) -> None: ...
+def on_tick(callback: Callable | None) -> None: ...
 
 def add_source(x: float, y: float, vx: float, vy: float, radius: float, color: Sequence[float]) -> FluidSource: ...
 
