@@ -103,14 +103,7 @@ NB_MODULE(fluidsim, m) {
                  Button b;
                  b.id = std::move(id);
                  b.label = std::move(label);
-                 b.on_click = [on_click](const std::map<std::string, ExportValue>& vars)
-                     -> std::optional<std::map<std::string, ExportValue>> {
-                     auto result = on_click(vars);
-                     if (result.is_none()) {
-                         return std::nullopt;
-                     }
-                     return nb::cast<std::map<std::string, ExportValue>>(result);
-                 };
+                 b.on_click = [on_click](const std::map<std::string, ExportValue>& vars) { on_click(vars); };
                  p.widgets.push_back(std::move(b));
              })
         .def("add_slider",
@@ -128,6 +121,8 @@ NB_MODULE(fluidsim, m) {
         .def("sameline", [](ScriptPanel& p) { p.widgets.push_back(SameLine{}); });
 
     m.def("set_panel", [](ScriptPanel panel) { ScriptingEngine::instance->set_panel(std::move(panel)); });
+    m.def("set_widget_value",
+          [](std::string id, ExportValue value) { ScriptingEngine::instance->set_widget_value(id, value); });
 
     m.def(
         "open_file_dialog",

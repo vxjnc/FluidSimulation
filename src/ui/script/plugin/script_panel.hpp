@@ -15,9 +15,7 @@ class Script;
 struct Button {
     std::string id;
     std::string label;
-    std::function<std::optional<std::map<std::string, ExportValue>>(
-        const std::map<std::string, ExportValue>&)>
-        on_click;
+    std::function<void(const std::map<std::string, ExportValue>&)> on_click;
 };
 
 struct SliderF {

@@ -15,11 +15,7 @@ namespace {
                            [&](SameLine&) { ImGui::SameLine(); },
                            [&](Button& b) {
                                if (ImGui::Button(b.label.c_str()) && b.on_click) {
-                                   if (auto result = b.on_click(panel.collect_state())) {
-                                       for (auto& [k, v] : *result) {
-                                           panel.set_value(k, v);
-                                       }
-                                   }
+                                   b.on_click(panel.collect_state());
                                }
                            },
                            [&](SliderF& s) { ImGui::SliderFloat(s.label.c_str(), &s.val, s.min, s.max); },

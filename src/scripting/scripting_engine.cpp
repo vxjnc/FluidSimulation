@@ -166,11 +166,15 @@ sys.stdout = sys.stderr = _Capture()
     void clear_output(size_t id) override { outputs_.erase(id); }
 
     void set_panel(ScriptPanel panel) override {
-        if (!current_script_) {
-            return;
+        if (current_script_) {
+            current_script_->panel = std::move(panel);
         }
-        current_script_->panel = std::move(panel);
     }
+    void set_widget_value(const std::string& id, ExportValue value) override {
+        if (current_script_) {
+            current_script_->panel->set_value(id, value);
+        }
+    };
 
     void set_current_context(size_t id) override {
         if (id == ScriptSource::INVALID_ID) {
