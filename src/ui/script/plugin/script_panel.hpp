@@ -3,7 +3,6 @@
 #include <array>
 #include <functional>
 #include <map>
-#include <optional>
 #include <string>
 #include <variant>
 #include <vector>
@@ -58,6 +57,40 @@ public:
         using Ts::operator()...;
     };
     template <class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
+
+    void set_label(const std::string& id, const std::string& label) {
+        for (auto& w : widgets) {
+            std::visit(overloaded{
+                           [&](SameLine&) {},
+                           [&](Button& b) {
+                               if (b.id == id) {
+                                   b.label = label;
+                               }
+                           },
+                           [&](SliderF& s) {
+                               if (s.id == id) {
+                                   s.label = label;
+                               }
+                           },
+                           [&](DragInt& i) {
+                               if (i.id == id) {
+                                   i.label = label;
+                               }
+                           },
+                           [&](DragF2& f) {
+                               if (f.id == id) {
+                                   f.label = label;
+                               }
+                           },
+                           [&](Checkbox& c) {
+                               if (c.id == id) {
+                                   c.label = label;
+                               }
+                           },
+                       },
+                       w);
+        }
+    }
 
     void set_value(const std::string& id, ExportValue value) {
         for (auto& w : widgets) {

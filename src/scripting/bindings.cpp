@@ -123,6 +123,8 @@ NB_MODULE(fluidsim, m) {
     m.def("set_panel", [](ScriptPanel panel) { ScriptingEngine::instance->set_panel(std::move(panel)); });
     m.def("set_widget_value",
           [](std::string id, ExportValue value) { ScriptingEngine::instance->set_widget_value(id, value); });
+    m.def("set_widget_label",
+          [](std::string id, std::string label) { ScriptingEngine::instance->set_widget_label(id, label); });
 
     m.def(
         "open_file_dialog",

@@ -175,6 +175,11 @@ sys.stdout = sys.stderr = _Capture()
             current_script_->panel->set_value(id, value);
         }
     };
+    void set_widget_label(const std::string& id, const std::string& label) override {
+        if (current_script_) {
+            current_script_->panel->set_label(id, label);
+        }
+    }
 
     void set_current_context(size_t id) override {
         if (id == ScriptSource::INVALID_ID) {

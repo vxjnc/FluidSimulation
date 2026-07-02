@@ -29,7 +29,8 @@ public:
     virtual void clear_output(size_t) {}
 
     virtual void set_panel(ScriptPanel) {}
-    virtual void set_widget_value(const std::string& id, ExportValue value) {};
+    virtual void set_widget_value(const std::string&, ExportValue) {};
+    virtual void set_widget_label(const std::string&, const std::string&) {};
 
     virtual std::string_view python_path() { return ""; }
 
