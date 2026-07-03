@@ -5,15 +5,18 @@
 #include <utility>
 
 #include <Python.h>
+#include <nanobind/nanobind.h>
 
 #include "src/ui/script/plugin/script_panel.hpp"
+
+namespace nb = nanobind;
 
 struct ScriptRuntime {
     ScriptRuntime() = default;
     ScriptRuntime(const ScriptRuntime&) = delete;
     ScriptRuntime& operator=(const ScriptRuntime&) = delete;
     ScriptRuntime(ScriptRuntime&& other) noexcept
-        : globals(std::exchange(other.globals, nullptr)), tick_callback(std::move(other.tick_callback)),
+        : globals(std::move(other.globals)), tick_callback(std::move(other.tick_callback)),
           panel(std::move(other.panel)) {
         other.panel.reset();
     }
@@ -27,14 +30,11 @@ struct ScriptRuntime {
                 }
             }
         }
-        if (globals) {
-            Py_DECREF(globals);
-        }
     }
 
     bool is_alive() const { return static_cast<bool>(tick_callback) || panel.has_value(); }
 
-    PyObject* globals = nullptr;
+    nb::dict globals;
     std::function<void()> tick_callback;
     std::optional<ScriptPanel> panel;
 };

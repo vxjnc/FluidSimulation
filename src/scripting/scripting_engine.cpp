@@ -73,10 +73,7 @@ sys.stdout = sys.stderr = _Capture()
         stop_script(source.id);
 
         ScriptRuntime rt;
-
-        nb::dict globals;
-        globals["__builtins__"] = nb::module_::import_("builtins");
-        rt.globals = globals.release().ptr();
+        rt.globals["__builtins__"] = nb::module_::import_("builtins");
 
         current_id_ = source.id;
         current_script_ = &rt;
@@ -85,7 +82,7 @@ sys.stdout = sys.stderr = _Capture()
                                               std::format("<script {}>", source.id).c_str(), Py_file_input);
         if (compiled) {
             auto start = std::chrono::steady_clock::now();
-            PyObject* result = PyEval_EvalCode(compiled, rt.globals, rt.globals);
+            PyObject* result = PyEval_EvalCode(compiled, rt.globals.ptr(), rt.globals.ptr());
             auto elapsed = std::chrono::steady_clock::now() - start;
             Py_DECREF(compiled);
             if (result) {
