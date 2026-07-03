@@ -27,6 +27,39 @@ NB_MODULE(_fluidsim_io, m) {
     });
 }
 
+int panel_tp_traverse(PyObject* self, visitproc visit, void* arg) {
+    Py_VISIT(Py_TYPE(self));
+
+    if (!nb::inst_ready(self)) {
+        return 0;
+    }
+
+    ScriptPanel* p = nb::inst_ptr<ScriptPanel>(self);
+    for (Widget& w : p->widgets) {
+        if (Button* b = std::get_if<Button>(&w)) {
+            nb::handle cb = nb::find(b->on_click);
+            Py_VISIT(cb.ptr());
+        }
+    }
+    return 0;
+}
+
+int panel_tp_clear(PyObject* self) {
+    ScriptPanel* p = nb::inst_ptr<ScriptPanel>(self);
+    for (Widget& w : p->widgets) {
+        if (Button* b = std::get_if<Button>(&w)) {
+            b->on_click = nullptr;
+        }
+    }
+    return 0;
+}
+
+PyType_Slot panel_slots[] = {
+    {Py_tp_traverse, (void*)panel_tp_traverse},
+    {Py_tp_clear, (void*)panel_tp_clear},
+    {0, nullptr},
+};
+
 NB_MODULE(fluidsim, m) {
     nb::class_<FluidSource>(m, "FluidSource")
         .def_rw("color", &FluidSource::color)
@@ -95,15 +128,16 @@ NB_MODULE(fluidsim, m) {
         return result;
     });
 
-    nb::class_<ScriptPanel>(m, "Panel")
+    nb::class_<ScriptPanel>(m, "Panel", nb::type_slots(panel_slots))
         .def(nb::init<>())
         .def_rw("title", &ScriptPanel::title)
         .def("add_button",
-             [](ScriptPanel& p, std::string id, std::string label, nb::callable on_click) {
+             [](ScriptPanel& p, std::string id, std::string label,
+                std::function<void(const std::map<std::string, ExportValue>&)> on_click) {
                  Button b;
                  b.id = std::move(id);
                  b.label = std::move(label);
-                 b.on_click = [on_click](const std::map<std::string, ExportValue>& vars) { on_click(vars); };
+                 b.on_click = std::move(on_click);
                  p.widgets.push_back(std::move(b));
              })
         .def("add_slider",

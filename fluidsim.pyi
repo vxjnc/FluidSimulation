@@ -1,4 +1,4 @@
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 import enum
 
 
@@ -90,7 +90,7 @@ class Panel:
     @title.setter
     def title(self, arg: str, /) -> None: ...
 
-    def add_button(self, id: str, label: str, on_click: Callable) -> None: ...
+    def add_button(self, id: str, label: str, on_click: Callable[[Mapping[str, float | int | bool | Sequence[float]]], None]) -> None: ...
 
     def add_slider(self, id: str, label: str, default_val: float, min: float, max: float) -> None: ...
 
