@@ -113,16 +113,9 @@ sys.stdout = sys.stderr = _Capture()
 
     void stop_script(size_t id) override { runtimes_.erase(id); }
 
-    void set_tick_callback(void* cb) override {
-        if (!current_script_) {
-            return;
-        }
-        if (current_script_->tick_callback) {
-            Py_DECREF(static_cast<PyObject*>(current_script_->tick_callback));
-        }
-        current_script_->tick_callback = static_cast<PyObject*>(cb);
-        if (cb) {
-            Py_INCREF(static_cast<PyObject*>(cb));
+    void set_tick_callback(std::function<void()> cb) override {
+        if (current_script_) {
+            current_script_->tick_callback = std::move(cb);
         }
     }
 
@@ -133,11 +126,11 @@ sys.stdout = sys.stderr = _Capture()
             }
             current_script_ = &rt;
             current_id_ = id;
-            PyObject* res = PyObject_CallNoArgs(rt.tick_callback);
-            if (res) {
-                Py_DECREF(res);
+            try {
+                rt.tick_callback();
             }
-            else {
+            catch (nb::python_error& e) {
+                e.restore();
                 PyErr_Print();
                 PyErr_Clear();
             }

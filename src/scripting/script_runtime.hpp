@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <optional>
 #include <utility>
 
@@ -12,8 +13,8 @@ struct ScriptRuntime {
     ScriptRuntime(const ScriptRuntime&) = delete;
     ScriptRuntime& operator=(const ScriptRuntime&) = delete;
     ScriptRuntime(ScriptRuntime&& other) noexcept
-        : globals(std::exchange(other.globals, nullptr)),
-          tick_callback(std::exchange(other.tick_callback, nullptr)), panel(std::move(other.panel)) {
+        : globals(std::exchange(other.globals, nullptr)), tick_callback(std::move(other.tick_callback)),
+          panel(std::move(other.panel)) {
         other.panel.reset();
     }
     ScriptRuntime& operator=(ScriptRuntime&&) = default;
@@ -26,17 +27,14 @@ struct ScriptRuntime {
                 }
             }
         }
-        if (tick_callback) {
-            Py_DECREF(tick_callback);
-        }
         if (globals) {
             Py_DECREF(globals);
         }
     }
 
-    bool is_alive() const { return tick_callback != nullptr || panel.has_value(); }
+    bool is_alive() const { return static_cast<bool>(tick_callback) || panel.has_value(); }
 
     PyObject* globals = nullptr;
-    PyObject* tick_callback = nullptr;
+    std::function<void()> tick_callback;
     std::optional<ScriptPanel> panel;
 };

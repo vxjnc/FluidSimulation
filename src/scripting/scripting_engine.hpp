@@ -18,7 +18,7 @@ public:
     virtual void run_script(const ScriptSource&) {}
     virtual void stop_script(size_t) {}
 
-    virtual void set_tick_callback(void*) {}
+    virtual void set_tick_callback(std::function<void()>) {}
     virtual void tick() {}
 
     virtual void append_output(std::string_view) {}

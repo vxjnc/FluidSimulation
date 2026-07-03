@@ -84,8 +84,8 @@ NB_MODULE(fluidsim, m) {
         .value("LINE", FluidSource::Form::LINE)
         .value("RADIAL", FluidSource::Form::RADIAL);
 
-    m.def("on_tick", [](std::optional<nb::callable> callback) {
-        ScriptingEngine::instance->set_tick_callback(callback.has_value() ? callback->ptr() : nullptr);
+    m.def("on_tick", [](std::optional<std::function<void()>> callback) {
+        ScriptingEngine::instance->set_tick_callback(callback.value_or(nullptr));
     });
 
     m.def(
