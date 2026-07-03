@@ -9,13 +9,18 @@
 #include "src/wgpu_context.hpp"
 
 namespace {
-    void draw_script_panel(ScriptPanel& panel) {
+    void draw_script_panel(ScriptPanel& panel, ScriptingEngine& engine) {
         for (auto& w : panel.widgets) {
             std::visit(ScriptPanel::overloaded{
                            [&](SameLine&) { ImGui::SameLine(); },
                            [&](Button& b) {
                                if (ImGui::Button(b.label.c_str()) && b.on_click) {
-                                   b.on_click(panel.collect_state());
+                                   try {
+                                       b.on_click(panel.collect_state());
+                                   }
+                                   catch (const std::exception& e) {
+                                       engine.append_output(std::format("{}\n", e.what()));
+                                   }
                                }
                            },
                            [&](SliderF& s) { ImGui::SliderFloat(s.label.c_str(), &s.val, s.min, s.max); },
@@ -164,7 +169,7 @@ void ImGuiManager::renderUI(FluidViewport& viewport, MouseState& mouse, FluidSim
         engine.set_current_context(id);
         title = panel.title.empty() ? std::format("Script {}", id) : panel.title;
         ImGui::Begin(title.c_str(), &panel.open);
-        draw_script_panel(panel);
+        draw_script_panel(panel, engine);
         ImGui::End();
     });
     engine.set_current_context(ScriptSource::INVALID_ID);
