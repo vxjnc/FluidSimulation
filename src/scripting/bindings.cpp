@@ -1,6 +1,4 @@
-#include "src/notification_manager.hpp"
 #ifdef SCRIPTING_AVAILABLE
-
 #include <filesystem>
 #include <optional>
 
@@ -16,6 +14,7 @@
 #include <nfd.hpp>
 
 #include "src/compute/fluid_source.hpp"
+#include "src/notification_manager.hpp"
 #include "src/scripting/scripting_engine.hpp"
 
 namespace nb = nanobind;
@@ -62,7 +61,12 @@ PyType_Slot panel_slots[] = {
 };
 
 NB_MODULE(fluidsim, m) {
-    nb::class_<FluidSource>(m, "FluidSource")
+    nb::module_ m_physics = m.def_submodule("physics", "Fluid source control");
+    nb::module_ m_ui = m.def_submodule("ui", "Script panel UI");
+    nb::module_ m_system = m.def_submodule("system", "Notifications, dialogs, tick scheduling");
+
+    // --- physics ---
+    nb::class_<FluidSource>(m_physics, "FluidSource")
         .def_rw("color", &FluidSource::color)
         .def_rw("x", &FluidSource::x)
         .def_rw("y", &FluidSource::y)
@@ -75,21 +79,17 @@ NB_MODULE(fluidsim, m) {
             [](FluidSource& s, FluidSource::Mode m) { s.mode_mask = static_cast<int>(m); })
         .def_rw("form", &FluidSource::form);
 
-    nb::enum_<FluidSource::Mode>(m, "Mode", nb::is_flag())
+    nb::enum_<FluidSource::Mode>(m_physics, "Mode", nb::is_flag())
         .value("VELOCITY", FluidSource::Mode::VELOCITY)
         .value("DYE_ADDITIVE", FluidSource::Mode::DYE_ADDITIVE)
         .value("DYE_REPLACE", FluidSource::Mode::DYE_REPLACE);
 
-    nb::enum_<FluidSource::Form>(m, "Form")
+    nb::enum_<FluidSource::Form>(m_physics, "Form")
         .value("CIRCLE", FluidSource::Form::CIRCLE)
         .value("LINE", FluidSource::Form::LINE)
         .value("RADIAL", FluidSource::Form::RADIAL);
 
-    m.def("on_tick", [](std::optional<std::function<void()>> callback) {
-        ScriptingEngine::instance->set_tick_callback(callback.value_or(nullptr));
-    });
-
-    m.def(
+    m_physics.def(
         "add_source",
         [](float x, float y, float vx, float vy, float radius, std::array<float, 3> color) -> FluidSource& {
             auto& sources = *ScriptingEngine::instance->sources;
@@ -101,7 +101,7 @@ NB_MODULE(fluidsim, m) {
         },
         nb::rv_policy::reference);
 
-    m.def("remove_source", [](int idx) {
+    m_physics.def("remove_source", [](int idx) {
         auto& sources = *ScriptingEngine::instance->sources;
         if (idx < 0 || idx >= static_cast<int>(sources.size())) {
             throw nb::index_error("index out of range");
@@ -109,7 +109,7 @@ NB_MODULE(fluidsim, m) {
         sources.erase(sources.begin() + idx);
     });
 
-    m.def(
+    m_physics.def(
         "get_source",
         [](int idx) -> FluidSource& {
             auto& sources = *ScriptingEngine::instance->sources;
@@ -120,7 +120,7 @@ NB_MODULE(fluidsim, m) {
         },
         nb::rv_policy::reference);
 
-    m.def("get_sources", []() {
+    m_physics.def("get_sources", []() {
         auto& sources = *ScriptingEngine::instance->sources;
         nb::list result;
         for (auto& src : sources) {
@@ -129,7 +129,8 @@ NB_MODULE(fluidsim, m) {
         return result;
     });
 
-    nb::class_<ScriptPanel>(m, "Panel", nb::type_slots(panel_slots))
+    // --- ui ---
+    nb::class_<ScriptPanel>(m_ui, "Panel", nb::type_slots(panel_slots))
         .def(nb::init<>())
         .def_rw("title", &ScriptPanel::title)
         .def("add_button",
@@ -155,13 +156,20 @@ NB_MODULE(fluidsim, m) {
              })
         .def("sameline", [](ScriptPanel& p) { p.widgets.push_back(SameLine{}); });
 
-    m.def("set_panel", [](ScriptPanel panel) { ScriptingEngine::instance->set_panel(std::move(panel)); });
-    m.def("set_widget_value",
-          [](std::string id, ExportValue value) { ScriptingEngine::instance->set_widget_value(id, value); });
-    m.def("set_widget_label",
-          [](std::string id, std::string label) { ScriptingEngine::instance->set_widget_label(id, label); });
+    m_ui.def("set_panel", [](ScriptPanel panel) { ScriptingEngine::instance->set_panel(std::move(panel)); });
+    m_ui.def("set_widget_value", [](std::string id, ExportValue value) {
+        ScriptingEngine::instance->set_widget_value(id, value);
+    });
+    m_ui.def("set_widget_label", [](std::string id, std::string label) {
+        ScriptingEngine::instance->set_widget_label(id, label);
+    });
 
-    m.def(
+    // --- system ---
+    m_system.def("on_tick", [](std::optional<std::function<void()>> callback) {
+        ScriptingEngine::instance->set_tick_callback(callback.value_or(nullptr));
+    });
+
+    m_system.def(
         "open_file_dialog",
         [](std::optional<std::vector<std::pair<std::string, std::string>>> filters)
             -> std::optional<std::string> {
@@ -185,7 +193,7 @@ NB_MODULE(fluidsim, m) {
         },
         nb::arg("filters") = nb::none());
 
-    m.def(
+    m_system.def(
         "save_file_dialog",
         [](std::optional<std::vector<std::pair<std::string, std::string>>> filters,
            std::string default_name) -> std::optional<std::string> {
@@ -208,12 +216,12 @@ NB_MODULE(fluidsim, m) {
         },
         nb::arg("filters") = nb::none());
 
-    nb::enum_<NotifyLevel>(m, "NotifyLevel")
+    nb::enum_<NotifyLevel>(m_system, "NotifyLevel")
         .value("Info", NotifyLevel::Info)
         .value("Warning", NotifyLevel::Warning)
         .value("Error", NotifyLevel::Error);
 
-    m.def("notify", [](NotifyLevel level, std::string message) {
+    m_system.def("notify", [](NotifyLevel level, std::string message) {
         ScriptingEngine::instance->notifications->notify(level, std::move(message));
     });
 }

@@ -80,7 +80,7 @@ if(Python_FOUND)
             $<TARGET_FILE:fluid_scripting_stubs>
             ${CMAKE_SOURCE_DIR}/fluidsim.so
         COMMAND ${CMAKE_COMMAND} -E env PYTHONPATH=${CMAKE_SOURCE_DIR}
-            ${Python_EXECUTABLE} -m nanobind.stubgen -m fluidsim -O ${CMAKE_SOURCE_DIR}
+            ${Python_EXECUTABLE} -m nanobind.stubgen -m fluidsim -r -O ${CMAKE_SOURCE_DIR}
         COMMAND ${CMAKE_COMMAND} -E remove ${CMAKE_SOURCE_DIR}/fluidsim.so
         DEPENDS fluid_scripting_stubs
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
