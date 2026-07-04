@@ -1,3 +1,4 @@
+#include "src/notification_manager.hpp"
 #ifdef SCRIPTING_AVAILABLE
 
 #include <filesystem>
@@ -206,6 +207,15 @@ NB_MODULE(fluidsim, m) {
             return std::nullopt;
         },
         nb::arg("filters") = nb::none());
+
+    nb::enum_<NotifyLevel>(m, "NotifyLevel")
+        .value("Info", NotifyLevel::Info)
+        .value("Warning", NotifyLevel::Warning)
+        .value("Error", NotifyLevel::Error);
+
+    m.def("notify", [](NotifyLevel level, std::string message) {
+        ScriptingEngine::instance->notifications->notify(level, std::move(message));
+    });
 }
 
 #endif

@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "src/compute/fluid_source.hpp"
+#include "src/notification_manager.hpp"
 #include "src/scripting/script_source.hpp"
 #include "src/ui/script/plugin/script_panel.hpp"
 
@@ -38,9 +39,11 @@ public:
     virtual void for_each_panel(std::function<void(size_t id, ScriptPanel&)>) {}
 
     static ScriptingEngine* instance;
+    NotificationManager* notifications = nullptr;
     std::vector<FluidSource>* sources = nullptr;
 };
 
 extern "C" ScriptingEngine* create_scripting_engine(std::vector<FluidSource>* sources,
+                                                    NotificationManager* notifications,
                                                     std::string_view pythonPath);
 extern "C" void destroy_scripting_engine(ScriptingEngine* engine);

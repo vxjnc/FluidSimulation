@@ -1,48 +1,56 @@
 
 #include "scripting_loader.hpp"
 
+#include <iostream>
+#include <print>
 #include <string>
 
 #include "src/scripting/scripting_engine.hpp"
 #include "src/utils/dynlib.hpp"
 #include "src/utils/python_find.hpp"
 
-void ScriptingLoader::init(std::vector<FluidSource>* sources, std::string_view pythonPath) {
+void ScriptingLoader::init(std::vector<FluidSource>* sources, NotificationManager* notifications,
+                           std::string_view pythonPath) {
     std::string exe = pythonPath.empty() ? python_find::find_exe() : std::string(pythonPath);
     if (exe.empty()) {
+        std::println(std::cerr, "Failed to find python");
         engine_ = new ScriptingEngine();
         return;
     }
 
     std::string libpath = python_find::find_libpython(exe);
     if (libpath.empty()) {
+        std::println(std::cerr, "Failed to find libpython path");
         engine_ = new ScriptingEngine();
         return;
     }
 
     libpython_ = DynLib(libpath, true);
     if (!libpython_.valid()) {
+        std::println(std::cerr, "Failed to find libpython");
         engine_ = new ScriptingEngine();
         return;
     }
 
     libscripting_ = DynLib(python_find::find_libscripting(), true);
     if (!libscripting_.valid()) {
+        std::println(std::cerr, "Failed to find libscripting");
         libpython_.close();
         engine_ = new ScriptingEngine();
         return;
     }
 
-    using factory_fn = ScriptingEngine*(std::vector<FluidSource>*, std::string_view);
+    using factory_fn = ScriptingEngine*(std::vector<FluidSource>*, NotificationManager*, std::string_view);
     auto factory = libscripting_.fn<factory_fn>("create_scripting_engine");
     if (!factory) {
+        std::println(std::cerr, "Failed to find create_scripting_engine");
         libscripting_.close();
         libpython_.close();
         engine_ = new ScriptingEngine();
         return;
     }
 
-    engine_ = factory(sources, exe);
+    engine_ = factory(sources, notifications, exe);
 }
 
 ScriptingLoader::~ScriptingLoader() {

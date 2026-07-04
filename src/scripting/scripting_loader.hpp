@@ -8,11 +8,13 @@
 
 class Application;
 class ScriptingEngine;
+class NotificationManager;
 
 class ScriptingLoader {
 public:
     ScriptingLoader() = default;
-    void init(std::vector<FluidSource>* sources, std::string_view pythonPath = "");
+    void init(std::vector<FluidSource>* sources, NotificationManager* notifications,
+              std::string_view pythonPath = "");
     ~ScriptingLoader();
 
     ScriptingLoader(const ScriptingLoader&) = delete;

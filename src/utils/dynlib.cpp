@@ -1,5 +1,8 @@
 #include "dynlib.hpp"
 
+#include <iostream>
+#include <print>
+
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -13,6 +16,9 @@ DynLib::DynLib(const std::string& path, bool global) {
 #else
     int flags = RTLD_NOW | (global ? RTLD_GLOBAL : RTLD_LOCAL);
     handle_ = dlopen(path.c_str(), flags);
+    if (!handle_) {
+        std::println(std::cerr, "Failed to load lib: {}", dlerror());
+    }
 #endif
 }
 

@@ -22,9 +22,11 @@ ScriptingEngine* ScriptingEngine::instance = nullptr;
 
 class ScriptingEngineImpl : public ScriptingEngine {
 public:
-    ScriptingEngineImpl(std::vector<FluidSource>* sources_, std::string_view pythonPath) {
+    ScriptingEngineImpl(std::vector<FluidSource>* sources_, NotificationManager* notifications_,
+                        std::string_view pythonPath) {
         instance = this;
         sources = sources_;
+        notifications = notifications_;
         pythonPath_ = pythonPath;
 
         std::string prefix = python_find::find_prefix(pythonPath_);
@@ -199,8 +201,9 @@ private:
 };
 
 extern "C" ScriptingEngine* create_scripting_engine(std::vector<FluidSource>* sources,
+                                                    NotificationManager* notifications,
                                                     std::string_view pythonPath) {
-    return new ScriptingEngineImpl(sources, pythonPath);
+    return new ScriptingEngineImpl(sources, notifications, pythonPath);
 }
 extern "C" void destroy_scripting_engine(ScriptingEngine* engine) { delete engine; }
 
