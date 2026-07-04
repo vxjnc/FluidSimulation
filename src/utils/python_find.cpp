@@ -35,18 +35,14 @@ namespace python_find {
 #ifdef _WIN32
         for (const char* c : {"python.exe", "python3.exe"}) {
             std::string r = popen_result(std::format("where {} 2>nul", c));
-            if (!r.empty()) {
-                return r;
-            }
-        }
 #else
         for (const char* c : {"python3", "python3.14", "python3.13", "python3.12"}) {
             std::string r = popen_result(std::format("which {} 2>/dev/null", c));
+#endif
             if (!r.empty()) {
                 return r;
             }
         }
-#endif
         return {};
     }
 

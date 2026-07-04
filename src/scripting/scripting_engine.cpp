@@ -10,7 +10,6 @@
 #include <nanobind/nanobind.h>
 
 #include "src/scripting/script_runtime.hpp"
-#include "src/ui/script/plugin/script_panel.hpp"
 #include "src/utils/python_find.hpp"
 
 extern "C" PyObject* PyInit_fluidsim();

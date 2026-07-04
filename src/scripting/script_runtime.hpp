@@ -7,7 +7,7 @@
 #include <Python.h>
 #include <nanobind/nanobind.h>
 
-#include "src/ui/script/plugin/script_panel.hpp"
+#include "src/scripting/script_panel.hpp"
 
 namespace nb = nanobind;
 

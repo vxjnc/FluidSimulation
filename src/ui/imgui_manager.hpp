@@ -18,8 +18,8 @@
 #include "src/ui/import/import_panel.hpp"
 #include "src/ui/notifications/notifications_panel.hpp"
 #include "src/ui/random_splat/splat_panel.hpp"
-#include "src/ui/script/plugin/plugins_panel.hpp"
-#include "src/ui/script/script_ide.hpp"
+#include "src/ui/scripting/plugin/plugins_panel.hpp"
+#include "src/ui/scripting/script_ide.hpp"
 #include "src/ui/stats/stats_panel.hpp"
 
 enum class ImportTarget : uint8_t { Dye, Velocity, Obstacles };

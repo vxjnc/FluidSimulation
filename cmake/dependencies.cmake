@@ -109,7 +109,7 @@ FetchContent_Declare(
 FetchContent_Declare(
     imgui_markdown
     GIT_REPOSITORY https://github.com/enkisoftware/imgui_markdown.git
-    GIT_TAG        7f88a689f783b5f628a2c446ccc2e7198e732dfe
+    GIT_TAG        4acbf80584753e15ea54eb271129995862daac8f
     GIT_SHALLOW    ON
 )
 

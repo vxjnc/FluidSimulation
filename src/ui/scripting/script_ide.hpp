@@ -1,9 +1,10 @@
 #pragma once
 
-#include "sigslot/signal.hpp"
+#include <sigslot/signal.hpp>
+
 #include "src/scripting/script_source.hpp"
-#include "src/ui/script/script_console.hpp"
-#include "src/ui/script/script_editor.hpp"
+#include "src/ui/scripting/script_console.hpp"
+#include "src/ui/scripting/script_editor.hpp"
 
 class ScriptingEngine;
 

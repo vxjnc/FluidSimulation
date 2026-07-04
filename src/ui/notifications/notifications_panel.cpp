@@ -28,7 +28,7 @@ void NotificationsPanel::render(NotificationManager& notifications) {
         ImGui::Begin(std::format("##toast{}", reinterpret_cast<uintptr_t>(&n)).c_str(), nullptr,
                      ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs |
                          ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing |
-                         ImGuiWindowFlags_NoNav);
+                         ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoSavedSettings);
         ImGui::TextColored(color, "%s", n.message.c_str());
         y -= ImGui::GetWindowHeight() + 8.0f;
         ImGui::End();

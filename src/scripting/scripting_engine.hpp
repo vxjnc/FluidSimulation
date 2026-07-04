@@ -5,8 +5,8 @@
 
 #include "src/compute/fluid_source.hpp"
 #include "src/notification_manager.hpp"
+#include "src/scripting/script_panel.hpp"
 #include "src/scripting/script_source.hpp"
-#include "src/ui/script/plugin/script_panel.hpp"
 
 class Application;
 
