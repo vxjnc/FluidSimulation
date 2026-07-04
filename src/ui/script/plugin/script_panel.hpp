@@ -58,33 +58,33 @@ public:
     };
     template <class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
 
-    void set_label(const std::string& id, const std::string& label) {
+    void set_label(const std::string& id, std::string label) {
         for (auto& w : widgets) {
             std::visit(overloaded{
                            [&](SameLine&) {},
                            [&](Button& b) {
                                if (b.id == id) {
-                                   b.label = label;
+                                   b.label = std::move(label);
                                }
                            },
                            [&](SliderF& s) {
                                if (s.id == id) {
-                                   s.label = label;
+                                   s.label = std::move(label);
                                }
                            },
                            [&](DragInt& i) {
                                if (i.id == id) {
-                                   i.label = label;
+                                   i.label = std::move(label);
                                }
                            },
                            [&](DragF2& f) {
                                if (f.id == id) {
-                                   f.label = label;
+                                   f.label = std::move(label);
                                }
                            },
                            [&](Checkbox& c) {
                                if (c.id == id) {
-                                   c.label = label;
+                                   c.label = std::move(label);
                                }
                            },
                        },

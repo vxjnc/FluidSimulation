@@ -161,7 +161,7 @@ NB_MODULE(fluidsim, m) {
         ScriptingEngine::instance->set_widget_value(id, value);
     });
     m_ui.def("set_widget_label", [](std::string id, std::string label) {
-        ScriptingEngine::instance->set_widget_label(id, label);
+        ScriptingEngine::instance->set_widget_label(id, std::move(label));
     });
 
     // --- system ---
