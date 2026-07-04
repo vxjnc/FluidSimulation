@@ -5,7 +5,7 @@ class DynLib {
 public:
     DynLib() = default;
     explicit DynLib(const std::string& path, bool global = false);
-    ~DynLib();
+    ~DynLib() { close(); }
 
     DynLib(const DynLib&) = delete;
     DynLib& operator=(const DynLib&) = delete;

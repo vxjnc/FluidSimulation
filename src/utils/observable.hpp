@@ -23,6 +23,9 @@ template <typename T> struct Observable {
     T* ptr() { return &value; }
     const T* ptr() const { return &value; }
 
+    T& val() { return value; };
+    const T& val() const { return value; }
+
 private:
     T value{};
 };

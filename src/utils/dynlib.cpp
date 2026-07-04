@@ -44,5 +44,3 @@ void DynLib::close() {
 #endif
     handle_ = nullptr;
 }
-
-DynLib::~DynLib() { close(); }

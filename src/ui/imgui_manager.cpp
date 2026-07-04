@@ -114,7 +114,7 @@ void ImGuiManager::renderUI(FluidViewport& viewport, MouseState& mouse, FluidSim
         renderMenuBar(engine);
     }
 
-    renderSettingsModal(notifications);
+    renderSettingsModal();
     renderAboutModal();
 
     if (visibility.stats) {
@@ -304,7 +304,7 @@ void ImGuiManager::renderMenuBar(ScriptingEngine& engine) {
     ImGui::EndMainMenuBar();
 }
 
-void ImGuiManager::renderSettingsModal(NotificationManager& notifications) {
+void ImGuiManager::renderSettingsModal() {
     if (settings->ui.settingsOpen) {
         ImGui::OpenPopup("Settings");
     }
@@ -330,14 +330,11 @@ void ImGuiManager::renderSettingsModal(NotificationManager& notifications) {
         if (ImGui::BeginTabItem("Scripting")) {
             ImGui::Text("Python Executable");
             ImGui::SetNextItemWidth(-40);
-            ImGui::TextUnformatted(settings->scripting.pythonPath.c_str());
+            ImGui::TextUnformatted(settings->scripting.pythonPath.ptr()->c_str());
             ImGui::SameLine();
             if (ImGui::Button("...")) {
                 FileDialog::Open(std::span<const nfdu8filteritem_t>(),
-                                 [this, &notifications](const char* path) {
-                                     settings->scripting.pythonPath = path;
-                                     notifications.warning("Restart the app for the change to take effect");
-                                 });
+                                 [this](const char* path) { settings->scripting.pythonPath = path; });
             }
             ImGui::EndTabItem();
         }

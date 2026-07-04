@@ -35,9 +35,9 @@ Application::Application(uint32_t width, uint32_t height, std::string_view title
         WGPUContext::instance().resize(static_cast<uint32_t>(w), static_cast<uint32_t>(h));
     });
 
-    scripting.init(&sources, &notificationManager, settings.scripting.pythonPath);
+    scripting.init(&sources, &notificationManager, settings.scripting.pythonPath.val());
     if (scripting.engine().is_available()) {
-        settings.scripting.pythonPath = scripting.engine().python_path();
+        settings.scripting.pythonPath.val() = scripting.engine().python_path();
     }
 
     pluginManager.scan();
@@ -64,6 +64,10 @@ Application::Application(uint32_t width, uint32_t height, std::string_view title
 
     settings.curlStrength.onChange.connect(&FluidSim::setCurlStrength, &simulation);
     settings.curlStrength.onChange(static_cast<float>(settings.curlStrength));
+
+    settings.scripting.pythonPath.onChange.connect([&](std::string_view path) {
+        notificationManager.info("Restart the app for the change to take effect");
+    });
 
     imguiManager.visibility.stats.onChange.connect([&](bool visible) {
         simulation.profiler.enabled = visible;

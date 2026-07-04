@@ -2,6 +2,8 @@
 
 #include <string>
 
+#include "src/utils/observable.hpp"
+
 struct ScriptingSettings {
-    std::string pythonPath;
+    Observable<std::string> pythonPath;
 };

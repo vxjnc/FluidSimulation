@@ -93,7 +93,7 @@ private:
 
     void renderMenuBar(ScriptingEngine& engine);
 
-    void renderSettingsModal(NotificationManager& notifications);
+    void renderSettingsModal();
     void renderAboutModal();
 
     void drawSourceOverlay(ImVec2 origin, ImVec2 size, std::span<const FluidSource> sources);
