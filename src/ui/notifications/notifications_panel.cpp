@@ -1,4 +1,4 @@
-#include "src/ui/notifications/notifications_panel.hpp"
+#include "notifications_panel.hpp"
 
 #include <format>
 

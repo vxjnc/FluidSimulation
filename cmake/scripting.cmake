@@ -11,32 +11,37 @@ if(Python_FOUND)
     )
     FetchContent_MakeAvailable(nanobind)
 
-    add_library(fluid_scripting SHARED
-        src/scripting/scripting_engine.cpp
-        src/scripting/bindings.cpp
-        src/utils/python_find.cpp
-        ${nanobind_SOURCE_DIR}/src/nb_combined.cpp
-    )
-    target_include_directories(fluid_scripting PRIVATE
-        ${CMAKE_SOURCE_DIR}
-        ${nanobind_SOURCE_DIR}/include
-        ${nanobind_SOURCE_DIR}/ext/robin_map/include
-        ${Python_INCLUDE_DIRS}
-    )
-    target_link_libraries(fluid_scripting PRIVATE nfd)
-    target_compile_definitions(fluid_scripting PRIVATE SCRIPTING_AVAILABLE)
+    function(configure_scripting_target target_name bindings_source output_dir)
+        add_library(${target_name} SHARED
+            src/scripting/scripting_engine.cpp
+            ${bindings_source}
+            src/utils/python_find.cpp
+            ${nanobind_SOURCE_DIR}/src/nb_combined.cpp
+        )
+        target_include_directories(${target_name} PRIVATE
+            ${CMAKE_SOURCE_DIR}
+            ${nanobind_SOURCE_DIR}/include
+            ${nanobind_SOURCE_DIR}/ext/robin_map/include
+            ${Python_INCLUDE_DIRS}
+        )
+        target_link_libraries(${target_name} PRIVATE nfd)
+        target_compile_definitions(${target_name} PRIVATE SCRIPTING_AVAILABLE)
+        if(MSVC)
+            target_link_options(${target_name} PRIVATE /FORCE:UNRESOLVED)
+        else()
+            target_link_options(${target_name} PRIVATE -Wl,--allow-shlib-undefined)
+        endif()
+        set_target_properties(${target_name} PROPERTIES
+            LIBRARY_OUTPUT_DIRECTORY "${output_dir}"
+        )
+    endfunction()
+
+    configure_scripting_target(fluid_scripting src/scripting/bindings.cpp "${CMAKE_SOURCE_DIR}")
+
     target_compile_definitions(fluid_gui PUBLIC SCRIPTING_AVAILABLE)
-    if(MSVC)
-        target_link_options(fluid_scripting PRIVATE /FORCE:UNRESOLVED)
-    else()
-        target_link_options(fluid_scripting PRIVATE -Wl,--allow-shlib-undefined)
-    endif()
     if(UNIX)
         target_link_libraries(fluid_gui PUBLIC dl)
     endif()
-    set_target_properties(fluid_scripting PROPERTIES
-        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}"
-    )
 
     # Generate stubs
     set(STUBS_BINDINGS "${CMAKE_BINARY_DIR}/bindings_stubs.cpp")
@@ -51,29 +56,8 @@ if(Python_FOUND)
         COMMENT "Generating bindings_stubs.cpp"
     )
 
-    add_library(fluid_scripting_stubs SHARED
-        src/scripting/scripting_engine.cpp
-        ${STUBS_BINDINGS}
-        src/utils/python_find.cpp
-        ${nanobind_SOURCE_DIR}/src/nb_combined.cpp
-    )
-    target_include_directories(fluid_scripting_stubs PRIVATE
-        ${CMAKE_SOURCE_DIR}
-        ${nanobind_SOURCE_DIR}/include
-        ${nanobind_SOURCE_DIR}/ext/robin_map/include
-        ${Python_INCLUDE_DIRS}
-    )
-    target_link_libraries(fluid_scripting_stubs PRIVATE nfd)
-    target_compile_definitions(fluid_scripting_stubs PRIVATE SCRIPTING_AVAILABLE)
-    if(MSVC)
-        target_link_options(fluid_scripting_stubs PRIVATE /FORCE:UNRESOLVED)
-    else()
-        target_link_options(fluid_scripting_stubs PRIVATE -Wl,--allow-shlib-undefined)
-    endif()
-    set_target_properties(fluid_scripting_stubs PROPERTIES
-        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
-        EXCLUDE_FROM_ALL TRUE
-    )
+    configure_scripting_target(fluid_scripting_stubs "${STUBS_BINDINGS}" "${CMAKE_BINARY_DIR}")
+    set_target_properties(fluid_scripting_stubs PROPERTIES EXCLUDE_FROM_ALL TRUE)
 
     add_custom_target(generate_stubs
         COMMAND ${CMAKE_COMMAND} -E copy
