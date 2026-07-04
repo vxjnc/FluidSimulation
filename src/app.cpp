@@ -158,7 +158,7 @@ void Application::run() {
         processInput(enc, frameSources);
         update(enc, frameSources);
         imguiManager.renderUI(viewport, mouse, simulation, renderer, sources, uiProfiler, scripting.engine(),
-                              scripts, pluginManager);
+                              scripts, pluginManager, notificationManager);
         auto [target, targetView] = render(enc);
 
         wgpu::raii::CommandBuffer cmd = enc->finish({});

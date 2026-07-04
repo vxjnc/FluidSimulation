@@ -1,6 +1,7 @@
 #include "imgui_manager.hpp"
 
 #include "generated/version.h"
+#include "src/notification_manager.hpp"
 #include "src/ui/font_manager.hpp"
 #include "src/ui/imgui_style.hpp"
 #include "src/ui/widgets/common.hpp"
@@ -9,7 +10,7 @@
 #include "src/wgpu_context.hpp"
 
 namespace {
-    void draw_script_panel(ScriptPanel& panel, ScriptingEngine& engine) {
+    void draw_script_panel(ScriptPanel& panel, ScriptingEngine& engine, NotificationManager& notifications) {
         for (auto& w : panel.widgets) {
             std::visit(ScriptPanel::overloaded{
                            [&](SameLine&) { ImGui::SameLine(); },
@@ -19,7 +20,9 @@ namespace {
                                        b.on_click(panel.collect_state());
                                    }
                                    catch (const std::exception& e) {
-                                       engine.append_output(std::format("{}\n", e.what()));
+                                       std::string msg = std::format("{}\n", e.what());
+                                       engine.append_output(msg);
+                                       notifications.error(std::move(msg));
                                    }
                                }
                            },
@@ -72,7 +75,7 @@ void ImGuiManager::init(GLFWwindow* window, wgpu::Device device, wgpu::TextureFo
 void ImGuiManager::renderUI(FluidViewport& viewport, MouseState& mouse, FluidSim& sim, Render& render,
                             std::vector<FluidSource>& sources, const GpuProfiler<>& uiProfiler,
                             ScriptingEngine& engine, std::vector<ScriptSource>& scripts,
-                            PluginManager& pluginManager) {
+                            PluginManager& pluginManager, NotificationManager& notifications) {
     ImGuiIO& io = ImGui::GetIO();
 
     ImGuiID dockspaceId = ImGui::DockSpaceOverViewport(ImGui::GetMainViewport()->ID);
@@ -111,7 +114,7 @@ void ImGuiManager::renderUI(FluidViewport& viewport, MouseState& mouse, FluidSim
         renderMenuBar(engine);
     }
 
-    renderSettingsModal();
+    renderSettingsModal(notifications);
     renderAboutModal();
 
     if (visibility.stats) {
@@ -162,14 +165,14 @@ void ImGuiManager::renderUI(FluidViewport& viewport, MouseState& mouse, FluidSim
     }
 
     std::string title;
-    engine.for_each_panel([&engine, &title](size_t id, ScriptPanel& panel) {
+    engine.for_each_panel([&engine, &title, &notifications](size_t id, ScriptPanel& panel) {
         if (!panel.open) {
             return;
         }
         engine.set_current_context(id);
         title = panel.title.empty() ? std::format("Script {}", id) : panel.title;
         ImGui::Begin(title.c_str(), &panel.open);
-        draw_script_panel(panel, engine);
+        draw_script_panel(panel, engine, notifications);
         ImGui::End();
     });
     engine.set_current_context(ScriptSource::INVALID_ID);
@@ -224,6 +227,8 @@ void ImGuiManager::renderUI(FluidViewport& viewport, MouseState& mouse, FluidSim
     }
     ImGui::End();
     ImGui::PopStyleVar();
+
+    notificationsPanel.render(notifications);
 
     ImGui::Render();
 }
@@ -299,7 +304,7 @@ void ImGuiManager::renderMenuBar(ScriptingEngine& engine) {
     ImGui::EndMainMenuBar();
 }
 
-void ImGuiManager::renderSettingsModal() {
+void ImGuiManager::renderSettingsModal(NotificationManager& notifications) {
     if (settings->ui.settingsOpen) {
         ImGui::OpenPopup("Settings");
     }
@@ -329,7 +334,10 @@ void ImGuiManager::renderSettingsModal() {
             ImGui::SameLine();
             if (ImGui::Button("...")) {
                 FileDialog::Open(std::span<const nfdu8filteritem_t>(),
-                                 [this](const char* path) { settings->scripting.pythonPath = path; });
+                                 [this, &notifications](const char* path) {
+                                     settings->scripting.pythonPath = path;
+                                     notifications.warning("Restart the app for the change to take effect");
+                                 });
             }
             ImGui::EndTabItem();
         }

@@ -16,6 +16,7 @@
 #include "src/ui/fluid_viewport.hpp"
 #include "src/ui/imgui_serialization.hpp"
 #include "src/ui/import/import_panel.hpp"
+#include "src/ui/notifications/notifications_panel.hpp"
 #include "src/ui/random_splat/splat_panel.hpp"
 #include "src/ui/script/plugin/plugins_panel.hpp"
 #include "src/ui/script/script_ide.hpp"
@@ -71,7 +72,7 @@ public:
     void renderUI(FluidViewport& viewport, MouseState& mouse, FluidSim& sim, Render& render,
                   std::vector<FluidSource>& sources, const GpuProfiler<>& uiProfiler,
                   ScriptingEngine& scripting, std::vector<ScriptSource>& scripts,
-                  PluginManager& pluginManager);
+                  PluginManager& pluginManager, NotificationManager& notifications);
 
     void endFrame(WGPURenderPassEncoder passEncoder) {
         ImGui_ImplWGPU_RenderDrawData(ImGui::GetDrawData(), passEncoder);
@@ -82,6 +83,7 @@ public:
     SplatPanel splatPanel;
     ImportPanel importPanel;
     StatsPanel statsPanel;
+    NotificationsPanel notificationsPanel;
 
     ScriptIDE scriptIDE;
     PluginsPanel pluginsPanel;
@@ -91,7 +93,7 @@ private:
 
     void renderMenuBar(ScriptingEngine& engine);
 
-    void renderSettingsModal();
+    void renderSettingsModal(NotificationManager& notifications);
     void renderAboutModal();
 
     void drawSourceOverlay(ImVec2 origin, ImVec2 size, std::span<const FluidSource> sources);

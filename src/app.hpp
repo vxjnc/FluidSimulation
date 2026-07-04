@@ -9,6 +9,7 @@
 #include "src/app_settings.hpp"
 #include "src/compute/fluid_sim.hpp"
 #include "src/compute/gpu_profiler.hpp"
+#include "src/notification_manager.hpp"
 #include "src/render/render.hpp"
 #include "src/save/save_manager.hpp"
 #include "src/scripting/plugin_manager.hpp"
@@ -45,6 +46,8 @@ private:
 
     ScriptingLoader scripting;
     PluginManager pluginManager;
+
+    NotificationManager notificationManager;
 
     GLFWwindow* window = nullptr;
     [[maybe_unused]] NFD::Guard nfdGuard;
