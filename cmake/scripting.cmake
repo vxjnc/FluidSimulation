@@ -25,7 +25,7 @@ if(Python_FOUND)
             ${Python_INCLUDE_DIRS}
         )
         target_link_libraries(${target_name} PRIVATE nfd)
-        target_compile_definitions(${target_name} PRIVATE SCRIPTING_AVAILABLE)
+        target_compile_definitions(${target_name} PRIVATE SCRIPTING_AVAILABLE Py_LIMITED_API=0x030C0000)
         if(MSVC)
             target_link_options(${target_name} PRIVATE /FORCE:UNRESOLVED)
         else()

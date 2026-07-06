@@ -7,6 +7,7 @@
 #include <string>
 
 #include <Python.h>
+#include <nanobind/eval.h>
 #include <nanobind/nanobind.h>
 
 #include "src/scripting/script_runtime.hpp"
@@ -51,13 +52,15 @@ public:
             PyErr_Clear();
         }
 
-        PyRun_SimpleString(R"(
+        nb::dict globals = nb::module_::import_("__main__").attr("__dict__");
+        nb::exec(R"(
 import sys, _fluidsim_io
 class _Capture:
     def write(self, text): _fluidsim_io.output(text)
     def flush(self): pass
 sys.stdout = sys.stderr = _Capture()
-)");
+)",
+                 globals);
     }
 
     ~ScriptingEngineImpl() override {
