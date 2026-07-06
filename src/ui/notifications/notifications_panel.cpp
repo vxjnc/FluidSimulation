@@ -1,6 +1,7 @@
 #include "notifications_panel.hpp"
 
 #include <format>
+#include <ranges>
 
 #include <imgui.h>
 
@@ -11,7 +12,7 @@ void NotificationsPanel::render(NotificationManager& notifications) {
     ImVec2 vp = ImGui::GetMainViewport()->Size;
     float y = vp.y - 20.0f;
 
-    for (auto& n : notifications.active_toasts()) {
+    for (auto [i, n] : notifications.active_toasts() | std::views::reverse | std::views::enumerate) {
         switch (n.level) {
         case NotifyLevel::Warning:
             color = ImVec4(0.9f, 0.7f, 0.1f, 1.0f);
@@ -25,7 +26,7 @@ void NotificationsPanel::render(NotificationManager& notifications) {
         }
 
         ImGui::SetNextWindowPos(ImVec2(vp.x - 20.0f, y), ImGuiCond_Always, ImVec2(1.0f, 1.0f));
-        ImGui::Begin(std::format("##toast{}", reinterpret_cast<uintptr_t>(&n)).c_str(), nullptr,
+        ImGui::Begin(std::format("##toast{}", i).c_str(), nullptr,
                      ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs |
                          ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing |
                          ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoSavedSettings);

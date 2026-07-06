@@ -35,9 +35,10 @@ public:
 
     const std::vector<Notification>& active_toasts() {
         float current = now_seconds();
-        std::erase_if(toasts_, [current](const Notification& n) {
-            return current - n.shown_at > kToastDurationSeconds;
+        auto first_active = std::ranges::find_if(toasts_, [current](const Notification& n) {
+            return current - n.shown_at <= kToastDurationSeconds;
         });
+        toasts_.erase(toasts_.begin(), first_active);
         return toasts_;
     }
 
