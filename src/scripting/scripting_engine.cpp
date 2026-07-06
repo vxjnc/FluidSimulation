@@ -128,6 +128,7 @@ sys.stdout = sys.stderr = _Capture()
                 rt.tick_callback();
             }
             catch (nb::python_error& e) {
+                notifications->error(e.what());
                 e.restore();
                 PyErr_Print();
                 PyErr_Clear();
