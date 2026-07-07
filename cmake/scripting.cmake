@@ -1,4 +1,4 @@
-find_package(Python 3.12 COMPONENTS Interpreter Development QUIET)
+find_package(Python 3.12 COMPONENTS Interpreter Development QUIET OPTIONAL_COMPONENTS Development.SABIModule)
 
 if(Python_FOUND)
     message(STATUS "Python ${Python_VERSION} found - scripting enabled")
@@ -27,12 +27,15 @@ if(Python_FOUND)
         target_link_libraries(${target_name} PRIVATE nfd)
         target_compile_definitions(${target_name} PRIVATE SCRIPTING_AVAILABLE Py_LIMITED_API=0x030C0000)
         if(MSVC)
-            target_link_options(${target_name} PRIVATE /FORCE:UNRESOLVED)
+            target_link_libraries(${target_name} PRIVATE Python::SABIModule)
         else()
             target_link_options(${target_name} PRIVATE -Wl,--allow-shlib-undefined)
         endif()
         set_target_properties(${target_name} PROPERTIES
             LIBRARY_OUTPUT_DIRECTORY "${output_dir}"
+            RUNTIME_OUTPUT_DIRECTORY "${output_dir}"
+            RUNTIME_OUTPUT_DIRECTORY_RELEASE "${output_dir}"
+            RUNTIME_OUTPUT_DIRECTORY_DEBUG "${output_dir}"
         )
     endfunction()
 

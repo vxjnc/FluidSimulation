@@ -3,6 +3,7 @@
 #include "scripting_engine.hpp"
 
 #include <chrono>
+#include <cstdlib>
 #include <format>
 #include <string>
 
@@ -31,7 +32,11 @@ public:
 
         std::string prefix = python_find::find_prefix(pythonPath_);
         if (!prefix.empty()) {
+#ifdef _WIN32
+            _putenv_s("PYTHONHOME", prefix.c_str());
+#else
             setenv("PYTHONHOME", prefix.c_str(), 1);
+#endif
         }
 
         PyImport_AppendInittab("_fluidsim_io", PyInit__fluidsim_io);

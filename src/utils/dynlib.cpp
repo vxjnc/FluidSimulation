@@ -4,6 +4,7 @@
 #include <print>
 
 #ifdef _WIN32
+#include <filesystem>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #else
@@ -12,7 +13,8 @@
 
 DynLib::DynLib(const std::string& path, bool global) {
 #ifdef _WIN32
-    handle_ = LoadLibraryA(path.data());
+    DWORD flags = std::filesystem::path(path).is_absolute() ? LOAD_WITH_ALTERED_SEARCH_PATH : 0;
+    handle_ = LoadLibraryExA(path.c_str(), nullptr, flags);
 #else
     int flags = RTLD_NOW | (global ? RTLD_GLOBAL : RTLD_LOCAL);
     handle_ = dlopen(path.c_str(), flags);
@@ -21,7 +23,6 @@ DynLib::DynLib(const std::string& path, bool global) {
     }
 #endif
 }
-
 void* DynLib::sym(const char* name) const {
     if (!handle_) {
         return nullptr;

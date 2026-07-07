@@ -49,8 +49,7 @@ namespace python_find {
     std::string find_libpython(const std::string& python_exe) {
 #ifdef _WIN32
         return popen_result(python_exe + " -c \"import sysconfig; print("
-                                         "sysconfig.get_config_var('BINDIR') + '\\\\python'"
-                                         " + sysconfig.get_config_var('py_version_nodot') + '.dll')\"");
+                                         "sysconfig.get_config_var('BINDIR') + '\\\\python3.dll')\"");
 #else
         return popen_result(python_exe + " -c \"import sysconfig; print("
                                          "sysconfig.get_config_var('LIBDIR') + '/libpython'"
