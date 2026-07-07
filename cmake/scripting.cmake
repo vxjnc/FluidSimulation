@@ -24,12 +24,12 @@ if(Python_FOUND)
             ${nanobind_SOURCE_DIR}/ext/robin_map/include
             ${Python_INCLUDE_DIRS}
         )
-        target_link_libraries(${target_name} PRIVATE nfd)
+        target_link_libraries(${target_name} PRIVATE nfd reproc++)
         target_compile_definitions(${target_name} PRIVATE SCRIPTING_AVAILABLE Py_LIMITED_API=0x030C0000)
         if(MSVC)
             target_link_libraries(${target_name} PRIVATE Python::SABIModule)
         else()
-            target_link_options(${target_name} PRIVATE -Wl,--allow-shlib-undefined)
+            target_link_options(${target_name} PRIVATE -Wl,--allow-shlib-undefined -s)
         endif()
         set_target_properties(${target_name} PROPERTIES
             LIBRARY_OUTPUT_DIRECTORY "${output_dir}"

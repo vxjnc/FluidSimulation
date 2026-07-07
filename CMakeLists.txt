@@ -64,7 +64,7 @@ target_include_directories(fluid_gui
         ${imguicolortextedit_SOURCE_DIR}
         ${imgui_markdown_SOURCE_DIR}
 )
-target_link_libraries(fluid_gui PUBLIC fluid_compute glfw imgui glfw3webgpu clip stb_headers nfd zpp_bits_headers Pal::Sigslot pfr)
+target_link_libraries(fluid_gui PUBLIC fluid_compute glfw imgui reproc++ glfw3webgpu clip stb_headers nfd zpp_bits_headers Pal::Sigslot pfr)
 add_dependencies(fluid_gui wgsl_shaders embedded_resources)
 
 # --- Executable ---
@@ -90,9 +90,9 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
         target_compile_options(${PROJECT_NAME} PRIVATE -O3)
     endif()
     set_property(TARGET ${PROJECT_NAME} PROPERTY INTERPROCEDURAL_OPTIMIZATION ON)
-    set_target_properties(${PROJECT_NAME} PROPERTIES
-        STRIP_SYMBOLS ON
-    )
+    if(NOT MSVC)
+        target_link_options(${PROJECT_NAME} PRIVATE -s)
+    endif()
 elseif(CMAKE_BUILD_TYPE STREQUAL "Debug")
     message(STATUS "Configuring project ${PROJECT_NAME} for PROFILING/DEBUG mode (Debug)")
     target_compile_options(${PROJECT_NAME} PRIVATE -g -fno-omit-frame-pointer)

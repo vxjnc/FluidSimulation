@@ -1,64 +1,66 @@
 #include "python_find.hpp"
 
-#include <format>
-
-#ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#endif
+#include <reproc++/drain.hpp>
+#include <reproc++/reproc.hpp>
 
 namespace python_find {
-    std::string popen_result(const std::string& cmd) {
-#ifdef _WIN32
-        FILE* pipe = _popen(cmd.c_str(), "r");
-#else
-        FILE* pipe = popen(cmd.c_str(), "r");
-#endif
-        if (!pipe) {
-            return {};
+    namespace {
+        template <typename... Args> std::string run_capture(Args&&... args) {
+            constexpr size_t N = sizeof...(args) + 1;
+            const char* argv[N] = {static_cast<const char*>(args)..., nullptr};
+
+            reproc::process process;
+            std::error_code ec = process.start(argv);
+            if (ec) {
+                return {};
+            }
+
+            std::string output;
+            reproc::sink::string sink(output);
+            ec = reproc::drain(process, sink, reproc::sink::null);
+            if (ec) {
+                return {};
+            }
+
+            while (!output.empty() && (output.back() == '\n' || output.back() == '\r')) {
+                output.pop_back();
+            }
+            return output;
         }
-        char buf[1024] = {};
-        fgets(buf, sizeof(buf), pipe);
-#ifdef _WIN32
-        _pclose(pipe);
-#else
-        pclose(pipe);
-#endif
-        std::string s(buf);
-        while (!s.empty() && (s.back() == '\n' || s.back() == '\r')) {
-            s.pop_back();
-        }
-        return s;
     }
 
     std::string find_exe() {
 #ifdef _WIN32
-        for (const char* c : {"python.exe", "python3.exe"}) {
-            std::string r = popen_result(std::format("where {} 2>nul", c));
-#else
-        for (const char* c : {"python3", "python3.14", "python3.13", "python3.12"}) {
-            std::string r = popen_result(std::format("which {} 2>/dev/null", c));
-#endif
+        for (const char* c : {"python3.exe", "python.exe"}) {
+            std::string r = run_capture("where", c);
             if (!r.empty()) {
                 return r;
             }
         }
+#else
+        for (const char* c : {"python3", "python3.15", "python3.14", "python3.13", "python3.12"}) {
+            std::string r = run_capture("which", c);
+            if (!r.empty()) {
+                return r;
+            }
+        }
+#endif
         return {};
     }
 
     std::string find_libpython(const std::string& python_exe) {
 #ifdef _WIN32
-        return popen_result(python_exe + " -c \"import sysconfig; print("
-                                         "sysconfig.get_config_var('BINDIR') + '\\\\python3.dll')\"");
+        return run_capture(python_exe.c_str(), "-c",
+                           "import sysconfig; print(sysconfig.get_config_var('BINDIR') + '\\\\python3.dll')");
 #else
-        return popen_result(python_exe + " -c \"import sysconfig; print("
-                                         "sysconfig.get_config_var('LIBDIR') + '/libpython'"
-                                         " + sysconfig.get_config_var('LDVERSION') + '.so.1.0')\"");
+        return run_capture(python_exe.c_str(), "-c",
+                           "import sysconfig; print(sysconfig.get_config_var('LIBDIR') + '/libpython'"
+                           " + sysconfig.get_config_var('LDVERSION') + '.so.1.0')");
 #endif
     }
 
     std::string find_prefix(const std::string& python_exe) {
-        return popen_result(python_exe + " -c \"import sys; print(sys.base_prefix)\"");
+        return run_capture(python_exe.c_str(), "-c", "import sys; print(sys.base_prefix)");
     }
 
     std::string find_libscripting() {

@@ -113,12 +113,25 @@ FetchContent_Declare(
     GIT_SHALLOW    ON
 )
 
+# --- reproc ---
+FetchContent_Declare(
+    reproc
+    GIT_REPOSITORY https://github.com/DaanDeMeyer/reproc.git
+    GIT_TAG        v14.2.7
+    GIT_SHALLOW    ON
+)
+set(REPROC++ ON CACHE BOOL "" FORCE)
+set(REPROC_TEST OFF CACHE BOOL "" FORCE)
+set(REPROC_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(REPROC_INSTALL OFF CACHE BOOL "" FORCE)
+
 FetchContent_MakeAvailable(
     glfw
     webgpu_distribution
     imgui
     glfw3webgpu
     clip
+    reproc
     stb
     nfd
     zpp_bits
@@ -157,3 +170,6 @@ target_include_directories(stb_headers SYSTEM INTERFACE ${stb_SOURCE_DIR})
 
 add_library(zpp_bits_headers INTERFACE)
 target_include_directories(zpp_bits_headers SYSTEM INTERFACE ${zpp_bits_SOURCE_DIR})
+
+# --- reproc++ ---
+set_target_properties(reproc reproc++ PROPERTIES POSITION_INDEPENDENT_CODE ON)
