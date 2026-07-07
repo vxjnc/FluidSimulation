@@ -2,7 +2,7 @@
 
 class NotificationManager;
 
-class NotificationsPanel {
+class NotificationsArea {
 public:
     void render(NotificationManager& notifications);
 };

@@ -1,4 +1,4 @@
-#include "notifications_panel.hpp"
+#include "notifications_area.hpp"
 
 #include <format>
 #include <ranges>
@@ -7,7 +7,7 @@
 
 #include "src/notification_manager.hpp"
 
-void NotificationsPanel::render(NotificationManager& notifications) {
+void NotificationsArea::render(NotificationManager& notifications) {
     ImVec4 color;
     ImVec2 vp = ImGui::GetMainViewport()->Size;
     float y = vp.y - 20.0f;

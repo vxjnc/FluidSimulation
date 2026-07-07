@@ -16,7 +16,7 @@
 #include "src/ui/fluid_viewport.hpp"
 #include "src/ui/imgui_serialization.hpp"
 #include "src/ui/import/import_panel.hpp"
-#include "src/ui/notifications/notifications_panel.hpp"
+#include "src/ui/notifications/notifications_area.hpp"
 #include "src/ui/random_splat/splat_panel.hpp"
 #include "src/ui/scripting/plugin/plugins_panel.hpp"
 #include "src/ui/scripting/script_ide.hpp"
@@ -83,7 +83,7 @@ public:
     SplatPanel splatPanel;
     ImportPanel importPanel;
     StatsPanel statsPanel;
-    NotificationsPanel notificationsPanel;
+    NotificationsArea notificationsPanel;
 
     ScriptIDE scriptIDE;
     PluginsPanel pluginsPanel;
