@@ -74,20 +74,18 @@ NB_MODULE(fluidsim, m) {
         .def_rw("vy", &FluidSource::vy)
         .def_rw("radius", &FluidSource::radius)
         .def_rw("active", &FluidSource::active)
-        .def_prop_rw(
-            "mask", [](FluidSource& s) { return static_cast<FluidSource::Mode>(s.mode_mask); },
-            [](FluidSource& s, FluidSource::Mode m) { s.mode_mask = static_cast<int>(m); })
+        .def_rw("mask", &FluidSource::mode_mask)
         .def_rw("form", &FluidSource::form);
 
     nb::enum_<FluidSource::Mode>(m_physics, "Mode", nb::is_flag())
-        .value("VELOCITY", FluidSource::Mode::VELOCITY)
-        .value("DYE_ADDITIVE", FluidSource::Mode::DYE_ADDITIVE)
-        .value("DYE_REPLACE", FluidSource::Mode::DYE_REPLACE);
+        .value("VELOCITY", FluidSource::Mode::Velocity)
+        .value("DYE_ADDITIVE", FluidSource::Mode::DyeAdditive)
+        .value("DYE_REPLACE", FluidSource::Mode::DyeReplace);
 
     nb::enum_<FluidSource::Form>(m_physics, "Form")
-        .value("CIRCLE", FluidSource::Form::CIRCLE)
-        .value("LINE", FluidSource::Form::LINE)
-        .value("RADIAL", FluidSource::Form::RADIAL);
+        .value("CIRCLE", FluidSource::Form::Circle)
+        .value("LINE", FluidSource::Form::Line)
+        .value("RADIAL", FluidSource::Form::Radial);
 
     m_physics.def(
         "add_source",

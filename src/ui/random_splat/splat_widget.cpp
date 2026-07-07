@@ -80,9 +80,9 @@ std::vector<FluidSource> SplatWidget::generate(const SplatSettings& s, VelocityI
             s.applyColor ? ColorUtils::Generator::randomVibrant(rng_) : std::array{1.f, 1.f, 1.f};
 
         sources.emplace_back(posDist(rng_), posDist(rng_), vx, vy, radiusDist(rng_), color).mode_mask =
-            (s.applyVelocity ? FluidSource::Mode::VELOCITY : 0) |
-            (s.applyColor ? (s.dyeReplace ? FluidSource::Mode::DYE_REPLACE : FluidSource::Mode::DYE_ADDITIVE)
-                          : 0);
+            (s.applyVelocity ? FluidSource::Mode::Velocity : FluidSource::Mode::Disabled) |
+            (s.applyColor ? (s.dyeReplace ? FluidSource::Mode::DyeReplace : FluidSource::Mode::DyeAdditive)
+                          : FluidSource::Mode::Disabled);
         ;
     }
 

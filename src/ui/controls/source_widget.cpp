@@ -22,51 +22,52 @@ bool SourceWidget::render(FluidSource& s, size_t idx, AppSettings& settings) {
         s.form = static_cast<FluidSource::Form>(current_form);
     }
 
-    bool has_velocity = s.mode_mask & FluidSource::Mode::VELOCITY;
-    bool has_dye = s.mode_mask & (FluidSource::Mode::DYE_ADDITIVE | FluidSource::Mode::DYE_REPLACE);
+    bool has_velocity = static_cast<bool>(s.mode_mask & FluidSource::Mode::Velocity);
+    bool has_dye =
+        static_cast<bool>(s.mode_mask & (FluidSource::Mode::DyeAdditive | FluidSource::Mode::DyeReplace));
 
     ImGui::Text("Inject:");
     ImGui::SameLine();
     if (ImGui::Checkbox("Velocity", &has_velocity)) {
         if (has_velocity) {
-            s.mode_mask |= FluidSource::Mode::VELOCITY;
+            s.mode_mask |= FluidSource::Mode::Velocity;
         }
         else {
-            s.mode_mask &= ~FluidSource::Mode::VELOCITY;
+            s.mode_mask &= ~FluidSource::Mode::Velocity;
         }
     }
     ImGui::SameLine();
     if (ImGui::Checkbox("Dye", &has_dye)) {
         if (has_dye) {
-            s.mode_mask |= FluidSource::Mode::DYE_ADDITIVE;
-            s.mode_mask &= ~FluidSource::Mode::DYE_REPLACE;
+            s.mode_mask |= FluidSource::Mode::DyeAdditive;
+            s.mode_mask &= ~FluidSource::Mode::DyeReplace;
         }
         else {
-            s.mode_mask &= ~(FluidSource::Mode::DYE_ADDITIVE | FluidSource::Mode::DYE_REPLACE);
+            s.mode_mask &= ~(FluidSource::Mode::DyeAdditive | FluidSource::Mode::DyeReplace);
         }
     }
 
     if (has_dye) {
-        bool additive = s.mode_mask & FluidSource::Mode::DYE_ADDITIVE;
+        bool additive = static_cast<bool>(s.mode_mask & FluidSource::Mode::DyeAdditive);
         if (ImGui::RadioButton("Additive", additive)) {
-            s.mode_mask &= ~FluidSource::Mode::DYE_REPLACE;
-            s.mode_mask |= FluidSource::Mode::DYE_ADDITIVE;
+            s.mode_mask &= ~FluidSource::Mode::DyeReplace;
+            s.mode_mask |= FluidSource::Mode::DyeAdditive;
         }
         ImGui::SameLine();
         if (ImGui::RadioButton("Replace", !additive)) {
-            s.mode_mask &= ~FluidSource::Mode::DYE_ADDITIVE;
-            s.mode_mask |= FluidSource::Mode::DYE_REPLACE;
+            s.mode_mask &= ~FluidSource::Mode::DyeAdditive;
+            s.mode_mask |= FluidSource::Mode::DyeReplace;
         }
     }
 
     ImGui::SliderFloat("X", &s.x, 0.0f, 1.0f);
     ImGui::SliderFloat("Y", &s.y, 0.0f, 1.0f);
 
-    if (has_velocity || s.form == FluidSource::Form::LINE) {
+    if (has_velocity || s.form == FluidSource::Form::Line) {
         Widgets::VelocityInput("Velocity", s.vx, s.vy, settings.ui.velocityMode);
     }
 
-    const char* radius_label = (s.form == FluidSource::Form::LINE) ? "Length" : "Radius";
+    const char* radius_label = (s.form == FluidSource::Form::Line) ? "Length" : "Radius";
     ImGui::SliderFloat(radius_label, &s.radius, 0.f, 1.f);
 
     ImGui::ColorEdit3("Color", s.color.data());

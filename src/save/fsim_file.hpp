@@ -16,7 +16,7 @@ struct FsimFluidSource {
     float vx = 0.f, vy = 0.f;
     float radius = 0.1f;
     bool active = true;
-    int mode_mask = 0;
+    uint8_t mode_mask = 0;
     uint8_t form = 0;
 
     constexpr static zpp::bits::errc serialize(auto& archive, auto& self) {
@@ -45,7 +45,7 @@ struct FsimFluidSource {
         r.vy = s.vy;
         r.radius = s.radius;
         r.active = s.active;
-        r.mode_mask = s.mode_mask;
+        r.mode_mask = static_cast<uint8_t>(s.mode_mask);
         r.form = static_cast<uint8_t>(s.form);
         return r;
     }
@@ -59,7 +59,7 @@ struct FsimFluidSource {
         s.vy = vy;
         s.radius = radius;
         s.active = active;
-        s.mode_mask = mode_mask;
+        s.mode_mask = static_cast<FluidSource::Mode>(mode_mask);
         s.form = static_cast<FluidSource::Form>(form);
         return s;
     }
