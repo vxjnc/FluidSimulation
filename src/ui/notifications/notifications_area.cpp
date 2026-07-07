@@ -20,7 +20,7 @@ void NotificationsArea::render(NotificationManager& notifications) {
         case NotifyLevel::Error:
             color = ImVec4(0.9f, 0.2f, 0.2f, 1.0f);
             break;
-        default:
+        case NotifyLevel::Info:
             color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
             break;
         }
@@ -30,7 +30,16 @@ void NotificationsArea::render(NotificationManager& notifications) {
                      ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs |
                          ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing |
                          ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoSavedSettings);
+
+        float radius = ImGui::GetTextLineHeight() * 0.3f;
+        ImVec2 cursor = ImGui::GetCursorScreenPos();
+        ImVec2 center(cursor.x + radius, cursor.y + ImGui::GetTextLineHeight() * 0.5f);
+        ImGui::GetWindowDrawList()->AddCircleFilled(center, radius, ImGui::ColorConvertFloat4ToU32(color));
+
+        ImGui::Dummy(ImVec2(radius * 2.0f + 6.0f, 0.0f));
+        ImGui::SameLine(0.0f, 0.0f);
         ImGui::TextColored(color, "%s", n.message.c_str());
+
         y -= ImGui::GetWindowHeight() + 8.0f;
         ImGui::End();
     }
