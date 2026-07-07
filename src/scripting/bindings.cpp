@@ -217,12 +217,21 @@ NB_MODULE(fluidsim, m) {
         nb::arg("filters") = nb::none());
 
     nb::enum_<NotifyLevel>(m_system, "NotifyLevel")
-        .value("Info", NotifyLevel::Info)
-        .value("Warning", NotifyLevel::Warning)
-        .value("Error", NotifyLevel::Error);
+        .value("INFO", NotifyLevel::Info)
+        .value("WARNING", NotifyLevel::Warning)
+        .value("ERROR", NotifyLevel::Error);
 
     m_system.def("notify", [](NotifyLevel level, std::string message) {
         ScriptingEngine::instance->notifications->notify(level, std::move(message));
+    });
+    m_system.def("notify_error", [](std::string message) {
+        ScriptingEngine::instance->notifications->notify(NotifyLevel::Error, std::move(message));
+    });
+    m_system.def("notify_warning", [](std::string message) {
+        ScriptingEngine::instance->notifications->notify(NotifyLevel::Warning, std::move(message));
+    });
+    m_system.def("notify_info", [](std::string message) {
+        ScriptingEngine::instance->notifications->notify(NotifyLevel::Info, std::move(message));
     });
 }
 

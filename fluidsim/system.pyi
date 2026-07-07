@@ -11,10 +11,16 @@ def open_file_dialog(filters: Sequence[tuple[str, str]] | None = None) -> str | 
 def save_file_dialog(filters: Sequence[tuple[str, str]] | None = None, default_name: str) -> str | None: ...
 
 class NotifyLevel(enum.Enum):
-    Info = 0
+    INFO = 0
 
-    Warning = 1
+    WARNING = 1
 
-    Error = 2
+    ERROR = 2
 
 def notify(level: NotifyLevel, message: str) -> None: ...
+
+def notify_error(message: str) -> None: ...
+
+def notify_warning(message: str) -> None: ...
+
+def notify_info(message: str) -> None: ...
