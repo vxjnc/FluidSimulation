@@ -17,7 +17,7 @@ Real-time fluid simulation on the GPU using WebGPU. Just something pretty to loo
 
 ## Building
 
-Requires CMake 3.28+, a C++23 compiler, and ZLIB.
+Requires CMake 3.28+, a C++23 compiler.
 
 ```bash
 cmake --preset release

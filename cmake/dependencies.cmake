@@ -81,17 +81,27 @@ CPMAddPackage(
     URL  https://github.com/eliemichel/glfw3webgpu/archive/fdcabcc54b56b50c12c10f5317abf8ae7ac32c29.zip
 )
 
+# --- zlib ---
+CPMAddPackage(
+    NAME zlib
+    URL  https://github.com/madler/zlib/archive/refs/tags/v1.3.2.zip
+    OPTIONS
+        "ZLIB_BUILD_TESTING OFF"
+        "ZLIB_INSTALL OFF"
+)
+
 # --- clip ---
 CPMAddPackage(
     NAME clip
     URL  https://github.com/dacap/clip/archive/refs/tags/v1.15.zip
-    OPTIONS
+    OPTIONS    
+        "CLIP_ENABLE_IMAGE ON"
+        "CLIP_ENABLE_LIST_FORMATS OFF"
         "CLIP_EXAMPLES OFF"
         "CLIP_TESTS OFF"
+        "CLIP_INSTALL OFF"
+        "CLIP_X11_WITH_PNG ON"
 )
-
-find_package(ZLIB REQUIRED)
-target_link_libraries(clip ZLIB::ZLIB)
 
 # --- stb ---
 CPMAddPackage(

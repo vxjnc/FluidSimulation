@@ -64,7 +64,7 @@ target_include_directories(fluid_gui
         ${ImGuiColorTextEdit_SOURCE_DIR}
         ${imgui_markdown_SOURCE_DIR}
 )
-target_link_libraries(fluid_gui PUBLIC fluid_compute glfw imgui reproc++ glfw3webgpu clip stb_headers nfd zpp_bits_headers Pal::Sigslot pfr)
+target_link_libraries(fluid_gui PUBLIC fluid_compute glfw imgui reproc++ glfw3webgpu clip stb_headers nfd zpp_bits_headers Pal::Sigslot pfr zlibstatic)
 add_dependencies(fluid_gui wgsl_shaders embedded_resources)
 
 # --- Executable ---
