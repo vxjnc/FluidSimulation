@@ -1,7 +1,11 @@
 #include "python_find.hpp"
 
+#include <filesystem>
+
 #include <reproc++/drain.hpp>
 #include <reproc++/reproc.hpp>
+
+#include "src/utils/platform_utils.hpp"
 
 namespace python_find {
     namespace {
@@ -64,10 +68,11 @@ namespace python_find {
     }
 
     std::string find_libscripting() {
+        std::filesystem::path exe_dir = PlatformUtils::executable_dir();
 #ifdef _WIN32
-        return "fluid_scripting.dll";
+        return exe_dir / "fluid_scripting.dll";
 #else
-        return "libfluid_scripting.so";
+        return exe_dir / "libfluid_scripting.so";
 #endif
     }
 }

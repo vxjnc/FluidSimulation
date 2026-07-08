@@ -18,6 +18,7 @@ if(Python_FOUND)
             ${bindings_source}
             src/utils/python_find.cpp
             ${nanobind_SOURCE_DIR}/src/nb_combined.cpp
+            src/utils/platform_utils.cpp
         )
         target_include_directories(${target_name} PRIVATE
             ${CMAKE_SOURCE_DIR}
