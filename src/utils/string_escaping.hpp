@@ -5,8 +5,8 @@
 
 namespace StringEscaping {
     static constexpr std::array rules_storage{
-        std::pair{'\n', 'n'}, std::pair{'\r', 'r'}, std::pair{'\t', 't'},
-        std::pair{'\v', 'v'}, std::pair{'\f', 'f'}, std::pair{' ', 's'},
+        std::pair{'\\', '\\'}, std::pair{'\n', 'n'}, std::pair{'\r', 'r'}, std::pair{'\t', 't'},
+        std::pair{'\v', 'v'},  std::pair{'\f', 'f'}, std::pair{' ', 's'},
     };
 
     template <size_t N = rules_storage.size(), std::array<std::pair<char, char>, N> Rules = rules_storage>
