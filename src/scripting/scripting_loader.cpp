@@ -9,6 +9,12 @@
 #include "src/utils/dynlib.hpp"
 #include "src/utils/python_find.hpp"
 
+#ifdef _WIN32
+#include <filesystem>
+
+#include <windows.h>
+#endif
+
 void ScriptingLoader::init(std::vector<FluidSource>* sources, NotificationManager* notifications,
                            std::string_view pythonPath) {
     std::string exe = pythonPath.empty() ? python_find::find_exe() : std::string(pythonPath);
@@ -31,6 +37,10 @@ void ScriptingLoader::init(std::vector<FluidSource>* sources, NotificationManage
         engine_ = new ScriptingEngine();
         return;
     }
+
+#ifdef _WIN32
+    SetDllDirectoryA(std::filesystem::path(libpath).parent_path().string().c_str());
+#endif
 
     libscripting_ = DynLib(python_find::find_libscripting(), true);
     if (!libscripting_.valid()) {
