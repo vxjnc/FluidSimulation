@@ -42,7 +42,7 @@ void ScriptingLoader::init(std::vector<FluidSource>* sources, NotificationManage
     SetDllDirectoryA(std::filesystem::path(libpath).parent_path().string().c_str());
 #endif
 
-    libscripting_ = DynLib(python_find::find_libscripting(), true);
+    libscripting_ = DynLib(python_find::find_libscripting().string(), true);
     if (!libscripting_.valid()) {
         std::println(std::cerr, "Failed to find libscripting");
         libpython_.close();

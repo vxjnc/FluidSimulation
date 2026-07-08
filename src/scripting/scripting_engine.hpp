@@ -43,7 +43,13 @@ public:
     std::vector<FluidSource>* sources = nullptr;
 };
 
-extern "C" ScriptingEngine* create_scripting_engine(std::vector<FluidSource>* sources,
-                                                    NotificationManager* notifications,
-                                                    std::string_view pythonPath);
-extern "C" void destroy_scripting_engine(ScriptingEngine* engine);
+#ifdef _WIN32
+#define FLUID_SCRIPTING_API __declspec(dllexport)
+#else
+#define FLUID_SCRIPTING_API
+#endif
+
+extern "C" FLUID_SCRIPTING_API ScriptingEngine* create_scripting_engine(std::vector<FluidSource>* sources,
+                                                                        NotificationManager* notifications,
+                                                                        std::string_view pythonPath);
+extern "C" FLUID_SCRIPTING_API void destroy_scripting_engine(ScriptingEngine* engine);

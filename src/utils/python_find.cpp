@@ -1,7 +1,5 @@
 #include "python_find.hpp"
 
-#include <filesystem>
-
 #include <reproc++/drain.hpp>
 #include <reproc++/reproc.hpp>
 
@@ -67,7 +65,7 @@ namespace python_find {
         return run_capture(python_exe.c_str(), "-c", "import sys; print(sys.base_prefix)");
     }
 
-    std::string find_libscripting() {
+    std::filesystem::path find_libscripting() {
         std::filesystem::path exe_dir = PlatformUtils::executable_dir();
 #ifdef _WIN32
         return exe_dir / "fluid_scripting.dll";
