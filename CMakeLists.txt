@@ -54,14 +54,14 @@ list(FILTER GUI_FILES EXCLUDE REGEX "src/scripting/.*")
 list(APPEND GUI_FILES "${CMAKE_SOURCE_DIR}/src/scripting/scripting_loader.cpp")
 add_library(fluid_gui STATIC 
     ${GUI_FILES}
-    ${imguicolortextedit_SOURCE_DIR}/TextEditor.cpp
+    ${ImGuiColorTextEdit_SOURCE_DIR}/TextEditor.cpp
 )
 target_include_directories(fluid_gui
     PUBLIC
         ${CMAKE_SOURCE_DIR}
         ${GENERATED_ROOT}
     SYSTEM PUBLIC
-        ${imguicolortextedit_SOURCE_DIR}
+        ${ImGuiColorTextEdit_SOURCE_DIR}
         ${imgui_markdown_SOURCE_DIR}
 )
 target_link_libraries(fluid_gui PUBLIC fluid_compute glfw imgui reproc++ glfw3webgpu clip stb_headers nfd zpp_bits_headers Pal::Sigslot pfr)
@@ -113,16 +113,13 @@ include(scripting)
 
 # --- Google Benchmark ---
 if(BUILD_BENCHMARKS)
-    FetchContent_Declare(
-        google_benchmark
-        GIT_REPOSITORY https://github.com/google/benchmark.git
-        GIT_TAG        v1.9.5
-        GIT_SHALLOW    ON
+    CPMAddPackage(
+        NAME google_benchmark
+        URL  https://github.com/google/benchmark/archive/refs/tags/v1.9.5.zip
+        OPTIONS
+            "BENCHMARK_ENABLE_TESTING OFF"
+            "BENCHMARK_ENABLE_INSTALL OFF"
     )
-    set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "" FORCE)
-    set(BENCHMARK_ENABLE_INSTALL OFF CACHE BOOL "" FORCE)
-
-    FetchContent_MakeAvailable(google_benchmark)
 
     add_subdirectory(benchmarks)
 endif()

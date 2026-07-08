@@ -33,7 +33,7 @@ cmake --build --preset release-wgpu
 ./FluidSimulation
 ```
 
-All other dependencies (GLFW, ImGui, sigslot, nfd, stb, etc.) are fetched automatically via CMake FetchContent.
+All other dependencies (GLFW, ImGui, sigslot, nfd, stb, etc.) are fetched automatically via CPM.cmake (CMake Package Manager).
 
 Python scripting is enabled automatically if Python 3.12+ development headers are found. To disable, build without Python headers installed, or force disable it along with all scripting UI components using the specific preset:
 

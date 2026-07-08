@@ -3,6 +3,7 @@
 #include <webgpu/webgpu-raii.hpp>
 
 #include "src/compute/fluid_sim.hpp"
+#include "src/wgpu_context.hpp"
 
 class FluidSimBenchmark : public benchmark::Fixture {
 public:

@@ -8,6 +8,7 @@ if(Python_FOUND)
         GIT_REPOSITORY https://github.com/wjakob/nanobind.git
         GIT_TAG        v2.13.0
         GIT_SHALLOW    ON
+        GIT_PROGRESS   ON
     )
     FetchContent_MakeAvailable(nanobind)
 
