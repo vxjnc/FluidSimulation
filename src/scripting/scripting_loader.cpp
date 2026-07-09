@@ -5,6 +5,8 @@
 #include <print>
 #include <string>
 
+#include <dbg.h>
+
 #include "src/scripting/scripting_engine.hpp"
 #include "src/utils/dynlib.hpp"
 #include "src/utils/python_find.hpp"
@@ -18,6 +20,7 @@
 void ScriptingLoader::init(std::vector<FluidSource>* sources, NotificationManager* notifications,
                            std::string_view pythonPath) {
     std::string exe = pythonPath.empty() ? python_find::find_exe() : std::string(pythonPath);
+    dbg(exe);
     if (exe.empty()) {
         std::println(std::cerr, "Failed to find python");
         engine_ = new ScriptingEngine();
@@ -25,6 +28,7 @@ void ScriptingLoader::init(std::vector<FluidSource>* sources, NotificationManage
     }
 
     std::string libpath = python_find::find_libpython(exe);
+    dbg(libpath);
     if (libpath.empty()) {
         std::println(std::cerr, "Failed to find libpython path");
         engine_ = new ScriptingEngine();
@@ -42,7 +46,9 @@ void ScriptingLoader::init(std::vector<FluidSource>* sources, NotificationManage
     SetDllDirectoryA(std::filesystem::path(libpath).parent_path().string().c_str());
 #endif
 
-    libscripting_ = DynLib(python_find::find_libscripting().string(), true);
+    std::string libscripting_path = python_find::find_libscripting().string();
+    dbg(libscripting_path);
+    libscripting_ = DynLib(libscripting_path, true);
     if (!libscripting_.valid()) {
         std::println(std::cerr, "Failed to find libscripting");
         libpython_.close();

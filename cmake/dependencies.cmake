@@ -86,6 +86,7 @@ CPMAddPackage(
     NAME zstd
     URL  https://github.com/facebook/zstd/archive/refs/tags/v1.5.7.zip
     SOURCE_SUBDIR build/cmake
+    SYSTEM TRUE
     OPTIONS
         "ZSTD_BUILD_SHARED OFF"
         "ZSTD_BUILD_PROGRAMS OFF"
@@ -169,3 +170,9 @@ CPMAddPackage(
 )
 
 set_target_properties(reproc reproc++ PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
+# --- dbg-macro ---
+CPMAddPackage(
+    NAME        dbg_macro
+    URL         https://github.com/sharkdp/dbg-macro/archive/refs/tags/v0.5.1.zip
+)

@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.28)
+set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
 
 project(FluidSimulation C CXX)
 
@@ -44,7 +45,7 @@ target_include_directories(fluid_compute PUBLIC
     ${CMAKE_SOURCE_DIR}
     ${GENERATED_ROOT}
 )
-target_link_libraries(fluid_compute PUBLIC webgpu wesl)
+target_link_libraries(fluid_compute PUBLIC webgpu wesl dbg_macro)
 add_dependencies(fluid_compute wgsl_shaders)
 
 # --- fluid_gui ---
@@ -65,10 +66,14 @@ target_include_directories(fluid_gui
         ${imgui_markdown_SOURCE_DIR}
 )
 target_link_libraries(fluid_gui PUBLIC fluid_compute glfw imgui reproc++ glfw3webgpu clip stb_headers nfd zpp_bits_headers Pal::Sigslot pfr libzstd_static)
-add_dependencies(fluid_gui wgsl_shaders embedded_resources)
+add_dependencies(fluid_gui wgsl_shaders embedded_resources )
 
 # --- Executable ---
 add_executable(${PROJECT_NAME} main.cpp)
+add_compile_definitions(
+    DBG_MACRO_NO_WARNING
+    $<$<NOT:$<CONFIG:Debug>>:DBG_MACRO_DISABLE>
+)
 target_link_libraries(${PROJECT_NAME} PRIVATE fluid_gui)
 target_copy_webgpu_binaries(${PROJECT_NAME})
 

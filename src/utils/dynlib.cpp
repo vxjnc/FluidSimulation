@@ -1,7 +1,6 @@
 #include "dynlib.hpp"
 
-#include <iostream>
-#include <print>
+#include <dbg.h>
 
 #ifdef _WIN32
 #include <filesystem>
@@ -15,11 +14,16 @@ DynLib::DynLib(const std::string& path, bool global) {
 #ifdef _WIN32
     DWORD flags = std::filesystem::path(path).is_absolute() ? LOAD_WITH_ALTERED_SEARCH_PATH : 0;
     handle_ = LoadLibraryExA(path.c_str(), nullptr, flags);
+    if (!handle_) {
+        DWORD errorCode = GetLastError();
+        dbg(path, errorCode);
+    }
 #else
     int flags = RTLD_NOW | (global ? RTLD_GLOBAL : RTLD_LOCAL);
     handle_ = dlopen(path.c_str(), flags);
     if (!handle_) {
-        std::println(std::cerr, "Failed to load lib: {}", dlerror());
+        std::string errorStr = dlerror();
+        dbg(path, errorStr);
     }
 #endif
 }
