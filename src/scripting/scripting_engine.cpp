@@ -34,7 +34,7 @@ public:
         std::string base_prefix = python_find::find_base_prefix(pythonPath_);
         if (!base_prefix.empty()) {
 #ifdef _WIN32
-            _putenv_s("PYTHONHOME", prefix.c_str());
+            _putenv_s("PYTHONHOME", base_prefix.c_str());
 #else
             setenv("PYTHONHOME", base_prefix.c_str(), 1);
 #endif
