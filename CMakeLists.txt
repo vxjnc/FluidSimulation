@@ -100,8 +100,11 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
     endif()
 elseif(CMAKE_BUILD_TYPE STREQUAL "Debug")
     message(STATUS "Configuring project ${PROJECT_NAME} for PROFILING/DEBUG mode (Debug)")
-    target_compile_options(${PROJECT_NAME} PRIVATE -g -fno-omit-frame-pointer)
-
+    if(MSVC)
+        target_compile_options(${PROJECT_NAME} PRIVATE /Zi)
+    else()
+        target_compile_options(${PROJECT_NAME} PRIVATE -g -fno-omit-frame-pointer)
+    endif()
 else()
     message(STATUS "Configuring project ${PROJECT_NAME} for default mode: ${CMAKE_BUILD_TYPE}")
 endif()
@@ -129,7 +132,7 @@ if(BUILD_BENCHMARKS)
     add_subdirectory(benchmarks)
 endif()
 
-if(NOT "${CMAKE_BINARY_DIR}/compile_commands.json" STREQUAL "${CMAKE_SOURCE_DIR}/build/compile_commands.json")
+if(EXISTS "${CMAKE_BINARY_DIR}/compile_commands.json" AND NOT "${CMAKE_BINARY_DIR}/compile_commands.json" STREQUAL "${CMAKE_SOURCE_DIR}/build/compile_commands.json")
     file(CREATE_LINK
         "${CMAKE_BINARY_DIR}/compile_commands.json"
         "${CMAKE_SOURCE_DIR}/build/compile_commands.json"
