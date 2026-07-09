@@ -61,8 +61,13 @@ namespace python_find {
 #endif
     }
 
-    std::string find_prefix(const std::string& python_exe) {
+    std::string find_base_prefix(const std::string& python_exe) {
         return run_capture(python_exe.c_str(), "-c", "import sys; print(sys.base_prefix)");
+    }
+
+    std::string find_site_packages(const std::string& python_exe) {
+        return run_capture(python_exe.c_str(), "-c",
+                           "import sysconfig; print(sysconfig.get_path('purelib'))");
     }
 
     std::filesystem::path find_libscripting() {

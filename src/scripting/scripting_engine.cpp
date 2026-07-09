@@ -10,6 +10,7 @@
 #include <Python.h>
 #include <nanobind/eval.h>
 #include <nanobind/nanobind.h>
+#include <nanobind/stl/string.h>
 
 #include "src/scripting/script_runtime.hpp"
 #include "src/utils/python_find.hpp"
@@ -30,18 +31,23 @@ public:
         notifications = notifications_;
         pythonPath_ = pythonPath;
 
-        std::string prefix = python_find::find_prefix(pythonPath_);
-        if (!prefix.empty()) {
+        std::string base_prefix = python_find::find_base_prefix(pythonPath_);
+        if (!base_prefix.empty()) {
 #ifdef _WIN32
             _putenv_s("PYTHONHOME", prefix.c_str());
 #else
-            setenv("PYTHONHOME", prefix.c_str(), 1);
+            setenv("PYTHONHOME", base_prefix.c_str(), 1);
 #endif
         }
 
         PyImport_AppendInittab("_fluidsim_io", PyInit__fluidsim_io);
         PyImport_AppendInittab("fluidsim", PyInit_fluidsim);
         Py_Initialize();
+
+        std::string site_packages = python_find::find_site_packages(pythonPath_);
+        if (!site_packages.empty()) {
+            nb::module_::import_("sys").attr("path").attr("insert")(0, site_packages);
+        }
 
 #ifdef NDEBUG
         PyObject* mod = PyImport_ImportModule("fluidsim");
