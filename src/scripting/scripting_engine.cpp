@@ -93,8 +93,10 @@ sys.stdout = sys.stderr = _Capture()
         current_id_ = source.id;
         current_script_ = &rt;
 
+        auto compile_start = std::chrono::steady_clock::now();
         PyObject* compiled = Py_CompileString(source.code.c_str(),
                                               std::format("<script {}>", source.id).c_str(), Py_file_input);
+        auto compile_elapsed = std::chrono::steady_clock::now() - compile_start;
         if (compiled) {
             auto start = std::chrono::steady_clock::now();
             PyObject* result = PyEval_EvalCode(compiled, rt.globals.ptr(), rt.globals.ptr());
@@ -102,8 +104,9 @@ sys.stdout = sys.stderr = _Capture()
             Py_DECREF(compiled);
             if (result) {
                 Py_DECREF(result);
+                auto compile_ms = std::chrono::duration<double, std::milli>(compile_elapsed).count();
                 auto ms = std::chrono::duration<double, std::milli>(elapsed).count();
-                append_output(std::format("Completed in {:.2f}ms\n", ms));
+                append_output(std::format("Compiled in {:.2f}ms\nCompleted in {:.2f}ms\n", compile_ms, ms));
             }
             else {
                 PyErr_Print();
@@ -158,8 +161,9 @@ sys.stdout = sys.stderr = _Capture()
         }
         auto& out = outputs_[current_id_];
         out += text;
-        if (out.size() > 10 * 1024) {
-            out.erase(0, out.size() - 10 * 1024);
+        constexpr size_t max_size = 10 * 1024;
+        if (out.size() > max_size) {
+            out.erase(0, out.size() - max_size);
         }
     }
 
