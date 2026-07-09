@@ -13,7 +13,12 @@
 DynLib::DynLib(const std::string& path, bool global) {
 #ifdef _WIN32
     DWORD flags = std::filesystem::path(path).is_absolute() ? LOAD_WITH_ALTERED_SEARCH_PATH : 0;
-    handle_ = LoadLibraryExA(path.c_str(), nullptr, flags);
+
+    int wlen = MultiByteToWideChar(CP_UTF8, 0, path.data(), static_cast<int>(path.size()), nullptr, 0);
+    std::wstring wpath(wlen, L'\0');
+    MultiByteToWideChar(CP_UTF8, 0, path.data(), static_cast<int>(path.size()), wpath.data(), wlen);
+
+    handle_ = LoadLibraryExW(wpath.c_str(), nullptr, flags);
     if (!handle_) {
         DWORD errorCode = GetLastError();
         dbg(path, errorCode);
@@ -22,8 +27,7 @@ DynLib::DynLib(const std::string& path, bool global) {
     int flags = RTLD_NOW | (global ? RTLD_GLOBAL : RTLD_LOCAL);
     handle_ = dlopen(path.c_str(), flags);
     if (!handle_) {
-        std::string errorStr = dlerror();
-        dbg(path, errorStr);
+        dbg(path, dlerror());
     }
 #endif
 }
