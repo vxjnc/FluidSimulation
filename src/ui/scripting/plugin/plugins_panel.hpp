@@ -13,5 +13,6 @@ public:
 
 private:
     std::string selected_;
+    size_t selectedIndex_ = 0;
     std::map<std::string, std::string> readme_cache_;
 };

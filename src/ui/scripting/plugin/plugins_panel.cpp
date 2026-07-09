@@ -1,5 +1,8 @@
 #include "plugins_panel.hpp"
 
+#include <format>
+#include <ranges>
+
 #include <imgui.h>
 #include <imgui_markdown.h>
 
@@ -17,21 +20,22 @@ void PluginsPanel::render(bool& open, PluginManager& manager, PluginSettings& se
     }
 
     float buttonH = ImGui::GetFrameHeightWithSpacing();
-    float leftW = 200.0f;
+    constexpr float leftW = 200.0f;
 
     ImGui::BeginChild("##left", ImVec2(leftW, 0), false);
 
     ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::GetStyleColorVec4(ImGuiCol_WindowBg));
     ImGui::BeginChild("##list", ImVec2(0, -buttonH), true);
     ImGui::PopStyleColor();
-    for (auto& name : manager.plugins()) {
+    for (auto [i, name] : manager.plugins() | std::views::enumerate) {
         bool enabled = settings.enabled[name];
         if (ImGui::Checkbox(("##" + name).c_str(), &enabled)) {
             settings.enabled[name] = enabled;
         }
         ImGui::SameLine();
-        if (ImGui::Selectable(name.c_str(), selected_ == name)) {
+        if (ImGui::Selectable(name.c_str(), selectedIndex_ == i)) {
             selected_ = name;
+            selectedIndex_ = i;
         }
     }
     ImGui::EndChild();
@@ -49,8 +53,9 @@ void PluginsPanel::render(bool& open, PluginManager& manager, PluginSettings& se
     if (!selected_.empty()) {
         if (ImGui::BeginTabBar("##tabs")) {
             if (ImGui::BeginTabItem("Readme")) {
-                if (readme_cache_.find(selected_) == readme_cache_.end()) {
-                    readme_cache_[selected_] = FileUtils::read_file("plugins/" + selected_ + "/readme.md");
+                if (!readme_cache_.contains(selected_)) {
+                    readme_cache_[selected_] =
+                        FileUtils::read_file(std::format("plugins/{}/readme.md", selected_));
                 }
                 const std::string& text = readme_cache_[selected_];
                 ImGui::Markdown(text.c_str(), text.size(), mdConfig);
