@@ -52,7 +52,7 @@ namespace python_find {
 
     std::string find_libpython(const std::string& python_exe) {
 #ifdef _WIN32
-        return run_capture(python_exe.c_str(), "-c",
+        return run_capture(python_exe.c_str(), "-X", "utf8", "-c",
                            "import sysconfig; print(sysconfig.get_config_var('BINDIR') + '\\\\python3.dll')");
 #else
         return run_capture(python_exe.c_str(), "-c",
@@ -62,11 +62,11 @@ namespace python_find {
     }
 
     std::string find_base_prefix(const std::string& python_exe) {
-        return run_capture(python_exe.c_str(), "-c", "import sys; print(sys.base_prefix)");
+        return run_capture(python_exe.c_str(), "-X", "utf8", "-c", "import sys; print(sys.base_prefix)");
     }
 
     std::string find_site_packages(const std::string& python_exe) {
-        return run_capture(python_exe.c_str(), "-c",
+        return run_capture(python_exe.c_str(), "-X", "utf8", "-c",
                            "import sysconfig; print(sysconfig.get_path('purelib'))");
     }
 
