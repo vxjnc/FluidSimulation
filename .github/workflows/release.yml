@@ -42,6 +42,10 @@ jobs:
           mkdir -p dist/FluidSimulation
           cp FluidSimulation dist/FluidSimulation/
           cp *.so dist/FluidSimulation/ 2>/dev/null || true
+          if [ "${{ matrix.preset }}" = "release" ]; then
+            mkdir -p dist/FluidSimulation/plugins/plugin-installer
+            cp plugins/plugin-installer/* dist/FluidSimulation/plugins/plugin-installer/
+          fi
           tar -czf FluidSimulation-${{ matrix.suffix }}.tar.gz -C dist FluidSimulation
 
       - name: Upload
@@ -86,6 +90,10 @@ jobs:
           mkdir -p dist/FluidSimulation
           cp FluidSimulation.exe dist/FluidSimulation/
           cp *.dll dist/FluidSimulation/ 2>/dev/null || true
+          if [ "${{ matrix.preset }}" = "release" ]; then
+            mkdir -p dist/FluidSimulation/plugins/plugin-installer
+            cp plugins/plugin-installer/* dist/FluidSimulation/plugins/plugin-installer/
+          fi
           cd dist && 7z a ../FluidSimulation-${{ matrix.suffix }}.zip .
 
       - name: Upload
