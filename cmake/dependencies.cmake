@@ -81,13 +81,15 @@ CPMAddPackage(
     URL  https://github.com/eliemichel/glfw3webgpu/archive/fdcabcc54b56b50c12c10f5317abf8ae7ac32c29.zip
 )
 
-# --- zlib ---
+# --- zstd ---
 CPMAddPackage(
-    NAME zlib
-    URL  https://github.com/madler/zlib/archive/refs/tags/v1.3.2.zip
+    NAME zstd
+    URL  https://github.com/facebook/zstd/archive/refs/tags/v1.5.7.zip
+    SOURCE_SUBDIR build/cmake
     OPTIONS
-        "ZLIB_BUILD_TESTING OFF"
-        "ZLIB_INSTALL OFF"
+        "ZSTD_BUILD_SHARED OFF"
+        "ZSTD_BUILD_PROGRAMS OFF"
+        "ZSTD_BUILD_TESTS OFF"
 )
 
 # --- clip ---

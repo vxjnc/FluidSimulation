@@ -1,12 +1,13 @@
 #include "fsim_serializer.hpp"
 
 #include <cstdint>
+#include <cstring>
 #include <fstream>
 #include <stdexcept>
 #include <vector>
 
-#include <zlib.h>
 #include <zpp_bits.h>
+#include <zstd.h>
 
 #include "src/save/fsim_file.hpp"
 
@@ -17,11 +18,10 @@ void FsimSerializer::save(const std::filesystem::path& path, const FsimFile& fil
         throw std::runtime_error("Serialization failed");
     }
 
-    uLong compressedSize = compressBound(static_cast<uLong>(raw.size()));
-    std::vector<std::byte> compressed(compressedSize);
-    if (compress2(reinterpret_cast<Bytef*>(compressed.data()), &compressedSize,
-                  reinterpret_cast<const Bytef*>(raw.data()), static_cast<uLong>(raw.size()),
-                  Z_BEST_COMPRESSION) != Z_OK) {
+    size_t compressedBound = ZSTD_compressBound(raw.size());
+    std::vector<std::byte> compressed(compressedBound);
+    size_t compressedSize = ZSTD_compress(compressed.data(), compressedBound, raw.data(), raw.size(), 15);
+    if (ZSTD_isError(compressedSize)) {
         throw std::runtime_error("Compression failed");
     }
     compressed.resize(compressedSize);
@@ -64,10 +64,8 @@ FsimFile FsimSerializer::load(const std::filesystem::path& path) {
     std::vector<char> compressed(std::istreambuf_iterator<char>(f), {});
 
     std::vector<std::byte> raw(uncompressedSize);
-    uLongf outSize = static_cast<uLongf>(uncompressedSize);
-    if (uncompress(reinterpret_cast<Bytef*>(raw.data()), &outSize,
-                   reinterpret_cast<const Bytef*>(compressed.data()),
-                   static_cast<uLong>(compressed.size())) != Z_OK) {
+    size_t decompressedSize = ZSTD_decompress(raw.data(), raw.size(), compressed.data(), compressed.size());
+    if (ZSTD_isError(decompressedSize) || decompressedSize != uncompressedSize) {
         throw std::runtime_error("Decompression failed");
     }
 
