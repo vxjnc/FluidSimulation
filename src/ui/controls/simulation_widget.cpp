@@ -5,7 +5,7 @@
 #include "src/app_settings.hpp"
 #include "src/compute/fluid_sim.hpp"
 #include "src/ui/fluid_viewport.hpp"
-#include "src/ui/widgets/slider_float.hpp"
+#include "src/ui/widgets/common.hpp"
 
 void SimulationWidget::render(AppSettings& settings, FluidSim& sim, const FluidViewport& viewport) {
     ImGui::Text("Simulation settings");
