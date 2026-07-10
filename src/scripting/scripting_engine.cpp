@@ -184,7 +184,7 @@ sys.stdout = sys.stderr = _Capture()
         if (current_script_) {
             current_script_->panel->set_value(id, value);
         }
-    };
+    }
     void set_widget_label(const std::string& id, std::string label) override {
         if (current_script_) {
             current_script_->panel->set_label(id, std::move(label));

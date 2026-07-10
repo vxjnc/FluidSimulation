@@ -11,6 +11,12 @@
 #include "src/utils/observable.hpp"
 #include "src/utils/string_escaping.hpp"
 
+template <typename T> struct is_string_map : std::false_type {};
+template <typename V> struct is_string_map<std::map<std::string, V>> : std::true_type {
+    using value_type = V;
+};
+template <typename T> constexpr bool is_string_map_v = is_string_map<T>::value;
+
 class ImguiSerialization {
 public:
     template <typename T> static constexpr bool readField(const char* line, const char* name, T& out) {
@@ -61,16 +67,17 @@ public:
             }
             return false;
         }
-        else if constexpr (std::is_same_v<T, std::map<std::string, bool>>) {
+        else if constexpr (is_string_map_v<T>) {
+            using V = typename is_string_map<T>::value_type;
             size_t len = std::strlen(name);
             if (std::strncmp(line, name, len) == 0 && line[len] == '.') {
                 const char* rest = line + len + 1;
                 const char* eq = std::strchr(rest, '=');
                 if (eq) {
                     std::string key(rest, eq - rest);
-                    int v = 0;
-                    if (std::sscanf(eq + 1, "%d", &v) == 1) {
-                        out[key] = (v != 0);
+                    V tmp{};
+                    if (readField(rest, key.c_str(), tmp)) {
+                        out[key] = tmp;
                         return true;
                     }
                 }
@@ -115,9 +122,10 @@ public:
         else if constexpr (std::is_same_v<T, std::string>) {
             buf->appendf("%s=%s\n", name, StringEscaping::encodeString(value).c_str());
         }
-        else if constexpr (std::is_same_v<T, std::map<std::string, bool>>) {
+        else if constexpr (is_string_map_v<T>) {
             for (const auto& [key, val] : value) {
-                buf->appendf("%s.%s=%d\n", name, key.c_str(), val ? 1 : 0);
+                std::string combined_name = std::string(name) + "." + key;
+                writeField(buf, combined_name.c_str(), val);
             }
         }
     };
