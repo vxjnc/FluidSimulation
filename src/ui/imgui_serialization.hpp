@@ -89,13 +89,18 @@ public:
         }
     }
     template <typename Obj>
-    static void readSection(const char* line, ImGuiID section_hash, ImGuiID section_name_hash, Obj& obj) {
+    static bool readSection(const char* line, ImGuiID section_hash, ImGuiID section_name_hash, Obj& obj) {
         if (section_hash != section_name_hash) {
-            return;
+            return false;
         }
+        bool early_exit = false;
         pfr::for_each_field_with_name(obj, [&](std::string_view name, auto& value) {
-            readField(line, std::string(name).c_str(), value);
+            if (early_exit) {
+                return;
+            }
+            early_exit = readField(line, std::string(name).c_str(), value);
         });
+        return true;
     }
     static void ImguiReadLine(ImGuiContext*, ImGuiSettingsHandler* h, void* entry_data, const char* line);
 

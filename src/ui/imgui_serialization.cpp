@@ -11,13 +11,13 @@ void ImguiSerialization::ImguiReadLine(ImGuiContext*, ImGuiSettingsHandler* h, v
 
     auto section_hash = static_cast<ImGuiID>((intptr_t)entry_data);
 
-    readSection(line, section_hash, ImHashStr("Visibility"), self->visibility);
-    readSection(line, section_hash, ImHashStr("AppSettings"), *self->settings);
-    readSection(line, section_hash, ImHashStr("RenderSettings"), self->settings->renderSettings);
-    readSection(line, section_hash, ImHashStr("SplatSettings"), self->settings->splatSettings);
-    readSection(line, section_hash, ImHashStr("UISettings"), self->settings->ui);
-    readSection(line, section_hash, ImHashStr("Scripting"), self->settings->scripting);
-    readSection(line, section_hash, ImHashStr("Plugins"), self->settings->plugins);
+    readSection(line, section_hash, ImHashStr("Visibility"), self->visibility) ||
+        readSection(line, section_hash, ImHashStr("AppSettings"), *self->settings) ||
+        readSection(line, section_hash, ImHashStr("RenderSettings"), self->settings->renderSettings) ||
+        readSection(line, section_hash, ImHashStr("SplatSettings"), self->settings->splatSettings) ||
+        readSection(line, section_hash, ImHashStr("UISettings"), self->settings->ui) ||
+        readSection(line, section_hash, ImHashStr("Scripting"), self->settings->scripting) ||
+        readSection(line, section_hash, ImHashStr("Plugins"), self->settings->plugins);
 }
 
 void ImguiSerialization::ImguiWriteAll(ImGuiContext*, ImGuiSettingsHandler* h, ImGuiTextBuffer* buf) {

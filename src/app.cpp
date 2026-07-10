@@ -1,5 +1,6 @@
 #include "app.hpp"
 
+#include <print>
 #include <ranges>
 
 #include "src/capture/screenshot_capture.hpp"
