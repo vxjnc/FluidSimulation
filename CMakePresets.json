@@ -28,6 +28,14 @@
             }
         },
         {
+            "name": "relwithdebinfo",
+            "inherits": "base",
+            "displayName": "RelWithDebInfo (Profiling)",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+            }
+        },
+        {
             "name": "release-wgpu",
             "inherits": "release",
             "displayName": "Release (WGPU backend)",
@@ -60,6 +68,10 @@
         {
             "name": "release",
             "configurePreset": "release"
+        },
+        {
+            "name": "relwithdebinfo",
+            "configurePreset": "relwithdebinfo"
         },
         {
             "name": "release-wgpu",
