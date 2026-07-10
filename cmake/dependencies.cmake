@@ -177,3 +177,9 @@ CPMAddPackage(
     NAME        dbg_macro
     URL         https://github.com/sharkdp/dbg-macro/archive/refs/tags/v0.5.1.zip
 )
+
+# --- magic_enum ---
+CPMAddPackage(
+    NAME magic_enum
+    URL https://github.com/Neargye/magic_enum/archive/refs/tags/v0.9.8.zip
+)

@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <ranges>
 
+#include <magic_enum/magic_enum_utility.hpp>
 #include <stb_image.h>
 
 #include "src/compute/wgpu_helper.hpp"
@@ -28,19 +29,13 @@ void ImportPanel::render(bool& open) {
 
         ImGui::TextUnformatted("Apply to:");
 
-        static constexpr std::pair<const char*, Target> kButtons[] = {
-            {"Dye", Target::Dye},
-            {"Velocity", Target::Velocity},
-            {"Obstacles", Target::Obstacles},
-        };
-
         LoadedImage img{pixels_, imgW_, imgH_};
 
-        for (const auto& [label, target] : kButtons) {
-            if (ImGui::Button(label, ImVec2(-1, 0))) {
+        magic_enum::enum_for_each<Target>([&](Target target) {
+            if (ImGui::Button(magic_enum::enum_name(target).data(), ImVec2(-1, 0))) {
                 importRequested(target, img);
             }
-        }
+        });
     }
 
     ImGui::End();

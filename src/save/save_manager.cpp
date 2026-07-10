@@ -2,12 +2,16 @@
 
 #include <ranges>
 
+#include <magic_enum/magic_enum_flags.hpp>
+
 #include "src/app_settings.hpp"
 #include "src/capture/gpu_readback.hpp"
 #include "src/compute/fluid_sim.hpp"
 #include "src/save/fsim_file.hpp"
 #include "src/save/fsim_serializer.hpp"
 #include "src/wgpu_context.hpp"
+
+using namespace magic_enum::bitwise_operators;
 
 void SaveManager::save(const std::filesystem::path& path, FluidSim& sim, std::span<const FluidSource> sources,
                        const AppSettings& settings) {

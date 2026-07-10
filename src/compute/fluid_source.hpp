@@ -11,19 +11,6 @@ struct FluidSource {
         DyeAdditive = 1 << 1,
         DyeReplace = 1 << 2,
     };
-    friend constexpr Mode operator|(Mode a, Mode b) {
-        return static_cast<Mode>(static_cast<uint8_t>(a) | static_cast<uint8_t>(b));
-    }
-    friend constexpr Mode operator&(Mode a, Mode b) {
-        return static_cast<Mode>(static_cast<uint8_t>(a) & static_cast<uint8_t>(b));
-    }
-    friend constexpr Mode operator^(Mode a, Mode b) {
-        return static_cast<Mode>(static_cast<uint8_t>(a) ^ static_cast<uint8_t>(b));
-    }
-    friend constexpr Mode operator~(Mode a) { return static_cast<Mode>(~static_cast<uint8_t>(a)); }
-    friend constexpr Mode& operator^=(Mode& a, Mode b) { return a = a ^ b; }
-    friend constexpr Mode& operator|=(Mode& a, Mode b) { return a = a | b; }
-    friend constexpr Mode& operator&=(Mode& a, Mode b) { return a = a & b; }
 
     enum class Form : uint8_t {
         Circle,
@@ -47,6 +34,7 @@ struct FluidSource {
     float radius = 0.05f;
     bool active = true;
 
-    Mode mode_mask = Mode::Velocity | Mode::DyeAdditive;
+    Mode mode_mask =
+        static_cast<Mode>(static_cast<int>(Mode::Velocity) | static_cast<int>(Mode::DyeAdditive));
     Form form = Form::Circle;
 };

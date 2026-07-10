@@ -5,10 +5,13 @@
 #include <numbers>
 
 #include <imgui.h>
+#include <magic_enum/magic_enum_flags.hpp>
 
 #include "src/compute/fluid_source.hpp"
 #include "src/ui/random_splat/splat_settings.hpp"
 #include "src/utils/color_generator.hpp"
+
+using namespace magic_enum::bitwise_operators;
 
 std::optional<std::vector<FluidSource>> SplatWidget::render(SplatSettings& s, VelocityInputMode velMode) {
     ImGui::Text("Random Splat");

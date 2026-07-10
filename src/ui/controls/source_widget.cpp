@@ -1,13 +1,15 @@
 #include "source_widget.hpp"
 
-#include <print>
-
 #include <imgui.h>
+#include <magic_enum/magic_enum_flags.hpp>
 #include <pfr.hpp>
 
 #include "src/app_settings.hpp"
 #include "src/compute/fluid_source.hpp"
+#include "src/ui/widgets/combo_enum.hpp"
 #include "src/ui/widgets/velocity_input.hpp"
+
+using namespace magic_enum::bitwise_operators;
 
 bool SourceWidget::render(FluidSource& s, size_t idx, AppSettings& settings) {
     ImGui::PushID(static_cast<int>(idx));
@@ -16,11 +18,7 @@ bool SourceWidget::render(FluidSource& s, size_t idx, AppSettings& settings) {
     ImGui::SameLine();
     ImGui::Text("Source %zu", idx + 1);
 
-    int current_form = static_cast<int>(s.form);
-    const char* forms[] = {"Circle", "Line", "Radial"};
-    if (ImGui::Combo("Form", &current_form, forms, sizeof(forms) / sizeof(forms[0]))) {
-        s.form = static_cast<FluidSource::Form>(current_form);
-    }
+    Widgets::ComboEnum("Form", s.form);
 
     bool has_velocity = static_cast<bool>(s.mode_mask & FluidSource::Mode::Velocity);
     bool has_dye =
