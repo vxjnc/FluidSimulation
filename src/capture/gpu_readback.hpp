@@ -20,18 +20,29 @@ namespace GpuReadback {
 
     template <typename T = std::byte, typename Callback>
         requires ReadbackCallback<T, Callback>
-    inline void request(wgpu::Device device, wgpu::Buffer buffer, uint64_t size, Callback callback) {
+    inline State<Callback>* record(wgpu::CommandEncoder enc, wgpu::Device device, wgpu::Buffer buffer,
+                                   uint64_t size, Callback callback) {
         auto* state = new State<Callback>{
             WGPUHelper::makeBuffer(device, size, wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::MapRead,
                                    "ReadbackBuffer"),
             size, std::move(callback)};
+        enc.copyBufferToBuffer(buffer, 0, *state->staging, 0, size);
+        return state;
+    }
 
+    template <typename T = std::byte, typename Callback> inline void startMap(State<Callback>* state) {
+        mapAsync<T, Callback>(state);
+    }
+
+    template <typename T = std::byte, typename Callback>
+        requires ReadbackCallback<T, Callback>
+    inline void request(wgpu::Device device, wgpu::Buffer buffer, uint64_t size, Callback callback) {
         wgpu::raii::CommandEncoder enc = device.createCommandEncoder({});
-        enc->copyBufferToBuffer(buffer, 0, *state->staging, 0, size);
+        auto* state = record<T, Callback>(*enc, device, buffer, size, std::move(callback));
         wgpu::raii::CommandBuffer cmd = enc->finish({});
         device.getQueue().submit(1, &*cmd);
 
-        mapAsync<T, Callback>(state);
+        startMap<T, Callback>(state);
     }
 
     template <typename T = std::byte, typename Callback>

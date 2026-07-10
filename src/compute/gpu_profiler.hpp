@@ -1,6 +1,7 @@
 #pragma once
 #include <cstring>
 #include <deque>
+#include <functional>
 #include <memory>
 #include <optional>
 
@@ -58,24 +59,33 @@ public:
         state_->pending = true;
     }
 
-    void requestReadback(wgpu::Device device) {
+    void recordReadback(wgpu::CommandEncoder& enc, wgpu::Device device) {
         if (!supported_ || !enabled || !state_->pending) {
             return;
         }
 
         auto state = state_;
-        GpuReadback::request<size_t>(device, *resolveBuffer_, 2 * sizeof(size_t),
-                                     [state](std::span<const size_t> timestamps) {
-                                         size_t delta = timestamps[1] - timestamps[0];
+        auto* rbState = GpuReadback::record<size_t>( //
+            enc, device, *resolveBuffer_, 2 * sizeof(size_t), [state](std::span<const size_t> timestamps) {
+                size_t delta = timestamps[1] - timestamps[0];
 
-                                         state->sum += delta;
-                                         state->samples.emplace_back(delta);
-                                         if (state->samples.size() > MAX_SAMPLES) {
-                                             state->sum -= state->samples.front();
-                                             state->samples.pop_front();
-                                         }
-                                         state->pending = false;
-                                     });
+                state->sum += delta;
+                state->samples.emplace_back(delta);
+                if (state->samples.size() > MAX_SAMPLES) {
+                    state->sum -= state->samples.front();
+                    state->samples.pop_front();
+                }
+                state->pending = false;
+            });
+
+        pendingFinish_ = [rbState]() { GpuReadback::startMap<size_t>(rbState); };
+    }
+
+    void finishReadback() {
+        if (pendingFinish_) {
+            pendingFinish_();
+            pendingFinish_ = nullptr;
+        }
     }
 
     std::optional<Stats> getStats() const {
@@ -127,6 +137,7 @@ private:
     bool wantsResolve_ = false;
 
     std::shared_ptr<SharedState> state_ = std::make_shared<SharedState>();
+    std::function<void()> pendingFinish_;
 
     wgpu::raii::QuerySet querySet_;
     wgpu::raii::Buffer resolveBuffer_;

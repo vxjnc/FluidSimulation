@@ -1,6 +1,5 @@
 #include "app.hpp"
 
-#include <print>
 #include <ranges>
 
 #include "src/capture/screenshot_capture.hpp"
@@ -166,16 +165,20 @@ void Application::run() {
                               scripts, pluginManager, notificationManager);
         auto [target, targetView] = render(enc);
 
+        simulation.profiler.recordReadback(*enc, ctx.device());
+        renderer.profiler.recordReadback(*enc, ctx.device());
+        uiProfiler.recordReadback(*enc, ctx.device());
+
         wgpu::raii::CommandBuffer cmd = enc->finish({});
         ctx.queue().submit(1, &*cmd);
+
+        simulation.profiler.finishReadback();
+        renderer.profiler.finishReadback();
+        uiProfiler.finishReadback();
 
         postSubmitQueue_.flush();
 
         ctx.present();
-
-        simulation.profiler.requestReadback(ctx.device());
-        renderer.profiler.requestReadback(ctx.device());
-        uiProfiler.requestReadback(ctx.device());
 
         scripting.engine().tick();
     }
