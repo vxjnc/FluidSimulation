@@ -91,6 +91,7 @@ CPMAddPackage(
         "ZSTD_BUILD_SHARED OFF"
         "ZSTD_BUILD_PROGRAMS OFF"
         "ZSTD_BUILD_TESTS OFF"
+        "ZSTD_LEGACY_SUPPORT OFF"
 )
 
 # --- clip ---
