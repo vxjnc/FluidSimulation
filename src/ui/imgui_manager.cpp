@@ -6,7 +6,6 @@
 #include "src/ui/imgui_style.hpp"
 #include "src/ui/widgets/common.hpp"
 #include "src/utils/file_dialog.hpp"
-#include "src/utils/image_processor.hpp"
 #include "src/wgpu_context.hpp"
 
 namespace {
@@ -133,32 +132,7 @@ void ImGuiManager::renderUI(FluidViewport& viewport, MouseState& mouse, FluidSim
         }
     }
     if (visibility.import) {
-        importPanel.render(
-            {ImportPanel::Action{"Dye",
-                                 [&](const ImportPanel::LoadedImage& img) {
-                                     uint32_t dw = sim.state.dye_width;
-                                     uint32_t dh = sim.state.dye_height;
-                                     auto pixels = ImageProcessor::resizeRGBA(img.pixels.data(), img.w, img.h,
-                                                                              dw, dh, true);
-                                     onImport(ImportTarget::Dye, std::move(pixels), dw, dh);
-                                 }},
-             ImportPanel::Action{"Velocity",
-                                 [&](const ImportPanel::LoadedImage& img) {
-                                     uint32_t vw = sim.state.width;
-                                     uint32_t vh = sim.state.height;
-                                     auto pixels = ImageProcessor::resizeRGBA(img.pixels.data(), img.w, img.h,
-                                                                              vw, vh, true);
-                                     onImport(ImportTarget::Velocity, std::move(pixels), vw, vh);
-                                 }},
-             ImportPanel::Action{"Obstacles",
-                                 [&](const ImportPanel::LoadedImage& img) {
-                                     uint32_t ow = sim.state.width;
-                                     uint32_t oh = sim.state.height;
-                                     auto pixels = ImageProcessor::resizeRGBA(img.pixels.data(), img.w, img.h,
-                                                                              ow, oh, true);
-                                     onImport(ImportTarget::Obstacles, std::move(pixels), ow, oh);
-                                 }}},
-            visibility.import);
+        importPanel.render(visibility.import);
     }
     if (visibility.plugins) {
         pluginsPanel.render(visibility.plugins, pluginManager, settings->plugins, engine);

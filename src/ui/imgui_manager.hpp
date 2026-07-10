@@ -22,8 +22,6 @@
 #include "src/ui/scripting/script_ide.hpp"
 #include "src/ui/stats/stats_panel.hpp"
 
-enum class ImportTarget : uint8_t { Dye, Velocity, Obstacles };
-
 class PluginManager;
 
 struct MouseState {
@@ -48,7 +46,6 @@ class ImGuiManager {
 
 public:
     sigslot::signal<std::vector<FluidSource>> onSplats;
-    sigslot::signal<ImportTarget, std::vector<float>, uint32_t, uint32_t> onImport;
     sigslot::signal<std::string> onSaveRequested;
     sigslot::signal<std::string> onLoadRequested;
     sigslot::signal<> onScreenshotClipboard;

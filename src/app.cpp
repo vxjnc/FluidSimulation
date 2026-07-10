@@ -5,6 +5,7 @@
 #include "src/capture/screenshot_capture.hpp"
 #include "src/utils/color_generator.hpp"
 #include "src/utils/file_dialog.hpp"
+#include "src/utils/image_processor.hpp"
 #include "src/utils/process_stats.hpp"
 #include "src/wgpu_context.hpp"
 
@@ -92,14 +93,32 @@ void Application::run() {
             frameSources.insert(frameSources.end(), splats.begin(), splats.end());
         });
     });
-    imguiManager.onImport.connect([&](auto target, auto pixels, auto w, auto h) {
+
+    imguiManager.importPanel.importRequested.connect([&](ImportPanel::Target target,
+                                                         const ImportPanel::LoadedImage& img) {
+        uint32_t w, h;
+        switch (target) {
+        case ImportPanel::Target::Dye:
+            w = simulation.state.dye_width;
+            h = simulation.state.dye_height;
+            break;
+        case ImportPanel::Target::Velocity:
+            [[fallthrough]];
+        case ImportPanel::Target::Obstacles:
+            w = simulation.state.width;
+            h = simulation.state.height;
+            break;
+        }
+
+        auto pixels = ImageProcessor::resizeRGBA(img.pixels.data(), img.w, img.h, w, h, true);
+
         postSubmitQueue_.push([&, target, pixels = std::move(pixels), w, h]() {
             switch (target) {
-            case ImportTarget::Dye:
+            case ImportPanel::Target::Dye:
                 ctx.queue().writeBuffer(*simulation.getCurrentDye(), 0, pixels.data(),
                                         pixels.size() * sizeof(float));
                 break;
-            case ImportTarget::Velocity: {
+            case ImportPanel::Target::Velocity: {
                 // RGBA -> RG
                 std::vector<float> rg;
                 rg.reserve(w * h * 2);
@@ -110,7 +129,7 @@ void Application::run() {
                 ctx.queue().writeBuffer(*simulation.state.velocity, 0, rg.data(), rg.size() * sizeof(float));
                 break;
             }
-            case ImportTarget::Obstacles: {
+            case ImportPanel::Target::Obstacles: {
                 // RGBA -> uint32 (R > 0.5 => 1)
                 auto obs = std::ranges::to<std::vector<uint32_t>>(
                     pixels | std::views::stride(4) |

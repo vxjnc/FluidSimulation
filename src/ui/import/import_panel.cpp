@@ -9,7 +9,7 @@
 #include "src/utils/file_dialog.hpp"
 #include "src/wgpu_context.hpp"
 
-void ImportPanel::render(std::span<const Action> actions, bool& open) {
+void ImportPanel::render(bool& open) {
     ImGui::Begin("Import", &open);
 
     if (ImGui::Button("Load Image...")) {
@@ -27,10 +27,18 @@ void ImportPanel::render(std::span<const Action> actions, bool& open) {
         ImGui::Separator();
 
         ImGui::TextUnformatted("Apply to:");
-        for (const auto& action : actions) {
-            if (ImGui::Button(action.label.data(), ImVec2(-1, 0))) {
-                LoadedImage img{pixels_, imgW_, imgH_};
-                action.callback(img);
+
+        static constexpr std::pair<const char*, Target> kButtons[] = {
+            {"Dye", Target::Dye},
+            {"Velocity", Target::Velocity},
+            {"Obstacles", Target::Obstacles},
+        };
+
+        LoadedImage img{pixels_, imgW_, imgH_};
+
+        for (const auto& [label, target] : kButtons) {
+            if (ImGui::Button(label, ImVec2(-1, 0))) {
+                importRequested(target, img);
             }
         }
     }

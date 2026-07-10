@@ -1,28 +1,23 @@
 #pragma once
 #include <cstdint>
-#include <span>
 #include <vector>
 
 #include <imgui.h>
+#include <sigslot/signal.hpp>
 #include <webgpu/webgpu-raii.hpp>
 
 class ImportPanel {
 public:
+    enum class Target : uint8_t { Dye, Velocity, Obstacles };
+
     struct LoadedImage {
         std::vector<float> pixels;
         uint32_t w, h;
     };
 
-    struct Action {
-        std::string label;
-        std::function<void(const LoadedImage&)> callback;
-    };
+    sigslot::signal<Target, const LoadedImage&> importRequested;
 
-    template <size_t N> void render(const Action (&actions)[N], bool& open) {
-        return render(std::span<const Action, N>(actions), open);
-    }
-
-    void render(std::span<const Action> actions, bool& open);
+    void render(bool& open);
 
 private:
     bool loaded_ = false;
