@@ -6,17 +6,6 @@
 #include <GLFW/glfw3native.h>
 #include <glfw3webgpu.h>
 
-WGPUContext& WGPUContext::instance() {
-    static WGPUContext ctx;
-    return ctx;
-}
-
-WGPUContext::~WGPUContext() {
-    if (initialized_) {
-        surface_->unconfigure();
-    }
-}
-
 void WGPUContext::init(GLFWwindow* window, uint32_t width, uint32_t height) {
     if (initialized_) {
         return;
@@ -139,20 +128,3 @@ void WGPUContext::resize(uint32_t width, uint32_t height) {
     width_ = width;
     height_ = height;
 }
-
-void WGPUContext::present() { surface_->present(); }
-void WGPUContext::processEvents() {
-#ifdef WEBGPU_BACKEND_DAWN
-    device_->tick();
-#endif
-#ifdef WEBGPU_BACKEND_WGPU
-    device_->poll(false, nullptr);
-#endif
-}
-
-wgpu::Device WGPUContext::device() const { return *device_; }
-wgpu::Queue WGPUContext::queue() const { return *queue_; }
-wgpu::Surface WGPUContext::surface() const { return *surface_; }
-wgpu::TextureFormat WGPUContext::surfaceFormat() const { return surfaceFormat_; }
-uint32_t WGPUContext::width() const { return width_; }
-uint32_t WGPUContext::height() const { return height_; }

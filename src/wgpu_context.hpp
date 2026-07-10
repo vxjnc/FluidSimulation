@@ -5,23 +5,37 @@
 
 class WGPUContext {
 public:
-    static WGPUContext& instance();
+    static WGPUContext& instance() {
+        static WGPUContext ctx;
+        return ctx;
+    }
 
-    ~WGPUContext();
+    ~WGPUContext() {
+        if (initialized_) {
+            surface_->unconfigure();
+        }
+    }
 
     void init(GLFWwindow* window, uint32_t width, uint32_t height);
 
     void resize(uint32_t width, uint32_t height);
 
-    void present();
-    void processEvents();
+    void present() { surface_->present(); }
+    void processEvents() {
+#ifdef WEBGPU_BACKEND_DAWN
+        device_->tick();
+#endif
+#ifdef WEBGPU_BACKEND_WGPU
+        device_->poll(false, nullptr);
+#endif
+    }
 
-    wgpu::Device device() const;
-    wgpu::Queue queue() const;
-    wgpu::Surface surface() const;
-    wgpu::TextureFormat surfaceFormat() const;
-    uint32_t width() const;
-    uint32_t height() const;
+    wgpu::Device device() const { return *device_; }
+    wgpu::Queue queue() const { return *queue_; }
+    wgpu::Surface surface() const { return *surface_; }
+    wgpu::TextureFormat surfaceFormat() const { return surfaceFormat_; }
+    uint32_t width() const { return width_; }
+    uint32_t height() const { return height_; }
 
 private:
     bool initialized_ = false;
