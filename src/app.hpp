@@ -40,8 +40,10 @@ public:
     uint32_t dyeWidth() const override { return simulation.state.dye_width; }
     uint32_t dyeHeight() const override { return simulation.state.dye_height; }
 
-    uint32_t velWidth() const override { return simulation.state.width; }
-    uint32_t velHeight() const override { return simulation.state.height; }
+    uint32_t simWidth() const override { return simulation.state.width; }
+    uint32_t simHeight() const override { return simulation.state.height; }
+
+    void setObstacles(std::span<const uint32_t> data) override;
 
 private:
     DeferredQueue preSimQueue_;

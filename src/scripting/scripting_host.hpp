@@ -14,6 +14,8 @@ public:
     virtual uint32_t dyeWidth() const = 0;
     virtual uint32_t dyeHeight() const = 0;
 
-    virtual uint32_t velWidth() const = 0;
-    virtual uint32_t velHeight() const = 0;
+    virtual uint32_t simWidth() const = 0;
+    virtual uint32_t simHeight() const = 0;
+
+    virtual void setObstacles(std::span<const uint32_t> data) = 0;
 };

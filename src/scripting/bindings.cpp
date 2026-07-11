@@ -3,6 +3,7 @@
 #include <optional>
 
 #include <nanobind/nanobind.h>
+#include <nanobind/ndarray.h>
 #include <nanobind/stl/array.h>
 #include <nanobind/stl/function.h>
 #include <nanobind/stl/map.h>
@@ -131,10 +132,19 @@ NB_MODULE(fluidsim, m) {
         auto* host = ScriptingEngine::instance->host;
         return std::make_pair(host->dyeWidth(), host->dyeHeight());
     });
-    m_physics.def("get_velocity_size", []() {
+    m_physics.def("get_sim_size", []() {
         auto* host = ScriptingEngine::instance->host;
-        return std::make_pair(host->velWidth(), host->velHeight());
+        return std::make_pair(host->simWidth(), host->simHeight());
     });
+
+    m_physics.def("set_obstacles",
+                  [](nb::ndarray<const uint32_t, nb::ndim<2>, nb::c_contig, nb::device::cpu> arr) {
+                      auto* host = ScriptingEngine::instance->host;
+                      if (arr.shape(0) != host->simHeight() || arr.shape(1) != host->simWidth()) {
+                          throw nb::value_error("obstacles shape must match (sim_height, sim_width)");
+                      }
+                      host->setObstacles({arr.data(), arr.size()});
+                  });
 
     // --- ui ---
     nb::class_<ScriptPanel>(m_ui, "Panel", nb::type_slots(panel_slots))

@@ -2,6 +2,10 @@
 
 from collections.abc import Sequence
 import enum
+from typing import Annotated
+
+import numpy
+from numpy.typing import NDArray
 
 
 class FluidSource:
@@ -83,4 +87,6 @@ def get_sources() -> list: ...
 
 def get_dye_size() -> tuple[int, int]: ...
 
-def get_velocity_size() -> tuple[int, int]: ...
+def get_sim_size() -> tuple[int, int]: ...
+
+def set_obstacles(arr: Annotated[NDArray[numpy.uint32], dict(shape=(None, None), order='C', device='cpu', writable=False)]) -> None: ...

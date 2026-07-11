@@ -84,6 +84,11 @@ Application::~Application() {
     glfwTerminate();
 }
 
+void Application::setObstacles(std::span<const uint32_t> data) {
+    WGPUContext& ctx = WGPUContext::instance();
+    ctx.queue().writeBuffer(*simulation.state.obstacles, 0, data.data(), data.size() * sizeof(uint32_t));
+}
+
 void Application::run() {
     WGPUContext& ctx = WGPUContext::instance();
     std::vector<FluidSource> frameSources;
@@ -134,8 +139,7 @@ void Application::run() {
                 auto obs = std::ranges::to<std::vector<uint32_t>>(
                     pixels | std::views::stride(4) |
                     std::views::transform([](float v) { return v > 0.5f ? 1u : 0u; }));
-                ctx.queue().writeBuffer(*simulation.state.obstacles, 0, obs.data(),
-                                        obs.size() * sizeof(uint32_t));
+                setObstacles(obs);
                 break;
             }
             }
