@@ -43,7 +43,7 @@ void ScriptingLoader::init(Application* app, std::string_view pythonPath) {
     }
 
 #ifdef _WIN32
-    SetDllDirectoryA(std::filesystem::path(libpath).parent_path().string().c_str());
+    SetDllDirectoryW(std::filesystem::path(libpath).parent_path().wstring().c_str());
 #endif
 
     auto u8 = python_find::find_libscripting().u8string();

@@ -15,6 +15,10 @@
 #include "src/scripting/script_runtime.hpp"
 #include "src/utils/python_find.hpp"
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 extern "C" PyObject* PyInit_fluidsim();
 extern "C" PyObject* PyInit__fluidsim_io();
 
@@ -32,7 +36,10 @@ public:
         std::string base_prefix = python_find::find_base_prefix(pythonPath_);
         if (!base_prefix.empty()) {
 #ifdef _WIN32
-            _putenv_s("PYTHONHOME", base_prefix.c_str());
+            int wlen = MultiByteToWideChar(CP_UTF8, 0, base_prefix.c_str(), -1, nullptr, 0);
+            std::wstring wbase_prefix(wlen, L'\0');
+            MultiByteToWideChar(CP_UTF8, 0, base_prefix.c_str(), -1, wbase_prefix.data(), wlen);
+            _wputenv_s(L"PYTHONHOME", wbase_prefix.c_str());
 #else
             setenv("PYTHONHOME", base_prefix.c_str(), 1);
 #endif
