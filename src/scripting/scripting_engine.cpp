@@ -24,11 +24,9 @@ ScriptingEngine* ScriptingEngine::instance = nullptr;
 
 class ScriptingEngineImpl : public ScriptingEngine {
 public:
-    ScriptingEngineImpl(std::vector<FluidSource>* sources_, NotificationManager* notifications_,
-                        std::string_view pythonPath) {
+    ScriptingEngineImpl(ScriptHost* host_, std::string_view pythonPath) {
         instance = this;
-        sources = sources_;
-        notifications = notifications_;
+        host = host_;
         pythonPath_ = pythonPath;
 
         std::string base_prefix = python_find::find_base_prefix(pythonPath_);
@@ -145,7 +143,7 @@ sys.stdout = sys.stderr = _Capture()
                 rt.tick_callback();
             }
             catch (nb::python_error& e) {
-                notifications->error(e.what());
+                host->notifications().error(e.what());
                 e.restore();
                 PyErr_Print();
                 PyErr_Clear();
@@ -218,10 +216,8 @@ private:
     size_t current_id_ = ScriptSource::INVALID_ID;
 };
 
-extern "C" ScriptingEngine* create_scripting_engine(std::vector<FluidSource>* sources,
-                                                    NotificationManager* notifications,
-                                                    std::string_view pythonPath) {
-    return new ScriptingEngineImpl(sources, notifications, pythonPath);
+extern "C" ScriptingEngine* create_scripting_engine(ScriptHost* host, std::string_view pythonPath) {
+    return new ScriptingEngineImpl(host, pythonPath);
 }
 extern "C" void destroy_scripting_engine(ScriptingEngine* engine) { delete engine; }
 

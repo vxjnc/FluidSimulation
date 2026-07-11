@@ -1,9 +1,7 @@
 #pragma once
 
 #include <string_view>
-#include <vector>
 
-#include "src/compute/fluid_source.hpp"
 #include "src/utils/dynlib.hpp"
 
 class Application;
@@ -13,8 +11,7 @@ class NotificationManager;
 class ScriptingLoader {
 public:
     ScriptingLoader() = default;
-    void init(std::vector<FluidSource>* sources, NotificationManager* notifications,
-              std::string_view pythonPath = "");
+    void init(Application* app, std::string_view pythonPath = "");
     ~ScriptingLoader();
 
     ScriptingLoader(const ScriptingLoader&) = delete;

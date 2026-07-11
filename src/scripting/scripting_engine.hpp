@@ -1,12 +1,10 @@
 #pragma once
 
 #include <string_view>
-#include <vector>
 
-#include "src/compute/fluid_source.hpp"
-#include "src/notification_manager.hpp"
 #include "src/scripting/script_panel.hpp"
 #include "src/scripting/script_source.hpp"
+#include "src/scripting/scripting_host.hpp"
 
 class Application;
 
@@ -39,8 +37,7 @@ public:
     virtual void for_each_panel(std::function<void(size_t id, ScriptPanel&)>) {}
 
     static ScriptingEngine* instance;
-    NotificationManager* notifications = nullptr;
-    std::vector<FluidSource>* sources = nullptr;
+    ScriptHost* host = nullptr;
 };
 
 #ifdef _WIN32
@@ -49,7 +46,6 @@ public:
 #define FLUID_SCRIPTING_API
 #endif
 
-extern "C" FLUID_SCRIPTING_API ScriptingEngine* create_scripting_engine(std::vector<FluidSource>* sources,
-                                                                        NotificationManager* notifications,
+extern "C" FLUID_SCRIPTING_API ScriptingEngine* create_scripting_engine(ScriptHost* host,
                                                                         std::string_view pythonPath);
 extern "C" FLUID_SCRIPTING_API void destroy_scripting_engine(ScriptingEngine* engine);

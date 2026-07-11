@@ -7,6 +7,7 @@
 
 #include <dbg.h>
 
+#include "src/app.hpp"
 #include "src/scripting/scripting_engine.hpp"
 #include "src/utils/dynlib.hpp"
 #include "src/utils/python_find.hpp"
@@ -17,8 +18,7 @@
 #include <windows.h>
 #endif
 
-void ScriptingLoader::init(std::vector<FluidSource>* sources, NotificationManager* notifications,
-                           std::string_view pythonPath) {
+void ScriptingLoader::init(Application* app, std::string_view pythonPath) {
     std::string exe = pythonPath.empty() ? python_find::find_exe() : std::string(pythonPath);
     dbg(exe);
     if (exe.empty()) {
@@ -57,7 +57,7 @@ void ScriptingLoader::init(std::vector<FluidSource>* sources, NotificationManage
         return;
     }
 
-    using factory_fn = ScriptingEngine*(std::vector<FluidSource>*, NotificationManager*, std::string_view);
+    using factory_fn = ScriptingEngine*(ScriptHost*, std::string_view);
     auto factory = libscripting_.fn<factory_fn>("create_scripting_engine");
     if (!factory) {
         std::println(std::cerr, "Failed to find create_scripting_engine");
@@ -67,7 +67,7 @@ void ScriptingLoader::init(std::vector<FluidSource>* sources, NotificationManage
         return;
     }
 
-    engine_ = factory(sources, notifications, exe);
+    engine_ = factory(app, exe);
 }
 
 ScriptingLoader::~ScriptingLoader() {

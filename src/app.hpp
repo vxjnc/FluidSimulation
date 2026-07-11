@@ -15,12 +15,13 @@
 #include "src/scripting/plugin_manager.hpp"
 #include "src/scripting/script_source.hpp"
 #include "src/scripting/scripting_engine.hpp"
+#include "src/scripting/scripting_host.hpp"
 #include "src/scripting/scripting_loader.hpp"
 #include "src/ui/fluid_viewport.hpp"
 #include "src/ui/imgui_manager.hpp"
 #include "src/utils/deffered_queue.hpp"
 
-class Application {
+class Application : public ScriptHost {
 public:
     Application(uint32_t width, uint32_t height, std::string_view title);
 
@@ -30,7 +31,11 @@ public:
     Application& operator=(const Application&) = delete;
 
     void run();
-    template <typename Self> auto&& getSources(this Self&& self) { return std::forward<Self>(self).sources; }
+    std::vector<FluidSource>& getSources() override { return sources; }
+    const std::vector<FluidSource>& getSources() const { return sources; }
+
+    NotificationManager& notifications() override { return notificationManager; }
+    const NotificationManager& notifications() const { return notificationManager; }
 
 private:
     DeferredQueue preSimQueue_;

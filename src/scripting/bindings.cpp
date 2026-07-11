@@ -90,7 +90,7 @@ NB_MODULE(fluidsim, m) {
     m_physics.def(
         "add_source",
         [](float x, float y, float vx, float vy, float radius, std::array<float, 3> color) -> FluidSource& {
-            auto& sources = *ScriptingEngine::instance->sources;
+            auto& sources = ScriptingEngine::instance->host->getSources();
             if (sources.size() >= sources.capacity()) {
                 throw nb::index_error("source limit (1024) reached");
             }
@@ -100,7 +100,7 @@ NB_MODULE(fluidsim, m) {
         nb::rv_policy::reference);
 
     m_physics.def("remove_source", [](int idx) {
-        auto& sources = *ScriptingEngine::instance->sources;
+        auto& sources = ScriptingEngine::instance->host->getSources();
         if (idx < 0 || idx >= static_cast<int>(sources.size())) {
             throw nb::index_error("index out of range");
         }
@@ -110,7 +110,7 @@ NB_MODULE(fluidsim, m) {
     m_physics.def(
         "get_source",
         [](int idx) -> FluidSource& {
-            auto& sources = *ScriptingEngine::instance->sources;
+            auto& sources = ScriptingEngine::instance->host->getSources();
             if (idx < 0 || idx >= static_cast<int>(sources.size())) {
                 throw nb::index_error("index out of range");
             }
@@ -119,7 +119,7 @@ NB_MODULE(fluidsim, m) {
         nb::rv_policy::reference);
 
     m_physics.def("get_sources", []() {
-        auto& sources = *ScriptingEngine::instance->sources;
+        auto& sources = ScriptingEngine::instance->host->getSources();
         nb::list result;
         for (auto& src : sources) {
             result.append(nb::cast(src, nb::rv_policy::reference));
@@ -220,16 +220,16 @@ NB_MODULE(fluidsim, m) {
         .value("ERROR", NotifyLevel::Error);
 
     m_system.def("notify", [](NotifyLevel level, std::string message) {
-        ScriptingEngine::instance->notifications->notify(level, std::move(message));
+        ScriptingEngine::instance->host->notifications().notify(level, std::move(message));
     });
     m_system.def("notify_error", [](std::string message) {
-        ScriptingEngine::instance->notifications->notify(NotifyLevel::Error, std::move(message));
+        ScriptingEngine::instance->host->notifications().notify(NotifyLevel::Error, std::move(message));
     });
     m_system.def("notify_warning", [](std::string message) {
-        ScriptingEngine::instance->notifications->notify(NotifyLevel::Warning, std::move(message));
+        ScriptingEngine::instance->host->notifications().notify(NotifyLevel::Warning, std::move(message));
     });
     m_system.def("notify_info", [](std::string message) {
-        ScriptingEngine::instance->notifications->notify(NotifyLevel::Info, std::move(message));
+        ScriptingEngine::instance->host->notifications().notify(NotifyLevel::Info, std::move(message));
     });
 }
 
