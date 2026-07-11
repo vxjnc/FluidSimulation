@@ -10,4 +10,10 @@ public:
 
     virtual std::vector<FluidSource>& getSources() = 0;
     virtual NotificationManager& notifications() = 0;
+
+    virtual uint32_t dyeWidth() const = 0;
+    virtual uint32_t dyeHeight() const = 0;
+
+    virtual uint32_t velWidth() const = 0;
+    virtual uint32_t velHeight() const = 0;
 };

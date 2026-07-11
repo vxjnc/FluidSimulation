@@ -127,6 +127,15 @@ NB_MODULE(fluidsim, m) {
         return result;
     });
 
+    m_physics.def("get_dye_size", []() {
+        auto* host = ScriptingEngine::instance->host;
+        return std::make_pair(host->dyeWidth(), host->dyeHeight());
+    });
+    m_physics.def("get_velocity_size", []() {
+        auto* host = ScriptingEngine::instance->host;
+        return std::make_pair(host->velWidth(), host->velHeight());
+    });
+
     // --- ui ---
     nb::class_<ScriptPanel>(m_ui, "Panel", nb::type_slots(panel_slots))
         .def(nb::init<>())

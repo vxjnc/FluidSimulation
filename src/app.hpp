@@ -37,6 +37,12 @@ public:
     NotificationManager& notifications() override { return notificationManager; }
     const NotificationManager& notifications() const { return notificationManager; }
 
+    uint32_t dyeWidth() const override { return simulation.state.dye_width; }
+    uint32_t dyeHeight() const override { return simulation.state.dye_height; }
+
+    uint32_t velWidth() const override { return simulation.state.width; }
+    uint32_t velHeight() const override { return simulation.state.height; }
+
 private:
     DeferredQueue preSimQueue_;
     DeferredQueue postSubmitQueue_;
