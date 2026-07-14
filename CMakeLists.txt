@@ -69,7 +69,9 @@ target_link_libraries(fluid_gui PUBLIC fluid_compute glfw imgui reproc++ glfw3we
 add_dependencies(fluid_gui wgsl_shaders embedded_resources )
 
 # --- Executable ---
-add_executable(${PROJECT_NAME} main.cpp)
+add_executable(${PROJECT_NAME} main.cpp
+    $<$<PLATFORM_ID:Windows>:${CMAKE_SOURCE_DIR}/packaging/app.rc>
+)
 add_compile_definitions(
     DBG_MACRO_NO_WARNING
     $<$<NOT:$<CONFIG:Debug>>:DBG_MACRO_DISABLE>
