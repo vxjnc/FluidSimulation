@@ -32,7 +32,7 @@ jobs:
         run: sudo apt-get install -y gcc-14 g++-14 libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libgl1-mesa-dev libdbus-1-dev libpng-dev python3-dev
 
       - name: Configure CMake
-        run: cmake --preset ${{ matrix.preset }} -DAPP_VERSION=${{ github.ref_name }} -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14
+        run: cmake --preset ${{ matrix.preset }} -DAPP_VERSION="${{ github.ref_name }}" -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14
 
       - name: Build
         run: cmake --build --preset ${{ matrix.preset }} -j$(nproc)
@@ -79,7 +79,7 @@ jobs:
         run: vcpkg install zlib
 
       - name: Configure CMake
-        run: cmake --preset ${{ matrix.preset }} -DAPP_VERSION=${{ github.ref_name }} -DCMAKE_TOOLCHAIN_FILE="C:/vcpkg/scripts/buildsystems/vcpkg.cmake" -DCMAKE_VERBOSE_MAKEFILE=ON
+        run: cmake --preset ${{ matrix.preset }} -DAPP_VERSION="${{ github.ref_name }}" -DCMAKE_TOOLCHAIN_FILE="C:/vcpkg/scripts/buildsystems/vcpkg.cmake" -DCMAKE_VERBOSE_MAKEFILE=ON
 
       - name: Build
         run: cmake --build --preset ${{ matrix.preset }} --config Release
@@ -119,7 +119,7 @@ jobs:
         run: sudo apt-get install -y gcc-14 g++-14 libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libgl1-mesa-dev libdbus-1-dev libpng-dev python3-dev
 
       - name: Configure CMake
-        run: cmake --preset release -DAPP_VERSION=${{ github.ref_name }} -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14
+        run: cmake --preset release -DAPP_VERSION="${{ github.ref_name }}" -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14
 
       - name: Build
         run: cmake --build --preset release -j$(nproc)
