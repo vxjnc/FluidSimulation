@@ -10,76 +10,58 @@ jobs:
   build-linux:
     runs-on: ubuntu-24.04
     continue-on-error: true
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - preset: release
-            suffix: linux
-          - preset: release-no-python
-            suffix: linux-no-scripting
     steps:
       - uses: actions/checkout@v4
 
       - name: Cache CMake build
         uses: actions/cache@v4
         with:
-          path: build/${{ matrix.preset }}/_deps
-          key: ${{ runner.os }}-${{ matrix.preset }}-deps-${{ hashFiles('CMakeLists.txt') }}
-          restore-keys: ${{ runner.os }}-${{ matrix.preset }}-deps-
+          path: build/release/_deps
+          key: ${{ runner.os }}-release-deps-${{ hashFiles('CMakeLists.txt') }}
+          restore-keys: ${{ runner.os }}-release-deps-
 
       - name: Install dependencies
         run: sudo apt-get install -y gcc-14 g++-14 libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libgl1-mesa-dev libdbus-1-dev libpng-dev python3-dev
 
       - name: Configure CMake
-        run: cmake --preset ${{ matrix.preset }} -DAPP_VERSION="${{ github.ref_name }}" -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14
+        run: cmake --preset release -DAPP_VERSION="${{ github.ref_name }}" -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14
 
       - name: Build
-        run: cmake --build --preset ${{ matrix.preset }} -j$(nproc)
+        run: cmake --build --preset release -j$(nproc)
 
       - name: Package
         run: |
           mkdir -p dist/FluidSimulation
           cp FluidSimulation dist/FluidSimulation/
           cp *.so dist/FluidSimulation/ 2>/dev/null || true
-          if [ "${{ matrix.preset }}" = "release" ]; then
-            mkdir -p dist/FluidSimulation/plugins/plugin-installer
-            cp plugins/plugin-installer/* dist/FluidSimulation/plugins/plugin-installer/
-          fi
-          tar -czf FluidSimulation-${{ matrix.suffix }}.tar.gz -C dist FluidSimulation
+          mkdir -p dist/FluidSimulation/plugins/plugin-installer
+          cp plugins/plugin-installer/* dist/FluidSimulation/plugins/plugin-installer/
+          tar -czf FluidSimulation-linux.tar.gz -C dist FluidSimulation
 
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: FluidSimulation-${{ matrix.suffix }}
-          path: FluidSimulation-${{ matrix.suffix }}.tar.gz
+          name: FluidSimulation-linux
+          path: FluidSimulation-linux.tar.gz
 
   build-windows:
     runs-on: windows-latest
     continue-on-error: true
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - preset: release
-            suffix: windows
-          - preset: release-no-python
-            suffix: windows-no-scripting
     steps:
       - uses: actions/checkout@v4
 
       - name: Cache CMake build
         uses: actions/cache@v4
         with:
-          path: build/${{ matrix.preset }}/_deps
-          key: ${{ runner.os }}-${{ matrix.preset }}-deps-${{ hashFiles('CMakeLists.txt') }}
-          restore-keys: ${{ runner.os }}-${{ matrix.preset }}-deps-
+          path: build/release/_deps
+          key: ${{ runner.os }}-release-deps-${{ hashFiles('CMakeLists.txt') }}
+          restore-keys: ${{ runner.os }}-release-deps-
 
       - name: Configure CMake
-        run: cmake --preset ${{ matrix.preset }} -DAPP_VERSION="${{ github.ref_name }}" -DCMAKE_VERBOSE_MAKEFILE=ON
+        run: cmake --preset release -DAPP_VERSION="${{ github.ref_name }}" -DCMAKE_VERBOSE_MAKEFILE=ON
 
       - name: Build
-        run: cmake --build --preset ${{ matrix.preset }} --config Release
+        run: cmake --build --preset release --config Release
 
       - name: Package
         shell: bash
@@ -87,17 +69,25 @@ jobs:
           mkdir -p dist/FluidSimulation
           cp FluidSimulation.exe dist/FluidSimulation/
           cp *.dll dist/FluidSimulation/ 2>/dev/null || true
-          if [ "${{ matrix.preset }}" = "release" ]; then
-            mkdir -p dist/FluidSimulation/plugins/plugin-installer
-            cp plugins/plugin-installer/* dist/FluidSimulation/plugins/plugin-installer/
-          fi
-          cd dist && 7z a ../FluidSimulation-${{ matrix.suffix }}.zip .
+          mkdir -p dist/FluidSimulation/plugins/plugin-installer
+          cp plugins/plugin-installer/* dist/FluidSimulation/plugins/plugin-installer/
+          cd dist && 7z a ../FluidSimulation-windows.zip .
 
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: FluidSimulation-${{ matrix.suffix }}
-          path: FluidSimulation-${{ matrix.suffix }}.zip
+          name: FluidSimulation-windows
+          path: FluidSimulation-windows.zip
+
+      - name: Build installer
+        shell: bash
+        run: ISCC.exe //DFluidSimVersion="${{ github.ref_name }}" packaging\windows-installer.iss
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: FluidSimulation-windows-installer
+          path: FluidSimulation-Setup.exe
 
   build-appimage:
     runs-on: ubuntu-24.04
@@ -166,7 +156,6 @@ jobs:
         with:
           files: |
             FluidSimulation-linux/FluidSimulation-linux.tar.gz
-            FluidSimulation-linux-no-scripting/FluidSimulation-linux-no-scripting.tar.gz
             FluidSimulation-windows/FluidSimulation-windows.zip
-            FluidSimulation-windows-no-scripting/FluidSimulation-windows-no-scripting.zip
+            FluidSimulation-windows-installer/FluidSimulation-Setup.exe
             FluidSimulation-appimage/FluidSimulation-x86_64.AppImage
