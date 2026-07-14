@@ -75,11 +75,8 @@ jobs:
           key: ${{ runner.os }}-${{ matrix.preset }}-deps-${{ hashFiles('CMakeLists.txt') }}
           restore-keys: ${{ runner.os }}-${{ matrix.preset }}-deps-
 
-      - name: Install dependencies
-        run: vcpkg install zlib
-
       - name: Configure CMake
-        run: cmake --preset ${{ matrix.preset }} -DAPP_VERSION="${{ github.ref_name }}" -DCMAKE_TOOLCHAIN_FILE="C:/vcpkg/scripts/buildsystems/vcpkg.cmake" -DCMAKE_VERBOSE_MAKEFILE=ON
+        run: cmake --preset ${{ matrix.preset }} -DAPP_VERSION="${{ github.ref_name }}" -DCMAKE_VERBOSE_MAKEFILE=ON
 
       - name: Build
         run: cmake --build --preset ${{ matrix.preset }} --config Release
