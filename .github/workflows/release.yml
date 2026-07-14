@@ -29,7 +29,7 @@ jobs:
       - name: Build
         run: cmake --build --preset release -j$(nproc)
 
-      - name: Package
+      - name: Package tar.gz
         run: |
           mkdir -p dist/FluidSimulation
           cp FluidSimulation dist/FluidSimulation/
@@ -38,11 +38,42 @@ jobs:
           cp plugins/plugin-installer/* dist/FluidSimulation/plugins/plugin-installer/
           tar -czf FluidSimulation-linux.tar.gz -C dist FluidSimulation
 
-      - name: Upload
+      - name: Upload tar.gz
         uses: actions/upload-artifact@v4
         with:
           name: FluidSimulation-linux
           path: FluidSimulation-linux.tar.gz
+
+      - name: Assemble AppDir
+        run: |
+          mkdir -p AppDir/usr/bin
+          mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
+          mkdir -p AppDir/usr/share/applications
+
+          cp FluidSimulation AppDir/usr/bin/
+          cp *.so AppDir/usr/bin/ 2>/dev/null || true
+
+          cp assets/icon.png AppDir/usr/share/icons/hicolor/256x256/apps/fluidsim.png
+          cp packaging/fluidsim.desktop AppDir/usr/share/applications/
+
+      - name: Download linuxdeploy
+        run: |
+          wget -q https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+          chmod +x linuxdeploy-x86_64.AppImage
+          wget -q -O runtime-x86_64 https://github.com/AppImage/type2-runtime/releases/download/continuous/runtime-x86_64
+          chmod +x runtime-x86_64
+
+      - name: Build AppImage
+        env:
+          LDAI_RUNTIME_FILE: ${{ github.workspace }}/runtime-x86_64
+        run: |
+          ./linuxdeploy-x86_64.AppImage --appdir AppDir --output appimage
+
+      - name: Upload AppImage
+        uses: actions/upload-artifact@v4
+        with:
+          name: FluidSimulation-appimage
+          path: FluidSimulation-x86_64.AppImage
 
   build-windows:
     runs-on: windows-latest
@@ -81,7 +112,7 @@ jobs:
 
       - name: Build installer
         shell: bash
-        run: ISCC.exe //DFluidSimVersion="${{ github.ref_name }}" packaging\windows-installer.iss
+        run: ISCC.exe //DFluidSimVersion="${{ github.ref_name }}" packaging/windows-installer.iss
 
       - name: Upload installer
         uses: actions/upload-artifact@v4
@@ -89,61 +120,8 @@ jobs:
           name: FluidSimulation-windows-installer
           path: FluidSimulation-Setup.exe
 
-  build-appimage:
-    runs-on: ubuntu-24.04
-    continue-on-error: true
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Cache CMake build
-        uses: actions/cache@v4
-        with:
-          path: build/release/_deps
-          key: ${{ runner.os }}-release-deps-${{ hashFiles('CMakeLists.txt') }}
-          restore-keys: ${{ runner.os }}-release-deps-
-
-      - name: Install dependencies
-        run: sudo apt-get install -y gcc-14 g++-14 libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libgl1-mesa-dev libdbus-1-dev libpng-dev python3-dev
-
-      - name: Configure CMake
-        run: cmake --preset release -DAPP_VERSION="${{ github.ref_name }}" -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14
-
-      - name: Build
-        run: cmake --build --preset release -j$(nproc)
-
-      - name: Assemble AppDir
-        run: |
-          mkdir -p AppDir/usr/bin
-          mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
-          mkdir -p AppDir/usr/share/applications
-
-          cp FluidSimulation AppDir/usr/bin/
-          cp *.so AppDir/usr/bin/ 2>/dev/null || true
-
-          cp assets/icon.png AppDir/usr/share/icons/hicolor/256x256/apps/fluidsim.png
-          cp packaging/fluidsim.desktop AppDir/usr/share/applications/
-
-      - name: Download linuxdeploy
-        run: |
-          wget -q https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
-          chmod +x linuxdeploy-x86_64.AppImage
-          wget -q -O runtime-x86_64 https://github.com/AppImage/type2-runtime/releases/download/continuous/runtime-x86_64
-          chmod +x runtime-x86_64
-
-      - name: Build AppImage
-        env:
-          LDAI_RUNTIME_FILE: ${{ github.workspace }}/runtime-x86_64
-        run: |
-          ./linuxdeploy-x86_64.AppImage --appdir AppDir --output appimage
-
-      - name: Upload
-        uses: actions/upload-artifact@v4
-        with:
-          name: FluidSimulation-appimage
-          path: FluidSimulation-x86_64.AppImage
-
   release:
-    needs: [build-linux, build-windows, build-appimage]
+    needs: [build-linux, build-windows]
     if: always()
     runs-on: ubuntu-latest
     permissions:
