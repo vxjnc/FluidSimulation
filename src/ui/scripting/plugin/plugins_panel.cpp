@@ -31,6 +31,12 @@ void PluginsPanel::render(bool& open, PluginManager& manager, PluginSettings& se
         bool enabled = settings.enabled[name];
         if (ImGui::Checkbox(("##" + name).c_str(), &enabled)) {
             settings.enabled[name] = enabled;
+            if (enabled) {
+                manager.start(engine, name);
+            }
+            else {
+                manager.stop(engine, name);
+            }
         }
         ImGui::SameLine();
         if (ImGui::Selectable(name.c_str(), selectedIndex_ == i)) {

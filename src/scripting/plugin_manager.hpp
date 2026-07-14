@@ -40,6 +40,9 @@ public:
         }
     }
 
+    void start(ScriptingEngine& engine, const std::string& name) { engine.run_script(sources_[name]); }
+    void stop(ScriptingEngine& engine, const std::string& name) { engine.stop_script(sources_[name].id); }
+
     void stop_all(ScriptingEngine& engine) {
         for (const auto& [name, source] : sources_) {
             engine.stop_script(source.id);
