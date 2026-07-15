@@ -84,9 +84,14 @@ Application::~Application() {
     glfwTerminate();
 }
 
+void Application::setDye(std::span<const float> data) {
+    WGPUContext& ctx = WGPUContext::instance();
+    ctx.queue().writeBuffer(*simulation.getCurrentDye(), 0, data.data(), data.size() * sizeof(data[0]));
+}
+
 void Application::setObstacles(std::span<const uint32_t> data) {
     WGPUContext& ctx = WGPUContext::instance();
-    ctx.queue().writeBuffer(*simulation.state.obstacles, 0, data.data(), data.size() * sizeof(uint32_t));
+    ctx.queue().writeBuffer(*simulation.state.obstacles, 0, data.data(), data.size() * sizeof(data[0]));
 }
 
 void Application::run() {
@@ -115,13 +120,12 @@ void Application::run() {
             break;
         }
 
-        auto pixels = ImageProcessor::resizeRGBA(img.pixels.data(), img.w, img.h, w, h, true);
+        std::vector<float> pixels = ImageProcessor::resizeRGBA(img.pixels.data(), img.w, img.h, w, h, true);
 
         postSubmitQueue_.push([&, target, pixels = std::move(pixels), w, h]() {
             switch (target) {
             case ImportPanel::Target::Dye:
-                ctx.queue().writeBuffer(*simulation.getCurrentDye(), 0, pixels.data(),
-                                        pixels.size() * sizeof(float));
+                setDye(pixels);
                 break;
             case ImportPanel::Target::Velocity: {
                 // RGBA -> RG

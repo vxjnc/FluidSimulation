@@ -137,6 +137,15 @@ NB_MODULE(fluidsim, m) {
         return std::make_pair(host->simWidth(), host->simHeight());
     });
 
+    m_physics.def("set_dye",
+                  [](nb::ndarray<const float, nb::shape<-1, -1, 4>, nb::c_contig, nb::device::cpu> arr) {
+                      auto* host = ScriptingEngine::instance->host;
+                      if (arr.shape(0) != host->dyeHeight() || arr.shape(1) != host->dyeWidth()) {
+                          throw nb::value_error("dye shape must match (dye_height, dye_width, 4)");
+                      }
+                      host->setDye({arr.data(), arr.size()});
+                  });
+
     m_physics.def("set_obstacles",
                   [](nb::ndarray<const uint32_t, nb::ndim<2>, nb::c_contig, nb::device::cpu> arr) {
                       auto* host = ScriptingEngine::instance->host;
