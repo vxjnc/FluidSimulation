@@ -18,5 +18,6 @@ public:
     virtual uint32_t simHeight() const = 0;
 
     virtual void setObstacles(std::span<const uint32_t> data) = 0;
+    virtual void setVelocity(std::span<const float> data) = 0;
     virtual void setDye(std::span<const float> data) = 0;
 };

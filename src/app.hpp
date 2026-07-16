@@ -44,6 +44,7 @@ public:
     uint32_t simHeight() const override { return simulation.state.height; }
 
     void setDye(std::span<const float> data) override;
+    void setVelocity(std::span<const float> data) override;
     void setObstacles(std::span<const uint32_t> data) override;
 
 private:

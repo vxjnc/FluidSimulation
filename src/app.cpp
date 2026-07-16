@@ -89,6 +89,11 @@ void Application::setDye(std::span<const float> data) {
     ctx.queue().writeBuffer(*simulation.getCurrentDye(), 0, data.data(), data.size() * sizeof(data[0]));
 }
 
+void Application::setVelocity(std::span<const float> data) {
+    WGPUContext& ctx = WGPUContext::instance();
+    ctx.queue().writeBuffer(*simulation.state.velocity, 0, data.data(), data.size() * sizeof(data[0]));
+}
+
 void Application::setObstacles(std::span<const uint32_t> data) {
     WGPUContext& ctx = WGPUContext::instance();
     ctx.queue().writeBuffer(*simulation.state.obstacles, 0, data.data(), data.size() * sizeof(data[0]));
@@ -135,7 +140,7 @@ void Application::run() {
                     rg.emplace_back(pixels[i]);
                     rg.emplace_back(pixels[i + 1]);
                 }
-                ctx.queue().writeBuffer(*simulation.state.velocity, 0, rg.data(), rg.size() * sizeof(float));
+                setVelocity(rg);
                 break;
             }
             case ImportPanel::Target::Obstacles: {

@@ -146,6 +146,15 @@ NB_MODULE(fluidsim, m) {
                       host->setDye({arr.data(), arr.size()});
                   });
 
+    m_physics.def("set_vel",
+                  [](nb::ndarray<const float, nb::shape<-1, -1, 2>, nb::c_contig, nb::device::cpu> arr) {
+                      auto* host = ScriptingEngine::instance->host;
+                      if (arr.shape(0) != host->simHeight() || arr.shape(1) != host->simWidth()) {
+                          throw nb::value_error("vel shape must match (sim_height, sim_width, 2)");
+                      }
+                      host->setVelocity({arr.data(), arr.size()});
+                  });
+
     m_physics.def("set_obstacles",
                   [](nb::ndarray<const uint32_t, nb::ndim<2>, nb::c_contig, nb::device::cpu> arr) {
                       auto* host = ScriptingEngine::instance->host;
